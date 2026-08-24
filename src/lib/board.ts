@@ -13,6 +13,12 @@ export interface Entry {
   payerEmail?: string;
   /** Vues publiques de la page share (compteur best-effort). */
   views?: number;
+  /** Enrichissement identité (webhook) : avatar X stocké côté serveur… */
+  avatarB64?: string;
+  avatarType?: string;
+  /** …et titre/description du site si le nom est une URL. Publics. */
+  linkTitle?: string;
+  linkDescription?: string;
 }
 
 /**
@@ -37,7 +43,7 @@ export function nextFloorTier(count: number): { at: number; floor: number } | nu
 }
 
 /** Les 100 premières places (par date) portent l'étoile FOUNDER à vie. */
-export function founderSlugs(entries: Entry[]): Set<string> {
+export function founderSlugs(entries: Pick<Entry, "slug" | "createdAt">[]): Set<string> {
   return new Set([...entries].sort((a, b) => a.createdAt - b.createdAt).slice(0, 100).map((e) => e.slug));
 }
 
@@ -67,11 +73,11 @@ export function makeIdentity(raw: string): { name: string; slug: string } | null
 }
 
 /** Rank = amount desc ; ties go to whoever arrived first (createdAt asc). */
-export function rankEntries(entries: Entry[]): Entry[] {
+export function rankEntries<T extends Pick<Entry, "amountUSD" | "createdAt">>(entries: T[]): T[] {
   return entries.slice().sort((a, b) => b.amountUSD - a.amountUSD || a.createdAt - b.createdAt);
 }
 
-export function totalOnDisplay(entries: Entry[]): number {
+export function totalOnDisplay(entries: Pick<Entry, "amountUSD">[]): number {
   return entries.reduce((sum, e) => sum + e.amountUSD, 0);
 }
 
