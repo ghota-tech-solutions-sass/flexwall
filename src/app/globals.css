@@ -517,3 +517,6 @@ footer {
 
 .operator-co { color: inherit; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(255,255,255,.25); }
 .operator-co:hover { color: var(--ink); }
+
+.footer-link { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.footer-link:hover { color: var(--green); }
