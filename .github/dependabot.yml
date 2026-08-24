@@ -38,3 +38,5 @@ updates:
     schedule:
       interval: "weekly"
     labels: ["dependencies"]
+
+# trigger: scan 1787560074
