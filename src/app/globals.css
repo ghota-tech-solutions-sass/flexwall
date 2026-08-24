@@ -534,3 +534,6 @@ footer {
 
 .podium-card-who { display: flex; align-items: center; gap: 10px; }
 .seat-avatar-md { width: 28px; height: 28px; }
+
+/* ── operator links row (about) ── */
+.operator-links { display: flex; gap: 16px; margin-top: 8px; flex-wrap: wrap; }
