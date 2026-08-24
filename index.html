@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>outflex.lol — post your money. take your rank.</title>
+<style>
+  :root{
+    --bg:#080807; --panel:#101010; --panel2:#141310; --line:#26231c;
+    --gold:#d8b25c; --gold2:#f0d78c; --txt:#ece7db; --mut:#8a8578;
+    --red:#e5484d; --green:#39d98a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background-image:radial-gradient(1200px 500px at 50% -100px, rgba(216,178,92,.07), transparent);}
+  .serif{font-family:Didot,'Bodoni MT','Playfair Display',Georgia,serif}
+  .mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+
+  header{border-bottom:1px solid var(--line)}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{font-size:22px;color:var(--gold);letter-spacing:.5px}
+  .brand span{color:var(--txt)}
+  .links{display:flex;gap:22px;font-size:13px;color:var(--mut)}
+  .links a:hover{color:var(--gold)}
+  .online{font-size:12px;color:var(--green)}
+
+  .statbar{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;
+    padding:14px 0;border-bottom:1px solid var(--line);font-size:12px;color:var(--mut)}
+  .statbar b{color:var(--gold);font-weight:600}
+
+  h1.tagline{text-align:center;font-size:34px;font-weight:400;margin:36px 0 6px}
+  h1.tagline em{color:var(--gold);font-style:normal}
+  .sub{text-align:center;color:var(--mut);font-size:14px;margin-bottom:30px}
+
+  .grid{display:grid;grid-template-columns:1fr 320px;gap:24px;padding-bottom:60px}
+
+  /* claim panel */
+  .claim{background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:22px}
+  .claim h2{font-size:15px;letter-spacing:3px;color:var(--gold);font-weight:600;margin-bottom:16px}
+  .rowc{display:flex;gap:10px;align-items:center}
+  input[type=text],input[type=number]{background:#0a0a09;border:1px solid var(--line);
+    color:var(--txt);border-radius:9px;padding:11px 13px;font-size:15px;width:100%;outline:none}
+  input:focus{border-color:var(--gold)}
+  .stepper{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#0a0a09}
+  .stepper button{background:none;border:none;color:var(--gold);font-size:18px;width:42px;cursor:pointer}
+  .stepper input{border:none;border-radius:0;text-align:center;width:130px;font-weight:600}
+  .cta{background:linear-gradient(180deg,var(--gold2),var(--gold));color:#171204;border:none;
+    border-radius:9px;padding:12px 26px;font-weight:700;font-size:14px;letter-spacing:1px;
+    cursor:pointer;white-space:nowrap}
+  .cta:hover{filter:brightness(1.06)}
+  .hint{font-size:12px;color:var(--mut);margin-top:12px}
+  .deny{color:var(--red);margin-top:12px;font-size:13px;display:none}
+  .shake{animation:shk .35s}
+  @keyframes shk{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  @media(max-width:720px){.rowc{flex-wrap:wrap}}
+
+  /* filters */
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .filters button{background:var(--panel);border:1px solid var(--line);color:var(--mut);
+    border-radius:999px;padding:7px 14px;font-size:12px;cursor:pointer}
+  .filters button.on{border-color:var(--gold);color:var(--gold)}
+
+  /* board */
+  .board{display:flex;flex-direction:column;gap:10px}
+  .row{display:flex;align-items:center;gap:16px;background:var(--panel);
+    border:1px solid var(--line);border-radius:13px;padding:16px 18px;transition:border-color .15s}
+  .row:hover{border-color:#3a352a}
+  .row.top3{background:linear-gradient(180deg,#181407,#101010);border-color:#4a3d1d}
+  .rk{width:46px;font-size:19px;color:var(--mut);flex-shrink:0}
+  .row:nth-child(1) .rk,.row:nth-child(2) .rk,.row:nth-child(3) .rk{color:var(--gold)}
+  .mid{flex:1;min-width:0}
+  .hline{display:flex;align-items:center;gap:8px}
+  .handle{font-weight:700;font-size:16px}
+  .badge{font-size:9px;letter-spacing:1px;padding:2px 7px;border-radius:999px;font-weight:700}
+  .badge.claimed{background:#1d1d1b;color:#777;border:1px solid #333}
+  .badge.verified{background:#2a2110;color:var(--gold2);border:1px solid #57451f}
+  .bio{color:var(--mut);font-size:13px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .meta{color:#5c5850;font-size:11px;margin-top:5px}
+  .right{text-align:right;flex-shrink:0}
+  .amt{font-size:21px;color:var(--gold2);font-weight:600;margin-bottom:7px}
+  .claimbtn{background:none;border:1px solid #3a3323;color:var(--gold);border-radius:8px;
+    padding:6px 12px;font-size:11px;cursor:pointer}
+  .claimbtn:hover{border-color:var(--gold);background:#1a1608}
+  @media(max-width:720px){.bio{white-space:normal}.amt{font-size:17px}}
+
+  /* aside */
+  aside{display:flex;flex-direction:column;gap:20px}
+  .box{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:18px}
+  .box h3{font-size:11px;letter-spacing:3px;color:var(--gold);margin-bottom:12px}
+  .box p{font-size:13px;color:var(--mut);line-height:1.55}
+  .box ol{padding-left:18px;font-size:13px;color:var(--mut);line-height:1.7}
+  .feed{display:flex;flex-direction:column;gap:10px}
+  .fi{font-size:12px;color:var(--mut);border-left:2px solid #2c2718;padding-left:10px;line-height:1.45}
+  .fi b{color:var(--txt)}
+  .fi .fa{color:var(--gold)}
+
+  footer{text-align:center;color:#55503f;font-size:12px;padding:26px 0;border-top:1px solid var(--line)}
+
+  /* toast + modal + confetti */
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+    background:#151208;border:1px solid var(--gold);color:var(--gold2);padding:13px 22px;
+    border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:all .25s;z-index:50}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;
+    align-items:center;justify-content:center;z-index:60;flex-direction:column;gap:16px;padding:20px}
+  #overlay.open{display:flex}
+  #card{max-width:92vw;border:1px solid var(--gold);border-radius:8px}
+  .mbtns{display:flex;gap:10px}
+  .cash{position:fixed;top:-40px;font-size:22px;z-index:99;pointer-events:none;animation:fall 1.7s ease-in forwards}
+  @keyframes fall{to{transform:translateY(115vh) rotate(260deg);opacity:.15}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand serif">outflex<span>.lol</span></a>
+    <nav class="links">
+      <a href="#board">Leaderboard</a><a href="#about">About</a><a href="#rules">Rules</a>
+    </nav>
+    <div class="online">● 746 online</div>
+  </div>
+</header>
+
+<div class="statbar wrap">
+  <div>1,191,773 visitors since launch</div>
+  <div><b id="totalDisplay">$0</b> currently rotting on this wall</div>
+  <div>refunds issued: <b>0</b></div>
+  <div>products sold: <b>none, ever</b></div>
+</div>
+
+<main class="wrap">
+  <h1 class="tagline serif">No products. No pitches. <em>Just money.</em></h1>
+  <p class="sub">Post an amount. Take your rank. Defend it. Entry minimum $1,000 — if that hurts, this isn't for you.</p>
+
+  <div class="grid">
+    <section>
+      <div class="claim" id="claimPanel">
+        <h2>POST YOUR MONEY</h2>
+        <div class="rowc">
+          <div class="stepper">
+            <button id="minus">−</button>
+            <input type="number" id="amount" value="10000" min="1000" step="1000">
+            <button id="plus">+</button>
+          </div>
+          <input type="text" id="handle" placeholder="@your handle">
+          <button class="cta" id="go">TAKE MY RANK</button>
+        </div>
+        <div class="deny" id="deny"></div>
+        <p class="hint">New spots start at $1,000. Already on the wall? Enter the same handle to top up your fortune.</p>
+      </div>
+
+      <div class="filters" id="filters">
+        <button data-t="all" class="on">All</button>
+        <button data-t="vault">👑 Seven figures+</button>
+        <button data-t="six">💎 Six figures</button>
+        <button data-t="five">🥂 Five figures</button>
+        <button data-t="four">🚪 The lobby ($1k–10k)</button>
+      </div>
+
+      <div class="board" id="board"></div>
+    </section>
+
+    <aside>
+      <div class="box" id="about">
+        <h3>ABOUT</h3>
+        <p>A public wall where the only thing being bought, ranked and judged is <b style="color:var(--txt)">money itself</b>.
+        No startup, no landing page, no pitch deck. You post a sum, everyone sees it, and the wall sorts
+        the richest on top. That's the whole product.</p>
+      </div>
+      <div class="box" id="rules">
+        <h3>RULES</h3>
+        <ol>
+          <li>Minimum $1,000. No exceptions.</li>
+          <li>Your money sits on display. Everyone sees the number.</li>
+          <li>Someone posts more? They pass you. Cope, top up, or log off.</li>
+          <li>Ties: whoever got there first stays ahead.</li>
+          <li>Everything is public. Including your fall.</li>
+        </ol>
+      </div>
+      <div class="box">
+        <h3>LATEST ACTIVITY</h3>
+        <div class="feed" id="feed"></div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer>built in one night · inspired by outbid.lol · no refunds · season 1 ends soon 👑</footer>
+
+<div id="toast"></div>
+<div id="overlay">
+  <canvas id="card" width="1200" height="630"></canvas>
+  <div class="mbtns">
+    <button class="cta" id="dl">DOWNLOAD FOR X</button>
+    <button class="claimbtn" id="closeOv" style="padding:12px 22px">close</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var MIN = 1000;
+  var now = Date.now();
+  var H = 3600000, M = 60000;
+  var entries = [
+    {h:"quietmoney",     a:14200000, v:true,  b:"you've never heard of me. that's the point.", t:now-30*H, c:8412},
+    {h:"vc_vampire",     a:9800000,  v:false, b:"i invest in founders who fear me",            t:now-28*H, c:6230},
+    {h:"crypto_karen",   a:4150000,  v:false, b:"down bad? never met her",                     t:now-26*H, c:9877},
+    {h:"trustfund_tom",  a:2700000,  v:true,  b:"grandpa worked so i wouldn't",                t:now-22*H, c:3120},
+    {h:"saas_andy",      a:1200500,  v:false, b:"sold my startup. bought this rank.",          t:now-20*H, c:12081},
+    {h:"nft_requiem",    a:890000,   v:false, b:"it's not a loss until i sell",                t:now-18*H, c:5400},
+    {h:"dropship_dad",   a:450000,   v:false, b:"winning products in bio",                     t:now-16*H, c:2211},
+    {h:"hedge_bae",      a:310000,   v:true,  b:"long volatility, short feelings",             t:now-14*H, c:1877},
+    {h:"lamboloss",      a:120000,   v:false, b:"the car was rented. this isn't.",             t:now-11*H, c:3305},
+    {h:"sixfigures_sam", a:88400,    v:false, b:"technically correct",                         t:now-9*H,  c:990},
+    {h:"landlord_linda", a:52000,    v:false, b:"rent due on the 1st. always.",                t:now-7*H,  c:1442},
+    {h:"oil_nephew",     a:23500,    v:false, b:"uncle says hi",                               t:now-5*H,  c:640},
+    {h:"minimum_wage_max",a:1001,    v:false, b:"one of us. barely.",                          t:now-3*H,  c:2918}
+  ];
+  var feedItems = [];
+  var filter = "all";
+  var lastRankInfo = null;
+
+  function fmt(n){ return "$" + Math.round(n).toLocaleString("en-US"); }
+  function ago(t){
+    var s = Math.max(1, Math.floor((Date.now()-t)/1000));
+    if (s < 60) return s + "s ago";
+    if (s < 3600) return Math.floor(s/60) + "m ago";
+    return Math.floor(s/3600) + "h ago";
+  }
+  function tierOf(a){ return a>=1000000?"vault":a>=100000?"six":a>=10000?"five":"four"; }
+  function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  function sorted(){ return entries.slice().sort(function(x,y){ return y.a - x.a || x.t - y.t; }); }
+
+  function pushFeed(handle, amt, rank){
+    feedItems.unshift({h:handle, a:amt, r:rank, t:Date.now()});
+    if (feedItems.length > 12) feedItems.pop();
+    renderFeed();
+  }
+
+  function renderBoard(){
+    var list = sorted();
+    var shown = list.filter(function(e){ return filter==="all" || tierOf(e.a)===filter; });
+    var globalRank = {};
+    list.forEach(function(e,i){ globalRank[e.h] = i+1; });
+    var html = "";
+    shown.forEach(function(e){
+      var r = globalRank[e.h];
+      var medal = r===1?"👑 ":"";
+      html += '<div class="row'+(r<=3?' top3':'')+'">'
+        + '<div class="rk mono">#'+r+'</div>'
+        + '<div class="mid">'
+        +   '<div class="hline"><span class="handle">'+medal+'@'+esc(e.h)+'</span>'
+        +   '<span class="badge '+(e.v?'verified':'claimed')+'">'+(e.v?'VERIFIED':'CLAIMED')+'</span></div>'
+        +   '<div class="bio">'+esc(e.b)+'</div>'
+        +   '<div class="meta">'+ago(e.t)+' · '+e.c.toLocaleString('en-US')+' clicks</div>'
+        + '</div>'
+        + '<div class="right"><div class="amt mono">'+fmt(e.a)+'</div>'
+        +   '<button class="claimbtn" data-amt="'+(e.a+1)+'">claim this rank for '+fmt(e.a+1)+'</button>'
+        + '</div></div>';
+    });
+    document.getElementById("board").innerHTML = html;
+    Array.prototype.forEach.call(document.querySelectorAll(".claimbtn"), function(b){
+      b.addEventListener("click", function(){
+        document.getElementById("amount").value = b.getAttribute("data-amt");
+        document.getElementById("handle").focus();
+        document.getElementById("claimPanel").scrollIntoView({behavior:"smooth"});
+      });
+    });
+    var tot = entries.reduce(function(s,e){ return s + e.a; }, 0);
+    document.getElementById("totalDisplay").textContent =
+      tot >= 1000000 ? "$"+(tot/1000000).toFixed(1)+"M" : fmt(tot);
+  }
+
+  function renderFeed(){
+    var html = "";
+    feedItems.forEach(function(f){
+      html += '<div class="fi"><b>@'+esc(f.h)+'</b> took <b>#'+f.r+'</b> · <span class="fa mono">'
+           + fmt(f.a)+'</span> — '+ago(f.t)+'</div>';
+    });
+    document.getElementById("feed").innerHTML = html || '<div class="fi">waiting for the first flex…</div>';
+  }
+
+  setInterval(function(){ renderFeed(); }, 15000);
+
+  function toast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(t._tm);
+    t._tm = setTimeout(function(){ t.classList.remove("show"); }, 3800);
+  }
+
+  function confetti(){
+    for (var i=0;i<18;i++){
+      var s = document.createElement("span");
+      s.className = "cash"; s.textContent = "💵";
+      s.style.left = (Math.random()*100)+"vw";
+      s.style.animationDelay = (Math.random()*0.5)+"s";
+      s.style.fontSize = (16+Math.random()*16)+"px";
+      document.body.appendChild(s);
+      s.addEventListener("animationend", function(){ this.remove(); });
+    }
+  }
+
+  function claim(amount, handle, opts){
+    opts = opts || {};
+    var ex = null;
+    for (var i=0;i<entries.length;i++) if (entries[i].h === handle) ex = entries[i];
+    var topped = false;
+    if (ex){ ex.a += amount; topped = true; }
+    else entries.push({h:handle, a:amount, v:false, b:"no bio. just money.", t:Date.now(), c:Math.floor(Math.random()*40)+2});
+    var rank = 1;
+    var list = sorted();
+    for (var j=0;j<list.length;j++){ if (list[j].h===handle){ rank=j+1; break; } }
+    renderBoard();
+    if (!opts.silent){
+      pushFeed(handle, amount, rank);
+      confetti();
+      toast(topped ? "Top-up accepted — "+fmt(amount)+" more on display at #"+rank+"."
+                   : "Welcome to the wall. You're #"+rank+" with "+fmt(amount)+".");
+      setTimeout(function(){ openCard(rank, handle, amount); }, 700);
+    } else {
+      pushFeed(handle, amount, rank);
+    }
+  }
+
+  document.getElementById("go").addEventListener("click", function(){
+    var amt = parseInt(document.getElementById("amount").value, 10);
+    var h = document.getElementById("handle").value.trim().replace(/^@+/,"").toLowerCase();
+    var deny = document.getElementById("deny");
+    if (!h || h.length < 2){
+      deny.textContent = "Enter a handle. The wall needs a name to shame or praise.";
+      deny.style.display = "block"; return;
+    }
+    if (!amt || amt < MIN){
+      deny.innerHTML = "❌ Access denied. The minimum is $1,000. Come back when the number has four digits.";
+      deny.style.display = "block";
+      var p = document.getElementById("claimPanel");
+      p.classList.remove("shake"); void p.offsetWidth; p.classList.add("shake");
+      return;
+    }
+    deny.style.display = "none";
+    claim(amt, h);
+  });
+
+  // filters
+  Array.prototype.forEach.call(document.querySelectorAll("#filters button"), function(b){
+    b.addEventListener("click", function(){
+      Array.prototype.forEach.call(document.querySelectorAll("#filters button"), function(x){ x.classList.remove("on"); });
+      b.classList.add("on");
+      filter = b.getAttribute("data-t");
+      renderBoard();
+    });
+  });
+
+  // stepper
+  var amountEl = document.getElementById("amount");
+  document.getElementById("plus").addEventListener("click", function(){
+    amountEl.value = Math.max(MIN, (parseInt(amountEl.value,10)||MIN) + 1000); });
+  document.getElementById("minus").addEventListener("click", function(){
+    amountEl.value = Math.max(MIN, (parseInt(amountEl.value,10)||MIN) - 1000); });
+
+  // demo bots — keeps the wall alive
+  var botPool = [
+    ["moonboy_larry","sold the bottom. buying tops."],
+    ["old_money_olsen","we don't talk about how"],
+    ["hush_fund","the number speaks, i don't"],
+    ["exit_at_30","retirement went great, thanks"],
+    ["patek_patrick","you never actually own a rank…"],
+    ["solana_sue","up only (this week)"],
+    ["rentier_92","passive income, active flexing"],
+    ["divorce_winna","kept the house AND the ranking"]
+  ];
+  function rnd(a,b){ return Math.floor(a + Math.random()*(b-a)); }
+  function botTick(){
+    if (document.hidden) return;
+    if (Math.random() < 0.25) { renderFeed(); return; } // sometimes just refresh times
+    var pick = botPool[rnd(0,botPool.length)];
+    var exists = entries.some(function(e){ return e.h === pick[0]; });
+    if (exists){ renderFeed(); return; }
+    var r = Math.random();
+    var amt = r < 0.5 ? rnd(1000,10000) : r < 0.85 ? rnd(10000,150000)
+            : (Math.random() < 0.12 ? rnd(1500000,9000000) : rnd(150000,900000));
+    claim(amt, pick[0], {silent:false});
+  }
+  setInterval(botTick, 8000);
+
+  // share card
+  function openCard(rank, handle, amount){
+    var cv = document.getElementById("card"), ctx = cv.getContext("2d");
+    ctx.fillStyle = "#0a0a09"; ctx.fillRect(0,0,1200,630);
+    ctx.strokeStyle = "#d8b25c"; ctx.lineWidth = 3; ctx.strokeRect(28,28,1144,574);
+    ctx.lineWidth = 1; ctx.strokeRect(44,44,1112,542);
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#8a8578"; ctx.font = "600 26px Helvetica, Arial, sans-serif";
+    ctx.fillText("O U T F L E X . L O L   —   T H E   R I C H   L I S T", 600, 130);
+    ctx.fillStyle = "#f0d78c"; ctx.font = "400 190px Georgia, 'Times New Roman', serif";
+    ctx.fillText("#"+rank, 600, 340);
+    ctx.fillStyle = "#ece7db"; ctx.font = "700 52px Helvetica, Arial, sans-serif";
+    ctx.fillText("@"+handle, 600, 430);
+    ctx.fillStyle = "#d8b25c"; ctx.font = "600 44px ui-monospace, Menlo, monospace";
+    ctx.fillText(fmt(amount) + " ON DISPLAY", 600, 505);
+    ctx.fillStyle = "#5c5850"; ctx.font = "italic 28px Georgia, serif";
+    ctx.fillText("no products. no pitches. just money. beat me.", 600, 570);
+    document.getElementById("overlay").classList.add("open");
+  }
+  document.getElementById("closeOv").addEventListener("click", function(){
+    document.getElementById("overlay").classList.remove("open"); });
+  document.getElementById("dl").addEventListener("click", function(){
+    var a = document.createElement("a");
+    a.download = "outflex-card.png";
+    a.href = document.getElementById("card").toDataURL("image/png");
+    a.click();
+  });
+
+  renderBoard();
+})();
+</script>
+</body>
+</html>

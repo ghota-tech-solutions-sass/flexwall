@@ -1,0 +1,17 @@
+node_modules
+.next
+.bun-cache
+.tmp
+.git
+.env
+.env*.local
+terraform
+*.log
+*.png
+!public/**
+index.html
+IDEA.md
+LAUNCH-X.md
+README.md
+.DS_Store
+scripts

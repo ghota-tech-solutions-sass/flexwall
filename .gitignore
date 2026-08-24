@@ -1,0 +1,15 @@
+node_modules/
+.next/
+.env*.local
+.env
+terraform/.terraform/
+terraform/*.tfstate*
+terraform/terraform.tfvars
+terraform/.terraform.lock.hcl
+terraform/tfplan
+terraform/cron.tfplan
+*.log
+.DS_Store
+.tmp/
+.bun-cache/
+shot-*.png
