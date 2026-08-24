@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { creditEntry, listEntries, payerEmailFor } from "@/lib/store/entries";
+import { creditEntry, listEntries, payerEmailFor, setEnrichment } from "@/lib/store/entries";
+import { enrichIdentity } from "@/lib/enrich";
 import { makeIdentity, rankEntries } from "@/lib/board";
 import { getStripeClient } from "@/lib/stripe/client";
 import { publicOrigin, requireEnv } from "@/lib/env";
@@ -55,6 +56,14 @@ export async function POST(req: NextRequest) {
               `credited ${identity.slug} (${displayName}) +$${amountUSD}` +
                 (chargedUSD !== amountUSD ? ` (charged $${chargedUSD}, promo applied)` : "")
             );
+            if (credited.type === "entry") {
+              // Avatar X / description du site : une fois, à la création de la place.
+              try {
+                await setEnrichment(identity.slug, await enrichIdentity(displayName));
+              } catch (error) {
+                console.error("enrichment failed:", error);
+              }
+            }
             if (payerEmail) await sendWelcome(req, identity.slug, displayName, payerEmail);
             await notifyPassed(req, identity.slug, displayName, credited.newTotalUSD - credited.amountUSD, credited.newTotalUSD);
           } else {

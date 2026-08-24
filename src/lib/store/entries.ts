@@ -2,14 +2,13 @@ import { FieldValue, Firestore } from "@google-cloud/firestore";
 import type { Entry } from "@/lib/board";
 import { optionalEnv } from "@/lib/env";
 
-/** Public projection of an entry: never carries the payer email. */
-export type PublicEntry = Omit<Entry, "payerEmail">;
+/** Public projection: no payer email, no avatar bytes (served by /api/avatar). */
+export type PublicEntry = Omit<Entry, "payerEmail" | "avatarB64"> & { hasAvatar?: boolean };
 
 function toPublic(e: Entry): PublicEntry {
-  // Destructure to drop payerEmail. Keep this the only place entries leave the store.
-  const { payerEmail: _private, ...rest } = e;
+  const { payerEmail: _private, avatarB64, ...rest } = e;
   void _private;
-  return rest;
+  return { ...rest, ...(avatarB64 ? { hasAvatar: true } : {}) };
 }
 
 /**
@@ -243,6 +242,42 @@ export async function eventsForSlug(slug: string): Promise<WallEvent[]> {
   return snap.docs
     .map((d) => d.data() as WallEvent)
     .sort((a, b) => b.ts - a.ts);
+}
+
+/** Enrichissement identité (avatar X / titre+description du site). Best-effort. */
+export async function setEnrichment(
+  slug: string,
+  data: { avatarB64?: string; avatarType?: string; linkTitle?: string; linkDescription?: string }
+): Promise<void> {
+  const fields = Object.fromEntries(Object.entries(data).filter(([, v]) => v));
+  if (Object.keys(fields).length === 0) return;
+  const db = getDb();
+  if (!db) {
+    seedDemo();
+    const e = memory.get(slug);
+    if (e) Object.assign(e, fields);
+    return;
+  }
+  try {
+    await db.collection(COLLECTION).doc(slug).update(fields);
+  } catch {
+    /* doc absent : ignore */
+  }
+}
+
+/** Avatar stocké d'une place (servi par /api/avatar/[slug]). */
+export async function avatarFor(slug: string): Promise<{ bytes: Buffer; type: string } | null> {
+  const db = getDb();
+  let e: Entry | undefined;
+  if (!db) {
+    seedDemo();
+    e = memory.get(slug);
+  } else {
+    const doc = await db.collection(COLLECTION).doc(slug).get();
+    e = doc.exists ? (doc.data() as Entry) : undefined;
+  }
+  if (!e?.avatarB64) return null;
+  return { bytes: Buffer.from(e.avatarB64, "base64"), type: e.avatarType || "image/jpeg" };
 }
 
 /** Email du payeur d'une place — PRIVÉ, réservé aux notifications serveur. */

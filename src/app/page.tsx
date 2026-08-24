@@ -152,6 +152,10 @@ export default async function Home() {
             <article className="podium-top">
               <p className="crown">№ 01 · largest amount on the wall</p>
               <div className="who">
+                {first.hasAvatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="seat-avatar seat-avatar-xl" src={"/api/avatar/" + first.slug} alt="" width={40} height={40} />
+                ) : null}
                 <Link className="handle-xl name-link" href={"/share/" + first.slug}>{first.name}</Link>
                 <OutLink name={first.name} size={22} />
                 {first.verified ? <span title="verified funds">✔</span> : null}
@@ -217,6 +221,10 @@ export default async function Home() {
                   <span className="rk mono">{String(i + 1).padStart(2, "0")}</span>
                   <div className="hcell">
                     <span className="handle-md">
+                      {e.hasAvatar ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img className="seat-avatar seat-avatar-sm" src={"/api/avatar/" + e.slug} alt="" width={20} height={20} />
+                      ) : null}
                       <Link className="name-link" href={"/share/" + e.slug}>{e.name}</Link>
                       <OutLink name={e.name} />
                       {founders.has(e.slug) ? <span className="fstar" title="founding 100">★</span> : null}

@@ -73,12 +73,23 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
       <div className="page">
         <section className="hero" style={{ paddingBottom: 8 }}>
           <p className="eyebrow">share card</p>
-          <h1 className="h1 serif" style={{ fontSize: "clamp(30px,4.5vw,46px)" }}>
-            #{rank} · <em className="green">{e.name}</em>
+          <h1 className="h1 serif seat-head" style={{ fontSize: "clamp(30px,4.5vw,46px)" }}>
+            {e.hasAvatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="seat-avatar" src={"/api/avatar/" + e.slug} alt="" width={52} height={52} />
+            ) : null}
+            <span>#{rank} · <em className="green">{e.name}</em></span>
           </h1>
           <p className="subline mono">
             {"$" + e.amountUSD.toLocaleString("en-US")} on public display. Download, post, dare someone.
           </p>
+          {e.linkTitle || e.linkDescription ? (
+            <p className="seat-site mono">
+              {e.linkTitle}
+              {e.linkTitle && e.linkDescription ? " — " : ""}
+              {e.linkDescription}
+            </p>
+          ) : null}
           {out ? (
             <p style={{ marginTop: 14 }}>
               <a className="btn-out" href={out.href} target="_blank" rel="noopener noreferrer nofollow ugc">
@@ -121,9 +132,9 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
                     </div>
                   </div>
                   <div className="acell">
-                    <div style={{ textAlign: "right" }}>
+                    <div className="trail-amounts">
                       <span className="amt-md green">+{formatUSD(ev.amountUSD)}</span>
-                      <div className="takeover">total: {formatUSD(ev.newTotalUSD)}</div>
+                      <span className="trail-total">total {formatUSD(ev.newTotalUSD)}</span>
                     </div>
                   </div>
                 </div>
