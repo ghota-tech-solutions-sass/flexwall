@@ -531,3 +531,6 @@ footer {
 .seat-avatar-xl { width: 40px; height: 40px; align-self: center; }
 .seat-avatar-sm { width: 20px; height: 20px; margin-right: 8px; }
 .seat-site { margin-top: 10px; font-size: 12px; color: var(--muted); max-width: 62ch; }
+
+.podium-card-who { display: flex; align-items: center; gap: 10px; }
+.seat-avatar-md { width: 28px; height: 28px; }

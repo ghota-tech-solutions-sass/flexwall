@@ -195,8 +195,14 @@ export default async function Home() {
                 e ? (
                   <article className="podium-card" key={e.slug}>
                     <p className="rank-tag mono">№ 0{k + 2}</p>
-                    <Link className="handle-lg name-link" href={"/share/" + e.slug}>{e.name}</Link>
-                    <OutLink name={e.name} />
+                    <span className="podium-card-who">
+                      {e.hasAvatar ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img className="seat-avatar seat-avatar-md" src={"/api/avatar/" + e.slug} alt="" width={28} height={28} />
+                      ) : null}
+                      <Link className="handle-lg name-link" href={"/share/" + e.slug}>{e.name}</Link>
+                      <OutLink name={e.name} />
+                    </span>
                     <div className="amount-lg mono">{formatUSD(e.amountUSD)}</div>
                     {(e.views ?? 0) > 0 ? (
                       <div className="views-inline mono">{(e.views ?? 0).toLocaleString("en-US")} views</div>
