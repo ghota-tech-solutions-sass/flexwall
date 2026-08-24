@@ -58,8 +58,10 @@ export default async function AboutPage() {
             A wall that ranks <em className="green">money.</em>
           </h1>
           <p className="subline">
-            Inspired by the pay-to-be-seen experiments before it, stripped of everything except
-            the part people actually came for: the rank.
+            Inspired by{" "}
+            <a className="mail-link" href="https://outbid.lol" target="_blank" rel="noopener noreferrer nofollow">outbid.lol</a>{" "}
+            and the pay-to-be-seen wave around it, stripped of everything except the part
+            people actually came for: the rank.
           </p>
         </section>
 
