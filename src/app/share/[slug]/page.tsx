@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import SeatAvatar from "@/components/SeatAvatar";
 import ShareCard from "@/components/ShareCard";
 import SeatViewPing from "@/components/SeatViewPing";
 import { listEntriesSafe, rankEntries } from "@/lib/board-server";
 import { dynamicFloor, formatUSD, founderSlugs } from "@/lib/board";
 import { eventsForSlug, type WallEvent } from "@/lib/store/entries";
+import SiteFooter from "@/components/SiteFooter";
 import SiteNav from "@/components/SiteNav";
 import { identityLink } from "@/lib/identity-link";
 import { LinkIcon, XLogo } from "@/components/OutLink";
@@ -48,7 +50,7 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
             <p className="subline">No one holds this name on the register. It could be yours.</p>
             <Link className="btn-primary" href="/?enter=1">Enter the list</Link>
           </section>
-          <footer><span>flexwall.lol</span><span>no refunds</span></footer>
+          <SiteFooter left="flexwall.lol" />
         </div>
       </>
     );
@@ -74,10 +76,7 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
         <section className="hero" style={{ paddingBottom: 8 }}>
           <p className="eyebrow">share card</p>
           <h1 className="h1 serif seat-head" style={{ fontSize: "clamp(30px,4.5vw,46px)" }}>
-            {e.hasAvatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="seat-avatar" src={"/api/avatar/" + e.slug} alt="" width={52} height={52} />
-            ) : null}
+            <SeatAvatar entry={e} size="xl" />
             <span>#{rank} · <em className="green">{e.name}</em></span>
           </h1>
           <p className="subline mono">
@@ -150,7 +149,7 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
           <Link className="btn-ghost" href="/">← the wall</Link>
         </div>
 
-        <footer><span>flexwall.lol · the open register</span><span>no refunds</span></footer>
+        <SiteFooter />
       </div>
     </>
   );

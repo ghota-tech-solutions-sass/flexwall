@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import RegisterTable from "@/components/RegisterTable";
 import SiteNav from "@/components/SiteNav";
 import EntryModal from "@/components/EntryModal";
+import SiteFooter from "@/components/SiteFooter";
 import Link from "next/link";
 import { formatUSD, listEntriesSafe, rankEntries, totalOnDisplay } from "@/lib/board-server";
-import { dynamicFloor, founderSlugs, nextFloorTier } from "@/lib/board";
+import { dynamicFloor, founderSlugs, tierNote } from "@/lib/board";
 import { stripeEnabled } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -38,19 +39,13 @@ export default async function BoardPage() {
 
         <RegisterTable initial={ranked} founders={[...founderSlugs(entries)]} />
 
-        <EntryModal floor={dynamicFloor(ranked.length)} tierNote={(() => {
-          const t = nextFloorTier(ranked.length);
-          return t ? `founding price, rises to ${formatUSD(t.floor)} in ${t.at - ranked.length} entries` : null;
-        })()} paymentsConfigured={stripeEnabled()} board={ranked} />
+        <EntryModal floor={dynamicFloor(ranked.length)} tierNote={tierNote(ranked.length)} paymentsConfigured={stripeEnabled()} board={ranked} />
 
         <div style={{ marginTop: 26 }}>
           <Link className="btn-ghost" href="/">← back to the wall</Link>
         </div>
 
-        <footer>
-          <span>flexwall.lol · the open register</span>
-          <span>no refunds</span>
-        </footer>
+        <SiteFooter />
       </div>
     </>
   );

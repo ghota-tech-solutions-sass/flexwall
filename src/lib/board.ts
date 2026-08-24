@@ -90,3 +90,9 @@ export function compactUSD(n: number): string {
   if (n >= 1_000) return "$" + Math.round(n / 1_000) + "k";
   return formatUSD(n);
 }
+
+/** "founding price, rises to $250 in 12 entries" — null once every tier is passed. */
+export function tierNote(count: number): string | null {
+  const t = nextFloorTier(count);
+  return t ? `founding price, rises to ${formatUSD(t.floor)} in ${t.at - count} entries` : null;
+}

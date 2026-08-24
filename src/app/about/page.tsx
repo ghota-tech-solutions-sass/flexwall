@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import SiteFooter from "@/components/SiteFooter";
 import SiteNav from "@/components/SiteNav";
 import { XLogo } from "@/components/OutLink";
 import { listEntriesSafe, totalOnDisplay } from "@/lib/board-server";
@@ -135,10 +136,7 @@ export default async function AboutPage() {
           <Link className="btn-ghost" href="/how-it-works">Read the rules</Link>
         </div>
 
-        <footer>
-          <span>flexwall.lol · the open register</span>
-          <span>no refunds</span>
-        </footer>
+        <SiteFooter />
       </div>
     </>
   );

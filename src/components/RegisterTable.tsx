@@ -2,11 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { PublicEntry } from "@/lib/store/entries";
+import { formatUSD } from "@/lib/board";
 import OutLink from "@/components/OutLink";
+import SeatAvatar from "@/components/SeatAvatar";
 
-function fmt(n: number): string {
-  return "$" + Math.round(n).toLocaleString("en-US");
-}
 
 /** Table complète du registre : recherche instantanée + rafraîchissement 12s. */
 export default function RegisterTable({ initial, founders }: { initial: PublicEntry[]; founders?: string[] }) {
@@ -67,10 +66,7 @@ export default function RegisterTable({ initial, founders }: { initial: PublicEn
               <span className="rk mono">{String(rank).padStart(2, "0")}</span>
               <div className="hcell">
                 <span className="handle-md">
-                  {e.hasAvatar ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img className="seat-avatar seat-avatar-sm" src={`/api/avatar/${e.slug}`} alt="" width={20} height={20} />
-                  ) : null}
+                  <SeatAvatar entry={e} />
                   <a className="name-link" href={`/share/${e.slug}`}>{e.name}</a>
                   <OutLink name={e.name} />
                   {founderSet.has(e.slug) ? <span className="fstar" title="founding 100">★</span> : null}
@@ -82,7 +78,7 @@ export default function RegisterTable({ initial, founders }: { initial: PublicEn
                 </span>
               </div>
               <div className="acell">
-                <span className="amt-md">{fmt(e.amountUSD)}</span>
+                <span className="amt-md">{formatUSD(e.amountUSD)}</span>
               </div>
             </div>
           );

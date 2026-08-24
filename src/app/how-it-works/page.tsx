@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import SiteFooter from "@/components/SiteFooter";
 import SiteNav from "@/components/SiteNav";
 import { dynamicFloor, FLOOR_TIERS, formatUSD } from "@/lib/board";
 import { listEntriesSafe, totalOnDisplay } from "@/lib/board-server";
@@ -102,10 +103,7 @@ export default async function HowItWorksPage() {
           </div>
         </div>
 
-        <footer>
-          <span>flexwall.lol · the open register</span>
-          <span>no refunds</span>
-        </footer>
+        <SiteFooter />
       </div>
     </>
   );

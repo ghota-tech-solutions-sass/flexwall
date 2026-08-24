@@ -1,11 +1,13 @@
 import EntryModal from "@/components/EntryModal";
 import SiteNav from "@/components/SiteNav";
 import OutLink from "@/components/OutLink";
+import SeatAvatar from "@/components/SeatAvatar";
+import SiteFooter from "@/components/SiteFooter";
 import Link from "next/link";
 import { totalOnDisplay, listEntriesSafe, rankEntries } from "@/lib/board-server";
 import { listEvents, type WallEvent } from "@/lib/store/entries";
 import { computeReign, reignDuration, timeAgo } from "@/lib/reign";
-import { dynamicFloor, formatUSD, founderSlugs, nextFloorTier } from "@/lib/board";
+import { dynamicFloor, formatUSD, founderSlugs, tierNote as tierNoteFor } from "@/lib/board";
 import { stripeEnabled } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -41,8 +43,7 @@ export default async function Home() {
   const total = totalOnDisplay(entries);
   const max = ranked.length > 0 ? Math.max(ranked[0].amountUSD, 1) : 1;
   const floor = dynamicFloor(ranked.length);
-  const tier = nextFloorTier(ranked.length);
-  const tierNote = tier ? `founding price, rises to ${formatUSD(tier.floor)} in ${tier.at - ranked.length} entries` : null;
+  const tierNote = tierNoteFor(ranked.length);
   const founders = founderSlugs(entries);
 
   const recent = entries
@@ -92,7 +93,7 @@ export default async function Home() {
           <p className="subline">
             One rule: <b>pick the name above yours, put up more money,
             take their place.</b> Every entry is public, permanent and paid.
-            Minimum {formatUSD(floor)}{tier ? ", rising to " + formatUSD(tier.floor) + " in " + (tier.at - ranked.length) + " entries" : ""}.
+            Minimum {formatUSD(floor)}{tierNote ? " (" + tierNote.replace("founding price, ", "") + ")" : ""}.
           </p>
 
           <div className="hero-ctas">
@@ -152,10 +153,7 @@ export default async function Home() {
             <article className="podium-top">
               <p className="crown">№ 01 · largest amount on the wall</p>
               <div className="who">
-                {first.hasAvatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img className="seat-avatar seat-avatar-xl" src={"/api/avatar/" + first.slug} alt="" width={40} height={40} />
-                ) : null}
+                <SeatAvatar entry={first} size="xl" />
                 <Link className="handle-xl name-link" href={"/share/" + first.slug}>{first.name}</Link>
                 <OutLink name={first.name} size={22} />
                 {first.verified ? <span title="verified funds">✔</span> : null}
@@ -196,10 +194,7 @@ export default async function Home() {
                   <article className="podium-card" key={e.slug}>
                     <p className="rank-tag mono">№ 0{k + 2}</p>
                     <span className="podium-card-who">
-                      {e.hasAvatar ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img className="seat-avatar seat-avatar-md" src={"/api/avatar/" + e.slug} alt="" width={28} height={28} />
-                      ) : null}
+                      <SeatAvatar entry={e} size="md" />
                       <Link className="handle-lg name-link" href={"/share/" + e.slug}>{e.name}</Link>
                       <OutLink name={e.name} />
                     </span>
@@ -227,10 +222,7 @@ export default async function Home() {
                   <span className="rk mono">{String(i + 1).padStart(2, "0")}</span>
                   <div className="hcell">
                     <span className="handle-md">
-                      {e.hasAvatar ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img className="seat-avatar seat-avatar-sm" src={"/api/avatar/" + e.slug} alt="" width={20} height={20} />
-                      ) : null}
+                      <SeatAvatar entry={e} />
                       <Link className="name-link" href={"/share/" + e.slug}>{e.name}</Link>
                       <OutLink name={e.name} />
                       {founders.has(e.slug) ? <span className="fstar" title="founding 100">★</span> : null}
@@ -327,13 +319,7 @@ export default async function Home() {
 
         <EntryModal floor={floor} tierNote={tierNote} paymentsConfigured={stripeEnabled()} board={ranked} />
 
-        <footer>
-          <span>
-            flexwall.lol · season I ·{" "}
-            <a className="footer-link" href="https://github.com/ghota-tech-solutions-sass/flexwall" target="_blank" rel="noopener noreferrer">source</a>
-          </span>
-          <span>your money is your application · no refunds</span>
-        </footer>
+        <SiteFooter left="flexwall.lol · season I" />
       </div>
     </>
   );
