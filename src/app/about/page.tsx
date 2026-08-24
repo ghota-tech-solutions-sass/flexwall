@@ -105,7 +105,9 @@ export default async function AboutPage() {
             (<a className="mail-link" href="https://outilis.fr" target="_blank" rel="noopener noreferrer">outilis.fr</a>),
             and now a wall that ranks money. Most of flexwall was built in a weekend, with AI
             pair-programming doing a lot of the typing and Stripe, Cloud Run and Firestore doing
-            the heavy lifting. He builds in public on X; the follower graph is part of the experiment.
+            the heavy lifting. The whole thing is open source at{" "}
+            <a className="mail-link" href="https://github.com/ghota-tech-solutions-sass/flexwall" target="_blank" rel="noopener noreferrer">github.com/ghota-tech-solutions-sass/flexwall</a>.
+            He builds in public on X; the follower graph is part of the experiment.
           </p>
           <p className="subline" style={{ marginTop: 14 }}>
             Questions, press, or a name that should not be on the wall:{" "}

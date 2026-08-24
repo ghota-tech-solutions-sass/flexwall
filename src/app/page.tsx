@@ -314,7 +314,10 @@ export default async function Home() {
         <EntryModal floor={floor} tierNote={tierNote} paymentsConfigured={stripeEnabled()} board={ranked} />
 
         <footer>
-          <span>flexwall.lol · season I</span>
+          <span>
+            flexwall.lol · season I ·{" "}
+            <a className="footer-link" href="https://github.com/ghota-tech-solutions-sass/flexwall" target="_blank" rel="noopener noreferrer">source</a>
+          </span>
           <span>your money is your application · no refunds</span>
         </footer>
       </div>
