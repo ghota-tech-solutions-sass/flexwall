@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import SeatLookup from "@/components/SeatLookup";
+import SiteFooter from "@/components/SiteFooter";
 import SiteNav from "@/components/SiteNav";
 import { listEntriesSafe, totalOnDisplay } from "@/lib/board-server";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
@@ -46,10 +47,7 @@ export default async function MePage({
           </p>
         </section>
         <SeatLookup authedSlug={authedSlug} welcome={welcome} linkExpired={linkExpired} />
-        <footer>
-          <span>flexwall.lol · the open register</span>
-          <span>no refunds</span>
-        </footer>
+        <SiteFooter />
       </div>
     </>
   );

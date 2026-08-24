@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { makeIdentity, type Entry } from "@/lib/board";
+import { formatUSD as fmtUsd, makeIdentity, type Entry } from "@/lib/board";
 
 interface Props {
   floor: number;
@@ -10,9 +10,6 @@ interface Props {
   board: Entry[];
 }
 
-function fmtUsd(n: number): string {
-  return "$" + Math.round(n).toLocaleString("en-US");
-}
 
 /**
  * Modale d'entrée. Ouverture découplée du rendu : n'importe quel bouton
