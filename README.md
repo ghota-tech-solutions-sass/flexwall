@@ -5,7 +5,8 @@
 A public wall where the only thing bought, ranked and judged is money itself.
 You pick a name, pay any amount through Stripe, and the wall shows your name,
 your amount and your rank. Anyone can pay more and take your place. Nothing is
-sold, nothing is shipped. The record is permanent.
+sold, nothing is shipped. The record is permanent. Inspired by
+[outbid.lol](https://outbid.lol), minus the products.
 
 Live at **[flexwall.lol](https://flexwall.lol)** · [How it works](https://flexwall.lol/how-it-works) · [About](https://flexwall.lol/about)
 
