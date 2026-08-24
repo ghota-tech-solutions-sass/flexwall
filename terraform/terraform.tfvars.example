@@ -1,0 +1,28 @@
+# cp terraform.tfvars.example terraform.tfvars puis remplir.
+# Les ids billing/folder se trouvent dans la console GCP ou via :
+#   gcloud billing accounts list
+#   gcloud resource-manager folders list --organization=<ORG_ID>
+
+project_id           = "ghota-outflex-prod"
+project_name         = "Outflex Production"
+billing_account      = "000000-000000-000000"
+folder_id            = "folders/000000000000"
+bootstrap_project_id = "micro-sass-478507"
+region               = "europe-west1"
+
+# Laisser vide pour l URL run.app par defaut, sinon le domaine custom.
+domain                = ""
+enable_domain_mapping = false
+
+# Stripe - commencer en test : sk_test_...
+# Le secret du webhook est cree automatiquement par Terraform
+# (ressource stripe_webhook_endpoint -> Secret Manager).
+stripe_secret_key = "sk_test_xxx"
+
+# Plancher d'entrée : bas au lancement, il monte avec la taille du mur.
+min_entry_usd = 1000
+
+# Email (magic links + welcome mail) through Google Workspace. Requires the
+# domain-wide delegation step described in email.tf. Empty = disabled.
+email_impersonate = "villers@ghotatechsolutions.com"
+email_from        = "flexwall.lol <villers@ghotatechsolutions.com>"
