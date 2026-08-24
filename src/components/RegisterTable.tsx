@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { Entry } from "@/lib/board";
+import type { PublicEntry } from "@/lib/store/entries";
 import OutLink from "@/components/OutLink";
 
 function fmt(n: number): string {
@@ -9,9 +9,9 @@ function fmt(n: number): string {
 }
 
 /** Table complète du registre : recherche instantanée + rafraîchissement 12s. */
-export default function RegisterTable({ initial, founders }: { initial: Entry[]; founders?: string[] }) {
+export default function RegisterTable({ initial, founders }: { initial: PublicEntry[]; founders?: string[] }) {
   const founderSet = new Set(founders ?? []);
-  const [rows, setRows] = useState<Entry[]>(initial);
+  const [rows, setRows] = useState<PublicEntry[]>(initial);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -67,6 +67,10 @@ export default function RegisterTable({ initial, founders }: { initial: Entry[];
               <span className="rk mono">{String(rank).padStart(2, "0")}</span>
               <div className="hcell">
                 <span className="handle-md">
+                  {e.hasAvatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img className="seat-avatar seat-avatar-sm" src={`/api/avatar/${e.slug}`} alt="" width={20} height={20} />
+                  ) : null}
                   <a className="name-link" href={`/share/${e.slug}`}>{e.name}</a>
                   <OutLink name={e.name} />
                   {founderSet.has(e.slug) ? <span className="fstar" title="founding 100">★</span> : null}
