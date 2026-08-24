@@ -45,7 +45,7 @@ input { font: inherit; }
 .topbar {
   position: sticky; top: 0; z-index: 30;
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  background: rgba(11, 12, 14, 0.75);
+  background: rgba(11, 12, 14, 0.95);
   border-bottom: 1px solid var(--line);
 }
 .topbar-in {
