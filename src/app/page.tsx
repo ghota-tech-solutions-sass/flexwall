@@ -21,8 +21,8 @@ function Bar({ pct, gold }: { pct: number; gold?: boolean }) {
         style={{
           width: w + "%",
           background: gold
-            ? "linear-gradient(90deg, rgba(230,195,124,.75), rgba(230,195,124,.25))"
-            : "linear-gradient(90deg, rgba(53,208,127,.7), rgba(53,208,127,.18))",
+            ? "linear-gradient(90deg, rgba(200,164,87,.85), rgba(200,164,87,.25))"
+            : "linear-gradient(90deg, rgba(156,179,128,.6), rgba(156,179,128,.15))",
         }}
       />
     </div>
