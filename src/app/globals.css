@@ -92,6 +92,7 @@ input { font: inherit; }
     border-top: 1px solid var(--line);
     overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch;
   }
+  .links a { padding: 8px 0; }
 }
 
 /* ── Buttons : rectangles gravés, capitales espacées ── */
@@ -282,6 +283,7 @@ input { font: inherit; }
   padding: 8px 14px; white-space: nowrap;
 }
 .rowi:hover .row-claim, .rowi:focus-within .row-claim { opacity: 1; }
+@media (hover: none) { .row-claim { opacity: 1; } }
 .row-claim:hover { background: var(--gold-dim); }
 
 /* ── Watermark screenshot ── */
@@ -314,7 +316,11 @@ input { font: inherit; }
 .modal h2 { font-family: var(--font-display); font-weight: 500; font-size: 27px; }
 .modal .sub { color: var(--muted); font-size: 14.5px; margin: 6px 0 22px; }
 .modal .form-line { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
-@media (max-width: 480px) { .modal .form-line { grid-template-columns: 1fr; } }
+@media (max-width: 480px) {
+  .modal .form-line { grid-template-columns: 1fr; }
+  .modal { padding: 26px 20px 22px; }
+  .page { padding: 0 18px 60px; }
+}
 .field {
   width: 100%;
   background: var(--bg);
@@ -374,10 +380,16 @@ footer {
 @media (max-width: 680px) {
   .podium-row { grid-template-columns: 1fr; }
   .rowi { grid-template-columns: 34px minmax(0,1fr) auto; gap: 10px; }
-  .amt-md { font-size: 15.5px; }
+  .amt-md { font-size: 16.5px; }
   .pass-hint { display: none; }
   .amount-xl { margin-left: 0; }
   .total-chip { display: none; }
+  .podium-top { padding: 22px 18px 20px; }
+  .hero { padding: 40px 0 30px; }
+  .btn-take { width: 100%; text-align: center; }
+  .row-claim { display: none; }
+  .why-block { padding: 26px 20px 24px; }
+  .clause dd { margin-left: 0; }
 }
 
 /* ── Compréhension instantanée ── */
@@ -389,8 +401,8 @@ footer {
 .how-step { padding: 16px 18px; display: flex; gap: 12px; align-items: baseline; }
 .how-step + .how-step { border-left: 1px solid var(--line); }
 .how-n {
-  font-family: var(--font-mono); font-size: 12.5px; color: var(--gold);
-  letter-spacing: .06em;
+  font-family: var(--font-display), Georgia, serif; font-style: italic;
+  font-size: 17px; color: var(--gold); min-width: 26px;
 }
 .how-t { font-size: 14.5px; color: var(--ink); font-family: var(--font-display), Georgia, serif; }
 .how-t b { font-weight: 600; }
@@ -473,6 +485,38 @@ footer {
 .why-card.hot { border-color: var(--gold-line); }
 .why-card.hot h5 { color: var(--gold-bright); }
 
+/* ── Terms : fine print de certificat, un seul paragraphe ── */
+.terms {
+  margin-top: 64px; padding: 26px 0 0;
+  border-top: 3px double var(--line-2);
+}
+.terms-title {
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 12px;
+}
+.terms-title::before { content: "✦ "; }
+.terms-text {
+  font-size: 15px; color: var(--muted); line-height: 1.75; max-width: 68ch;
+}
+.terms-text b { color: var(--ink); font-weight: 600; }
+
+/* ── Clauses : numéros romains suspendus, zéro card ── */
+.clauses {
+  margin-top: 30px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 26px 44px;
+}
+.clause dt {
+  font-size: 16.5px; font-weight: 600; color: var(--ink);
+  display: flex; align-items: baseline; gap: 10px;
+}
+.cl-n {
+  font-style: italic; font-weight: 400; color: var(--gold);
+  font-size: 18px; min-width: 30px; flex: none;
+}
+.clause dd {
+  margin: 6px 0 0 40px; font-size: 14px; color: var(--muted); line-height: 1.65;
+}
+
 @media (max-width: 680px) {
   .how-strip { grid-template-columns: 1fr; }
   .how-step + .how-step { border-left: none; border-top: 1px solid var(--line); }
@@ -481,6 +525,7 @@ footer {
   .trust-card:nth-child(even) { border-left: 1px solid var(--line); }
   .trust-card:nth-child(n+3) { border-top: 1px solid var(--line); }
   .why-grid { grid-template-columns: 1fr; }
+  .clauses { grid-template-columns: 1fr; gap: 20px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

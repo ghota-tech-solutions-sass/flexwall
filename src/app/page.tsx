@@ -116,15 +116,15 @@ export default async function Home() {
 
           <div className="how-strip mono">
             <div className="how-step">
-              <span className="how-n">01</span>
+              <span className="how-n serif">I.</span>
               <span className="how-t"><b>Pick a name.</b> An X handle, your real name, a company, or an alias.</span>
             </div>
             <div className="how-step">
-              <span className="how-n">02</span>
+              <span className="how-n serif">II.</span>
               <span className="how-t"><b>Post the money.</b> Paid through Stripe, shown in public.</span>
             </div>
             <div className="how-step">
-              <span className="how-n">03</span>
+              <span className="how-n serif">III.</span>
               <span className="how-t"><b>Defend your place.</b> Anyone can post more than you. The record keeps every name.</span>
             </div>
           </div>
@@ -273,48 +273,40 @@ export default async function Home() {
           <p className="wallmark mono">flexwall.lol</p>
         </section>
 
-        <div className="trust-rail">
-          <div className="trust-card">
-            <h4>Paid through Stripe</h4>
-            <p>Checkout runs on Stripe. We never see or store your card.</p>
-          </div>
-          <div className="trust-card">
-            <h4>Public by design</h4>
-            <p>Names, amounts and ranks are visible to anyone, permanently.</p>
-          </div>
-          <div className="trust-card">
-            <h4>Not a wealth ranking</h4>
-            <p>The wall shows what people chose to post, not verified net worth.</p>
-          </div>
-          <div className="trust-card">
-            <h4>No refunds</h4>
-            <p>Entries are final. That is what a permanent public record costs.</p>
-          </div>
-        </div>
+        <section className="terms">
+          <p className="terms-title mono">Terms of the register</p>
+          <p className="terms-text">
+            Payment runs on <b>Stripe</b> — we never see or store your card.
+            Every name, amount and rank is <b>public by design</b>, permanently.
+            The wall shows what people chose to post, <b>not verified net worth</b>.
+            Entries are final and there are <b>no refunds</b> — that is what a
+            permanent public record costs.
+          </p>
+        </section>
 
         <section className="why-block">
           <p className="section-label">Why people enter</p>
           <h3>
             Anyone can talk about money. Almost nobody will <em>put it on public display</em> to back it up.
           </h3>
-          <div className="why-grid">
-            <div className="why-card hot">
-              <h5>Proof of nerve</h5>
-              <p>Talking about money costs nothing. Posting it in public with no undo is a different thing. Your entry is dated, and it stays.</p>
+          <dl className="clauses">
+            <div className="clause">
+              <dt><span className="cl-n serif">I.</span> Proof of nerve</dt>
+              <dd>Talking about money costs nothing. Posting it in public with no undo is a different thing. Your entry is dated, and it stays.</dd>
             </div>
-            <div className="why-card">
-              <h5>A place worth defending</h5>
-              <p>There is exactly one №02. Holding it costs nothing. Taking it from you costs more than you paid. Every day nobody passes you is a day you held.</p>
+            <div className="clause">
+              <dt><span className="cl-n serif">II.</span> A place worth defending</dt>
+              <dd>There is exactly one №02. Holding it costs nothing. Taking it from you costs more than you paid. Every day nobody passes you is a day you held.</dd>
             </div>
-            <div className="why-card">
-              <h5>A permanent record</h5>
-              <p>If someone passes you tomorrow, your name and amount stay in the register. Entries never disappear. They become the number the next person has to beat.</p>
+            <div className="clause">
+              <dt><span className="cl-n serif">III.</span> A permanent record</dt>
+              <dd>If someone passes you tomorrow, your name and amount stay in the register. Entries never disappear. They become the number the next person has to beat.</dd>
             </div>
-            <div className="why-card">
-              <h5>Moves get noticed</h5>
-              <p>Every takeover is a screenshot. Your name shows up in the live ticker, and every seat has a share card made for posting.</p>
+            <div className="clause">
+              <dt><span className="cl-n serif">IV.</span> Moves get noticed</dt>
+              <dd>Every takeover is a screenshot. Your name shows up in the live ticker, and every seat has a share card made for posting.</dd>
             </div>
-          </div>
+          </dl>
         </section>
 
         <EntryModal floor={floor} tierNote={tierNote} paymentsConfigured={stripeEnabled()} board={ranked} />
