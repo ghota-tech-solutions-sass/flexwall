@@ -1,0 +1,150 @@
+version: "3"
+
+# Flexwall — raccourcis de développement et de mise en production.
+#   task            liste les tâches
+#   task dev        serveur local
+#   task check      typecheck + tests + build + tests fonctionnels
+#   task ship       tout vérifier, puis déployer en production
+#
+# Les identifiants de build (registry, tag horodaté) vivent dans
+# terraform/deploy.sh, qui reste la seule source de vérité pour l'image.
+
+vars:
+  PROJECT_ID: ghota-outflex-prod
+  REGION: europe-west1
+  SERVICE: outflex
+  SITE_URL: https://flexwall.lol
+
+tasks:
+  default:
+    desc: Liste les tâches disponibles
+    cmds:
+      - task --list
+    silent: true
+
+  dev:
+    desc: Serveur de développement (hot reload) sur :3000
+    cmds:
+      - bun run dev
+
+  check:
+    desc: Typecheck, tests unitaires, build, tests fonctionnels
+    cmds:
+      - bun run check
+
+  build:
+    desc: Build Next.js seul (sans tests)
+    cmds:
+      - bun run build
+
+  test:
+    desc: Tests unitaires seuls (rapide)
+    cmds:
+      - bun test tests/unit
+
+  og:
+    desc: Régénère public/og.png depuis assets/og.html
+    cmds:
+      - >-
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+        --headless --disable-gpu --hide-scrollbars
+        --screenshot=public/og.png --window-size=1200,630
+        "file://{{.TASKFILE_DIR}}/assets/og.html"
+      - echo "public/og.png regenerated"
+
+  deploy:
+    desc: Build l'image, la pousse et déploie sur Cloud Run (sans vérifications)
+    cmds:
+      - bash terraform/deploy.sh deploy
+      - task: smoke
+
+  ship:
+    desc: "Mise en production complète : garde-fous, tests, déploiement, contrôle"
+    cmds:
+      - task: preflight
+      - task: check
+      - bash terraform/deploy.sh deploy
+      - task: smoke
+
+  preflight:
+    desc: Vérifie que la branche est main, à jour et sans modification locale
+    cmds:
+      - |
+        set -e
+        branch=$(git rev-parse --abbrev-ref HEAD)
+        if [ "$branch" != "main" ]; then
+          echo "✗ sur '$branch', pas main. Merge d'abord, ou 'task deploy' pour forcer."
+          exit 1
+        fi
+        if [ -n "$(git status --porcelain -- ':!tsconfig.tsbuildinfo')" ]; then
+          echo "✗ des modifications ne sont pas commitées :"
+          git status --short -- ':!tsconfig.tsbuildinfo'
+          exit 1
+        fi
+        git fetch --quiet origin main
+        if [ -n "$(git log origin/main..HEAD --oneline)" ]; then
+          echo "✗ des commits locaux ne sont pas poussés :"
+          git log origin/main..HEAD --oneline
+          exit 1
+        fi
+        echo "✓ main, propre, poussée"
+    silent: true
+
+  smoke:
+    desc: Vérifie que la production répond et sert bien la nouvelle version
+    cmds:
+      - |
+        set -e
+        code=$(curl -s -o /dev/null -w "%{http_code}" {{.SITE_URL}}/)
+        if [ "$code" != "200" ]; then echo "✗ {{.SITE_URL}} → $code"; exit 1; fi
+        echo "✓ {{.SITE_URL}} → 200"
+        buttons=$(curl -s {{.SITE_URL}}/ | grep -o 'data-open-entry' | wc -l | tr -d ' ')
+        if [ "$buttons" -lt 2 ]; then echo "✗ aucun bouton d'entrée sur le mur"; exit 1; fi
+        echo "✓ le mur sert $buttons points d'entrée"
+    silent: true
+
+  logs:
+    desc: 50 dernières lignes de log Cloud Run
+    cmds:
+      - >-
+        gcloud logging read
+        'resource.type=cloud_run_revision AND resource.labels.service_name={{.SERVICE}}'
+        --project {{.PROJECT_ID}} --limit 50 --format "value(timestamp,textPayload)"
+
+  revisions:
+    desc: Liste les révisions Cloud Run et celle qui sert le trafic
+    cmds:
+      - >-
+        gcloud run revisions list --service {{.SERVICE}}
+        --region {{.REGION}} --project {{.PROJECT_ID}}
+        --format "table(name,creationTimestamp,status.conditions[0].status)"
+      - >-
+        gcloud run services describe {{.SERVICE}}
+        --region {{.REGION}} --project {{.PROJECT_ID}}
+        --format "value[separator=' sert 100% du trafic'](status.traffic[0].revisionName)"
+
+  rollback:
+    desc: "Renvoie tout le trafic vers une révision : task rollback -- outflex-00042-xyz"
+    cmds:
+      - |
+        set -e
+        rev="{{.CLI_ARGS}}"
+        if [ -z "$rev" ]; then
+          echo "Usage: task rollback -- <revision>   ('task revisions' pour la liste)"
+          exit 1
+        fi
+        gcloud run services update-traffic {{.SERVICE}} --to-revisions "$rev=100" \
+          --region {{.REGION}} --project {{.PROJECT_ID}}
+      - task: smoke
+    silent: true
+
+  env:
+    desc: Affiche les variables d'environnement du service en production
+    cmds:
+      - >-
+        gcloud run services describe {{.SERVICE}}
+        --region {{.REGION}} --project {{.PROJECT_ID}}
+        --format "value(spec.template.spec.containers[0].env)"
+      - echo ""
+      - echo "Rappel - les secrets sont montés par référence. Ne jamais déployer avec --set-env-vars, qui remplace tout le bloc."
+    silent: true
