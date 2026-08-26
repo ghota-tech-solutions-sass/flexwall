@@ -27,7 +27,9 @@ cd "$SCRIPT_DIR"
 case "${1:-help}" in
   build)
     log "Building Docker image..."
-    docker build -t "${REGISTRY}:${TIMESTAMP}" -f "$PROJECT_ROOT/Dockerfile" "$PROJECT_ROOT"
+    # --platform linux/amd64 : sur un Mac Apple Silicon, docker build produit
+    # une image arm64 que Cloud Run refuse au moment de créer la révision.
+    docker build --platform linux/amd64 -t "${REGISTRY}:${TIMESTAMP}" -f "$PROJECT_ROOT/Dockerfile" "$PROJECT_ROOT"
     ok "Build complete: ${REGISTRY}:${TIMESTAMP}"
     ;;
 
@@ -41,7 +43,9 @@ case "${1:-help}" in
     # Build, push et deploy dans le même appel : le tag est horodaté à
     # l'invocation, donc "deploy" seul pointait vers une image jamais poussée.
     log "Building ${REGISTRY}:${TIMESTAMP}..."
-    docker build -t "${REGISTRY}:${TIMESTAMP}" -f "$PROJECT_ROOT/Dockerfile" "$PROJECT_ROOT"
+    # --platform linux/amd64 : sur un Mac Apple Silicon, docker build produit
+    # une image arm64 que Cloud Run refuse au moment de créer la révision.
+    docker build --platform linux/amd64 -t "${REGISTRY}:${TIMESTAMP}" -f "$PROJECT_ROOT/Dockerfile" "$PROJECT_ROOT"
     log "Pushing..."
     docker push "${REGISTRY}:${TIMESTAMP}"
     log "Deploying ${SERVICE_NAME} to Cloud Run..."
