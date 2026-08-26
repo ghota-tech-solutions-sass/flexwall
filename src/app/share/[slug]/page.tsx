@@ -4,7 +4,9 @@ import SeatAvatar from "@/components/SeatAvatar";
 import ShareCard from "@/components/ShareCard";
 import SeatViewPing from "@/components/SeatViewPing";
 import { listEntriesSafe, rankEntries } from "@/lib/board-server";
-import { dynamicFloor, formatUSD, founderSlugs } from "@/lib/board";
+import { dynamicFloor, formatUSD, founderSlugs, tierNote } from "@/lib/board";
+import { stripeEnabled } from "@/lib/env";
+import EntryModal from "@/components/EntryModal";
 import { eventsForSlug, type WallEvent } from "@/lib/store/entries";
 import SiteFooter from "@/components/SiteFooter";
 import SiteNav from "@/components/SiteNav";
@@ -17,7 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const ranked = rankEntries(await listEntriesSafe());
   const e = ranked.find((x) => x.slug === slug);
-  if (!e) return { title: "Unknown seat", robots: { index: false, follow: true } };
+  if (!e) return { title: "Unknown spot", robots: { index: false, follow: true } };
   const rank = ranked.findIndex((x) => x.slug === slug) + 1;
   const title = e.name + " is #" + rank + " on flexwall.lol";
   const description =
@@ -34,7 +36,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function SharePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  void dynamicFloor; // le plancher s'affiche sur le mur, pas sur la carte
   const entries = await listEntriesSafe();
   const ranked = rankEntries(entries);
   const idx = ranked.findIndex((x) => x.slug === slug);
@@ -144,12 +145,18 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
         ) : null}
 
         <div className="share-actions" style={{ justifyContent: "flex-start", marginTop: 30 }}>
-          <Link className="btn-outbid btn-outbid-xl mono" href={"/?enter=1&amount=" + (e.amountUSD + 1)}>
+          <button className="btn-outbid btn-outbid-xl mono" data-open-entry data-amount={e.amountUSD + 1}>
             OUTBID FOR {formatUSD(e.amountUSD + 1)}
-          </Link>
+          </button>
           <Link className="btn-ghost" href="/">← the wall</Link>
         </div>
 
+        <EntryModal
+          floor={dynamicFloor(ranked.length)}
+          tierNote={tierNote(ranked.length)}
+          paymentsConfigured={stripeEnabled()}
+          board={ranked}
+        />
         <SiteFooter />
       </div>
     </>
