@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT_PATH="\${SCRIPT_DIR}/\$(basename "\${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # ── Config ──
 PROJECT_ID="ghota-outflex-prod"
@@ -10,7 +10,7 @@ REGION="europe-west1"
 REPO_NAME="outflex-repo"
 IMAGE_NAME="outflex"
 SERVICE_NAME="outflex"
-REGISTRY="\${REGION}-docker.pkg.dev/\${PROJECT_ID}/\${REPO_NAME}/\${IMAGE_NAME}"
+REGISTRY="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${IMAGE_NAME}"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
 # ── Colors ──
@@ -18,41 +18,35 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-log() { echo -e "\${BLUE}[deploy]\${NC} $1"; }
-ok()  { echo -e "\${GREEN}[✓]\${NC} $1"; }
+log() { echo -e "${BLUE}[deploy]${NC} $1"; }
+ok() { echo -e "${GREEN}[deploy]${NC} $1"; }
+
+cd "$SCRIPT_DIR"
 
 # ── Commands ──
-case "\${1:-help}" in
+case "${1:-help}" in
   build)
     log "Building Docker image..."
-    docker build --platform linux/amd64 -t "\${REGISTRY}:latest" -t "\${REGISTRY}:\${TIMESTAMP}" ..
-    ok "Image built: \${REGISTRY}:\${TIMESTAMP}"
+    docker build -t "${REGISTRY}:${TIMESTAMP}" -f "$PROJECT_ROOT/Dockerfile" "$PROJECT_ROOT"
+    ok "Build complete: ${REGISTRY}:${TIMESTAMP}"
     ;;
 
   push)
-    log "Configuring Docker auth..."
-    gcloud auth configure-docker "\${REGION}-docker.pkg.dev" --quiet
-    log "Pushing image..."
-    docker push "\${REGISTRY}:latest"
-    docker push "\${REGISTRY}:\${TIMESTAMP}"
-    ok "Image pushed"
+    log "Pushing image to Artifact Registry..."
+    docker push "${REGISTRY}:${TIMESTAMP}"
+    ok "Push complete"
     ;;
 
   deploy)
-    bash "\${SCRIPT_PATH}" build
-    bash "\${SCRIPT_PATH}" push
-    log "Deploying Cloud Run service..."
-    gcloud run deploy "\${SERVICE_NAME}" \
-      --image "\${REGISTRY}:latest" \
-      --region "\${REGION}" \
-      --project "\${PROJECT_ID}" \
-      --quiet
-    ok "Deployed to Cloud Run"
-    ;;
-
-  terraform)
-    shift
-    terraform "\${@}"
+    log "Deploying ${SERVICE_NAME} to Cloud Run..."
+    gcloud run deploy "${SERVICE_NAME}" \
+      --image "${REGISTRY}:${TIMESTAMP}" \
+      --region "${REGION}" \
+      --project "${PROJECT_ID}" \
+      --platform managed \
+      --allow-unauthenticated \
+      --set-env-vars "TIMESTAMP=${TIMESTAMP}"
+    ok "Deploy complete"
     ;;
 
   init)
@@ -73,7 +67,7 @@ case "\${1:-help}" in
     ;;
 
   help|*)
-    echo "Usage: $0 {build|push|deploy|init|plan|apply|destroy|terraform <cmd>}"
+    echo "Usage: $0 {build|push|deploy|init|plan|apply|destroy}"
     echo ""
     echo "  build     - Build Docker image"
     echo "  push      - Push to Artifact Registry"
