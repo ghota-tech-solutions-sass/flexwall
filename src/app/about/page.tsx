@@ -4,15 +4,15 @@ import SiteFooter from "@/components/SiteFooter";
 import SiteNav from "@/components/SiteNav";
 import { XLogo } from "@/components/OutLink";
 import { listEntriesSafe, totalOnDisplay } from "@/lib/board-server";
+import { pageMetadata } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "About",
-  description: "What flexwall.lol is, how the money moves, and what the wall is not.",
-  alternates: { canonical: "/about" },
-  openGraph: { url: "/about", title: "About · flexwall.lol", description: "What flexwall.lol is, how the money moves, and what the wall is not." },
-};
+  description: "Who built this, how the money moves, and what the wall is not.",
+  path: "/about",
+});
 
 function LinkedInLogo({ size = 14 }: { size?: number }) {
   return (
@@ -27,14 +27,14 @@ const cards: [string, string[]][] = [
     "What this is",
     [
       "A public wall that ranks money. You pick a name, you post an amount through Stripe, and the wall shows your name, your amount and your rank. That is the whole product: nothing to buy, nothing shipped, nothing unlocked.",
-      "Anyone can post more than you and take your place. Your name and every payment stay in the register either way.",
+      "Anyone can pay more than you and take your spot. Your name and every payment stay on the wall either way.",
     ],
   ],
   [
     "How the money moves",
     [
       "Payments run through Stripe hosted checkout. We never see or store your card. What you pay is what the wall displays, and payments are final: what you bought (a public, dated record) is delivered the second you pay.",
-      "The entry minimum starts low and rises as the wall fills. Top-ups on an existing seat have no minimum.",
+      "The entry minimum starts low and rises as the wall fills. Top-ups on a spot you already hold have no minimum.",
     ],
   ],
   [
@@ -47,7 +47,7 @@ const cards: [string, string[]][] = [
   [
     "Names and removals",
     [
-      "Enter under an X handle, a real name, a company or an alias. The first payment sets the display name; the same name always adds to the same seat.",
+      "Enter under an X handle, a real name, a company or an alias. The first payment sets the display name; the same name always adds to the same spot.",
       "Illegal, abusive or impersonating display names are removed without refund. That rule keeps the wall publishable, and it is the only edit we ever make.",
     ],
   ],

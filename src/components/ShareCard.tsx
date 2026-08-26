@@ -10,8 +10,10 @@ interface Props {
   founder: boolean;
 }
 
+// Même format que l'image Open Graph : le PNG téléchargé doit être celui que
+// X et iMessage affichent, pas une variante en 16:9.
 const W = 1200;
-const H = 675;
+const H = 630;
 
 /** Carte de partage 1200×675 dessinée en canvas — chaque rang devient un post. */
 export default function ShareCard({ rank, name, amountUSD, founder }: Props) {
@@ -36,34 +38,31 @@ export default function ShareCard({ rank, name, amountUSD, founder }: Props) {
     // wordmark
     ctx.fillStyle = "#e2b340";
     ctx.font = "700 22px ui-monospace, SFMono-Regular, Menlo, monospace";
-    ctx.fillText("F L E X W A L L", W / 2, 92);
+    ctx.fillText("F L E X W A L L", W / 2, 86);
 
     // rang géant — or pour le n°1, blanc sinon
-    ctx.font = "700 200px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.font = "700 180px ui-monospace, SFMono-Regular, Menlo, monospace";
     ctx.fillStyle = rank === 1 ? "#f2c75c" : "#ececec";
-    ctx.fillText("#" + String(rank).padStart(2, "0"), W / 2, 320);
+    ctx.fillText("#" + String(rank).padStart(2, "0"), W / 2, 282);
 
     // nom + étoile fondateur
     ctx.fillStyle = "#ececec";
-    ctx.font = "700 46px -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, Arial, sans-serif";
-    ctx.fillText((founder ? "★ " : "") + name, W / 2, 402);
+    ctx.font = "700 44px -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, Arial, sans-serif";
+    ctx.fillText((founder ? "★ " : "") + name, W / 2, 360);
 
     // montant
     ctx.fillStyle = "#e2b340";
-    ctx.font = "600 44px ui-monospace, SFMono-Regular, Menlo, monospace";
-    ctx.fillText("$" + amountUSD.toLocaleString("en-US"), W / 2, 470);
+    ctx.font = "700 52px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.fillText("$" + amountUSD.toLocaleString("en-US"), W / 2, 432);
 
-    // séparateur
-    ctx.strokeStyle = "#2c2c31";
-    ctx.beginPath();
-    ctx.moveTo(W / 2 - 220, 520);
-    ctx.lineTo(W / 2 + 220, 520);
-    ctx.stroke();
-
-    // footer — la mécanique, pas un slogan
-    ctx.fillStyle = "#71767b";
-    ctx.font = "400 22px ui-monospace, SFMono-Regular, Menlo, monospace";
-    ctx.fillText("outbid me for $" + (amountUSD + 1).toLocaleString("en-US") + " · flexwall.lol", W / 2, 585);
+    // le prix pour prendre la place, encadré comme sur la carte Open Graph
+    ctx.fillStyle = "#e7e9ea";
+    ctx.font = "700 30px ui-monospace, SFMono-Regular, Menlo, monospace";
+    const cta = "TAKE IT FOR $" + (amountUSD + 1).toLocaleString("en-US");
+    const ctaW = ctx.measureText(cta).width;
+    ctx.strokeStyle = "#e2b340";
+    ctx.strokeRect(W / 2 - ctaW / 2 - 26, 500, ctaW + 52, 56);
+    ctx.fillText(cta, W / 2, 537);
 
     setReady(true);
   }, [rank, name, amountUSD, founder]);

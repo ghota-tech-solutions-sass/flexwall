@@ -7,15 +7,15 @@ import Link from "next/link";
 import { formatUSD, listEntriesSafe, rankEntries, totalOnDisplay } from "@/lib/board-server";
 import { dynamicFloor, founderSlugs, tierNote } from "@/lib/board";
 import { stripeEnabled } from "@/lib/env";
+import { pageMetadata } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "The full register",
-  description: "Every entry on the wall, ranked by amount. Refreshes live.",
-  alternates: { canonical: "/board" },
-  openGraph: { url: "/board", title: "The full register · flexwall.lol", description: "Every entry on the wall, ranked by amount." },
-};
+export const metadata: Metadata = pageMetadata({
+  title: "The full list",
+  description: "Every name on the wall, ranked by what they paid. Anyone can be outbid.",
+  path: "/board",
+});
 
 export default async function BoardPage() {
   const entries = await listEntriesSafe();

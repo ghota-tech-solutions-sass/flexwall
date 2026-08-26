@@ -23,6 +23,9 @@ export default async function Home() {
   }
   const lastMove = events[0];
   const moveRank = lastMove ? new Map(ranked.map((e, i) => [e.slug, i + 1])).get(lastMove.slug) : undefined;
+  // Qui vient de reculer d'un cran : la moitié « quelqu'un perd sa place » du
+  // mécanisme n'apparaissait nulle part, seul le gagnant était annoncé.
+  const bumped = moveRank ? ranked[moveRank] : undefined;
   const total = totalOnDisplay(entries);
   const floor = dynamicFloor(ranked.length);
   const tierNote = tierNoteFor(ranked.length);
@@ -41,13 +44,22 @@ export default async function Home() {
             The internet&rsquo;s most expensive leaderboard.
           </h1>
           <p className="hero-sub">
-            Pay more. Take the spot.{" "}
-            <span className="hero-sub-dim">Someone can always outbid you.</span>
+            <span className="hero-sub-dim">Pay more. Take the spot.</span>{" "}
+            Someone can always outbid you.
           </p>
           <div className="hero-ctas">
             <button className="btn-take" data-open-entry data-amount={floor}>
               Get on the wall — {formatUSD(floor)}
             </button>
+            {first ? (
+              <button
+                className="btn-outbid mono"
+                data-open-entry
+                data-amount={first.amountUSD + 1}
+              >
+                OR TAKE #1 — {formatUSD(first.amountUSD + 1)}
+              </button>
+            ) : null}
           </div>
           <p className="cta-note">
             Stripe checkout · no account · no refunds
@@ -61,7 +73,9 @@ export default async function Home() {
             <span>
               <b>{lastMove.name}</b> paid{" "}
               <span className="gold mono">{formatUSD(lastMove.amountUSD)}</span>
-              {moveRank ? <> · now #{moveRank}</> : null}
+              {moveRank ? (
+                bumped ? <> · took #{moveRank} from <b>{bumped.name}</b></> : <> · now #{moveRank}</>
+              ) : null}
             </span>
             <span className="livebar-when">{timeAgo(lastMove.ts)}</span>
           </div>
@@ -88,7 +102,7 @@ export default async function Home() {
                 <SeatAvatar entry={first} size="xl" />
                 <Link className="top-name name-link" href={"/share/" + first.slug}>{first.name}</Link>
                 <OutLink name={first.name} size={20} />
-                {first.verified ? <span title="verified funds">✔</span> : null}
+                {first.verified ? <span className="top-verified" title="verified funds">✔</span> : null}
               </div>
               <div className="top-amount mono">{formatUSD(first.amountUSD)}</div>
               <button
@@ -121,7 +135,7 @@ export default async function Home() {
               const rank = k + 2;
               return (
                 <div className="rowi" key={e.slug}>
-                  <span className="rk mono">#{rank}</span>
+                  <span className="rk mono"><span className="rk-hash">#</span>{rank}</span>
                   <div className="hcell">
                     <span className="handle-md">
                       <SeatAvatar entry={e} />
@@ -129,12 +143,10 @@ export default async function Home() {
                       <OutLink name={e.name} />
                       {founders.has(e.slug) ? <span className="fstar" title="founding 100">★</span> : null}
                       {e.verified ? <span className="vdot" title="verified funds" /> : null}
-                    </span>
-                    {(e.views ?? 0) > 0 ? (
-                      <div className="pass-hint">
+                      {(e.views ?? 0) > 0 ? (
                         <span className="views-inline">{(e.views ?? 0).toLocaleString("en-US")} views</span>
-                      </div>
-                    ) : null}
+                      ) : null}
+                    </span>
                   </div>
                   <div className="acell">
                     <span className="amt-md mono">{formatUSD(e.amountUSD)}</span>

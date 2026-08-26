@@ -22,6 +22,8 @@ export default function RegisterTable({ initial, founders }: { initial: PublicEn
   useEffect(() => {
     let alive = true;
     async function poll() {
+      // Onglet en arrière-plan : ne pas réveiller la radio toutes les 12s.
+      if (document.hidden) return;
       try {
         const res = await fetch("/api/board", { cache: "no-store" });
         if (!res.ok) return;
@@ -54,9 +56,14 @@ export default function RegisterTable({ initial, founders }: { initial: PublicEn
       }
     }
     const id = setInterval(poll, 12000);
+    // Retour au premier plan : rafraîchir tout de suite, pour que le mouvement
+    // se voie au moment où quelqu'un regarde et pas 12s plus tard.
+    const onVisible = () => { if (!document.hidden) poll(); };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       alive = false;
       clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
 
@@ -79,11 +86,11 @@ export default function RegisterTable({ initial, founders }: { initial: PublicEn
         style={{ maxWidth: 380, marginBottom: 16 }}
       />
       <p className="board-note" style={{ marginBottom: 14 }}>
-        {filtered.length} of {rows.length} {rows.length === 1 ? "entry" : "entries"} · refreshes every 12s
+        {filtered.length} of {rows.length} {rows.length === 1 ? "name" : "names"} · refreshes every 12s
       </p>
 
       <div className="list">
-        {filtered.map((e, i) => {
+        {filtered.map((e) => {
           const rank = rows.findIndex((x) => x.slug === e.slug) + 1;
           return (
             <div className={"rowi" + (flash.has(e.slug) ? " flash" : "")} key={e.slug}>
@@ -91,7 +98,7 @@ export default function RegisterTable({ initial, founders }: { initial: PublicEn
                 className="row-bar"
                 style={{ width: Math.max(1.5, (e.amountUSD / max) * 100) + "%" }}
               />
-              <span className="rk mono">{String(rank).padStart(2, "0")}</span>
+              <span className="rk mono"><span className="rk-hash">#</span>{rank}</span>
               <div className="hcell">
                 <span className="handle-md">
                   <SeatAvatar entry={e} />
@@ -106,7 +113,15 @@ export default function RegisterTable({ initial, founders }: { initial: PublicEn
                 </span>
               </div>
               <div className="acell">
-                <span className="amt-md">{formatUSD(e.amountUSD)}</span>
+                <span className="amt-md mono">{formatUSD(e.amountUSD)}</span>
+                <button
+                  className="btn-outbid mono"
+                  data-open-entry
+                  data-amount={e.amountUSD + 1}
+                  title={"Take #" + rank + " from " + e.name + " for " + formatUSD(e.amountUSD + 1)}
+                >
+                  OUTBID {formatUSD(e.amountUSD + 1)}
+                </button>
               </div>
             </div>
           );
