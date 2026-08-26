@@ -6,7 +6,21 @@ export const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://fle
 export const SITE_TAGLINE = "The internet's most expensive leaderboard";
 export const SITE_DESCRIPTION =
   "Pay more. Take the spot. Someone can always outbid you.";
-export const OG_IMAGE = { url: "/og.png", width: 1200, height: 630, alt: "Flexwall — the internet's most expensive leaderboard." };
+/**
+ * Empreinte du contenu de public/og.png, réécrite par `task og`.
+ *
+ * X, Slack, LinkedIn et iMessage mettent l'aperçu en cache par URL d'image :
+ * republier un /og.png différent sous la même adresse laisse l'ancienne visible
+ * pendant des jours. L'empreinte fait partie de l'URL, donc une nouvelle image
+ * est toujours une nouvelle adresse. Ne pas éditer à la main.
+ */
+export const OG_VERSION = "c4f3306b8a";
+export const OG_IMAGE = {
+  url: `/og.png?v=${OG_VERSION}`,
+  width: 1200,
+  height: 630,
+  alt: "Flexwall — the internet's most expensive leaderboard.",
+};
 export const X_CREATOR = "@MickaelV79228";
 
 /**
