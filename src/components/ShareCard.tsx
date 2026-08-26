@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { xIntentUrl } from "@/lib/share";
+import { BRAND, BRAND_MONO } from "@/lib/brand";
 
 interface Props {
   rank: number;
@@ -26,9 +27,9 @@ export default function ShareCard({ rank, name, amountUSD, founder }: Props) {
     const ctx = c.getContext("2d");
     if (!ctx) return;
 
-    ctx.fillStyle = "#000000";
+    ctx.fillStyle = BRAND.bg;
     ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = "#2f3336";
+    ctx.strokeStyle = BRAND.line2;
     ctx.lineWidth = 1;
     ctx.strokeRect(20, 20, W - 40, H - 40);
 
@@ -36,31 +37,31 @@ export default function ShareCard({ rank, name, amountUSD, founder }: Props) {
     ctx.textAlign = "center";
 
     // wordmark
-    ctx.fillStyle = "#e2b340";
-    ctx.font = "700 22px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.fillStyle = BRAND.gold;
+    ctx.font = `700 22px ${BRAND_MONO}`;
     ctx.fillText("F L E X W A L L", W / 2, 86);
 
     // rang géant — or pour le n°1, blanc sinon
-    ctx.font = "700 180px ui-monospace, SFMono-Regular, Menlo, monospace";
-    ctx.fillStyle = rank === 1 ? "#f2c75c" : "#ececec";
+    ctx.font = `700 180px ${BRAND_MONO}`;
+    ctx.fillStyle = rank === 1 ? BRAND.goldBright : BRAND.ink;
     ctx.fillText("#" + String(rank).padStart(2, "0"), W / 2, 282);
 
     // nom + étoile fondateur
-    ctx.fillStyle = "#ececec";
+    ctx.fillStyle = BRAND.ink;
     ctx.font = "700 44px -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, Arial, sans-serif";
     ctx.fillText((founder ? "★ " : "") + name, W / 2, 360);
 
     // montant
-    ctx.fillStyle = "#e2b340";
-    ctx.font = "700 52px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.fillStyle = BRAND.gold;
+    ctx.font = `700 52px ${BRAND_MONO}`;
     ctx.fillText("$" + amountUSD.toLocaleString("en-US"), W / 2, 432);
 
     // le prix pour prendre la place, encadré comme sur la carte Open Graph
-    ctx.fillStyle = "#e7e9ea";
-    ctx.font = "700 30px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.fillStyle = BRAND.ink;
+    ctx.font = `700 30px ${BRAND_MONO}`;
     const cta = "TAKE IT FOR $" + (amountUSD + 1).toLocaleString("en-US");
     const ctaW = ctx.measureText(cta).width;
-    ctx.strokeStyle = "#e2b340";
+    ctx.strokeStyle = BRAND.gold;
     ctx.strokeRect(W / 2 - ctaW / 2 - 26, 500, ctaW + 52, 56);
     ctx.fillText(cta, W / 2, 537);
 
