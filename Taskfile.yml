@@ -43,14 +43,20 @@ tasks:
       - bun test tests/unit
 
   og:
-    desc: Régénère public/og.png depuis assets/og.html
+    desc: Régénère public/og.png depuis assets/og.html et réempreinte son URL
     cmds:
       - >-
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
         --headless --disable-gpu --hide-scrollbars
         --screenshot=public/og.png --window-size=1200,630
         "file://{{.TASKFILE_DIR}}/assets/og.html"
-      - echo "public/og.png regenerated"
+      # L'empreinte entre dans l'URL de l'image : sans elle, X et Slack
+      # continuent de servir l'aperçu précédent pendant des jours.
+      - |
+        v=$(shasum -a 256 public/og.png | cut -c1-10)
+        sed -i '' "s|^export const OG_VERSION = \".*\";|export const OG_VERSION = \"$v\";|" src/lib/site.ts
+        echo "public/og.png regenerated → /og.png?v=$v"
+    silent: true
 
   deploy:
     desc: Build l'image, la pousse et déploie sur Cloud Run (sans vérifications)
