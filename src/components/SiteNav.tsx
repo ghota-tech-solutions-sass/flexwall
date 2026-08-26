@@ -23,7 +23,7 @@ export default function SiteNav({
     <div className="topbar">
       <div className="topbar-in">
         <Link className="wordmark" href="/">FLEXWALL.LOL</Link>
-        <nav className="links mono">
+        <nav className="links">
           <Link href="/">Wall</Link>
           <Link href="/board">Full register</Link>
           <Link href="/how-it-works">How it works</Link>
@@ -31,8 +31,8 @@ export default function SiteNav({
           <Link href="/about">About</Link>
         </nav>
         {typeof total === "number" && total > 0 ? (
-          <span className="total-chip mono" title="Total amount posted on the wall">
-            <span className="green">{totalLabel(total)}</span> on the wall
+          <span className="total-chip" title="Total amount posted on the wall">
+            <span className="gold mono">{totalLabel(total)}</span> on the wall
           </span>
         ) : <span />}
         {variant === "modal" ? (

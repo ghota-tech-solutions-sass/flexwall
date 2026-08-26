@@ -39,15 +39,15 @@ export default async function HowItWorksPage() {
       <div className="page">
         <section className="hero" style={{ paddingBottom: 8 }}>
           <p className="eyebrow">how it works</p>
-          <h1 className="h1 serif" style={{ fontSize: "clamp(34px,5vw,52px)" }}>
-            Four moves. <em className="green">One wall.</em>
+          <h1 className="h1" style={{ fontSize: "clamp(34px,5vw,52px)" }}>
+            Four moves. <em>One wall.</em>
           </h1>
         </section>
 
         <div className="list" style={{ marginTop: 30 }}>
           {steps.map(([n, t, d]) => (
             <div className="rowi" key={n}>
-              <span className="rk mono green">{n}</span>
+              <span className="rk mono">{n}</span>
               <div className="hcell">
                 <span className="handle-md">{t}</span>
                 <div className="pass-hint" style={{ whiteSpace: "normal" }}>{d}</div>
@@ -85,7 +85,7 @@ export default async function HowItWorksPage() {
                   </span>
                 </div>
                 <div className="acell">
-                  <span className="amt-md green">{formatUSD(Number(f))}</span>
+                  <span className="amt-md gold">{formatUSD(Number(f))}</span>
                 </div>
               </div>
             ))}

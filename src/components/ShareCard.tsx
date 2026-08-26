@@ -24,49 +24,44 @@ export default function ShareCard({ rank, name, amountUSD, founder }: Props) {
     const ctx = c.getContext("2d");
     if (!ctx) return;
 
-    // fond encre chaude
-    ctx.fillStyle = "#0f0e0a";
+    ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, W, H);
-    // double cadre de certificat
-    ctx.strokeStyle = "#3d3620";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(14, 14, W - 28, H - 28);
-    ctx.strokeStyle = "#292519";
+    ctx.strokeStyle = "#2f3336";
     ctx.lineWidth = 1;
-    ctx.strokeRect(24, 24, W - 48, H - 48);
+    ctx.strokeRect(20, 20, W - 40, H - 40);
 
     ctx.textBaseline = "alphabetic";
     ctx.textAlign = "center";
 
-    // eyebrow gravé
-    ctx.fillStyle = "#c8a457";
-    ctx.font = "600 19px ui-monospace, SFMono-Regular, Menlo, monospace";
-    ctx.fillText("✦  F L E X W A L L . L O L  ✦", W / 2, 92);
+    // wordmark
+    ctx.fillStyle = "#e2b340";
+    ctx.font = "700 22px -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, Arial, sans-serif";
+    ctx.fillText("FLEXWALL.LOL", W / 2, 92);
 
-    // rang géant — or pour le n°1, parchemin sinon
-    ctx.font = "italic 700 210px Georgia, 'Times New Roman', serif";
-    ctx.fillStyle = rank === 1 ? "#e0bf74" : "#eae3d0";
+    // rang géant — ambre pour le n°1, blanc sinon
+    ctx.font = "800 200px -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, Arial, sans-serif";
+    ctx.fillStyle = rank === 1 ? "#f2c75c" : "#e7e9ea";
     ctx.fillText("#" + String(rank).padStart(2, "0"), W / 2, 320);
 
     // nom + étoile fondateur
-    ctx.fillStyle = "#eae3d0";
-    ctx.font = "600 46px Georgia, 'Times New Roman', serif";
+    ctx.fillStyle = "#e7e9ea";
+    ctx.font = "700 46px -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, Arial, sans-serif";
     ctx.fillText((founder ? "★ " : "") + name, W / 2, 402);
 
     // montant
-    ctx.fillStyle = "#c8a457";
+    ctx.fillStyle = "#e2b340";
     ctx.font = "500 44px ui-monospace, SFMono-Regular, Menlo, monospace";
     ctx.fillText("$" + amountUSD.toLocaleString("en-US"), W / 2, 470);
 
     // séparateur
-    ctx.strokeStyle = "#3d3620";
+    ctx.strokeStyle = "#2f3336";
     ctx.beginPath();
     ctx.moveTo(W / 2 - 220, 520);
     ctx.lineTo(W / 2 + 220, 520);
     ctx.stroke();
 
     // footer
-    ctx.fillStyle = "#6b6250";
+    ctx.fillStyle = "#71767b";
     ctx.font = "400 22px ui-monospace, SFMono-Regular, Menlo, monospace";
     ctx.fillText("the open register of private fortunes · no refunds", W / 2, 585);
 

@@ -28,8 +28,8 @@ export default async function BoardPage() {
       <div className="page">
         <section className="hero" style={{ paddingBottom: 10 }}>
           <p className="eyebrow"><span className="livedot" /> full register · every entry</p>
-          <h1 className="h1 serif" style={{ fontSize: "clamp(34px,5vw,52px)" }}>
-            The <em className="green">complete</em> register.
+          <h1 className="h1" style={{ fontSize: "clamp(34px,5vw,52px)" }}>
+            The <em>complete</em> register.
           </h1>
           <p className="subline">
             {ranked.length} {ranked.length === 1 ? "entry" : "entries"} · {formatUSD(total)} on public display.

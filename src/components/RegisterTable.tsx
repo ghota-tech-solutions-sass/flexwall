@@ -50,7 +50,7 @@ export default function RegisterTable({ initial, founders }: { initial: PublicEn
         aria-label="Search the register"
         style={{ maxWidth: 380, marginBottom: 16 }}
       />
-      <p className="board-note mono" style={{ marginBottom: 14 }}>
+      <p className="board-note" style={{ marginBottom: 14 }}>
         {filtered.length} of {rows.length} {rows.length === 1 ? "entry" : "entries"} · refreshes every 12s
       </p>
 
@@ -72,7 +72,7 @@ export default function RegisterTable({ initial, founders }: { initial: PublicEn
                   {founderSet.has(e.slug) ? <span className="fstar" title="founding 100">★</span> : null}
                   {e.verified ? <span className="vdot" title="verified funds" /> : null}
                 </span>
-                <span className="row-sub mono">
+                <span className="row-sub">
                   <a className="share-link" href={`/share/${e.slug}`}>share ↗</a>
                   {(e.views ?? 0) > 0 ? <span className="views"> · {(e.views ?? 0).toLocaleString("en-US")} views</span> : null}
                 </span>

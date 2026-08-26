@@ -21,8 +21,8 @@ function Bar({ pct, gold }: { pct: number; gold?: boolean }) {
         style={{
           width: w + "%",
           background: gold
-            ? "linear-gradient(90deg, rgba(200,164,87,.85), rgba(200,164,87,.25))"
-            : "linear-gradient(90deg, rgba(156,179,128,.6), rgba(156,179,128,.15))",
+            ? "linear-gradient(90deg, rgba(226,179,64,.9), rgba(226,179,64,.2))"
+            : "linear-gradient(90deg, rgba(139,152,165,.55), rgba(139,152,165,.12))",
         }}
       />
     </div>
@@ -74,7 +74,7 @@ export default async function Home() {
 
       <div className="page">
         {lastMove ? (
-          <div className="livebar mono">
+          <div className="livebar">
             <span className="livedot" />
             <span>
               <b>{lastMove.name}</b>{" "}
@@ -108,17 +108,17 @@ export default async function Home() {
                     data-open-entry
                     data-amount={first.amountUSD + 1}
                   >
-                    or take №01 for {formatUSD(first.amountUSD + 1)}
+                    or take #1 for {formatUSD(first.amountUSD + 1)}
                   </button>
                 ) : null}
               </div>
-              <p className="cta-note mono">Stripe checkout · ranked in seconds · no account needed</p>
+              <p className="cta-note">Stripe checkout · ranked in seconds · no account needed</p>
             </div>
 
             <aside className="entry-stamp">
-              <p className="stamp-label mono">Entry price</p>
+              <p className="stamp-label">Entry price</p>
               <p className="stamp-amount mono">{formatUSD(floor)}</p>
-              <p className="stamp-note mono">{tierNote ?? "the floor for a new name"}</p>
+              <p className="stamp-note">{tierNote ?? "the floor for a new name"}</p>
               <p className="stamp-rule">
                 Any amount at or above the floor buys a place. Your rank is whatever
                 you post — nothing else.
@@ -126,17 +126,17 @@ export default async function Home() {
             </aside>
           </div>
 
-          <div className="how-strip mono">
+          <div className="how-strip">
             <div className="how-step">
-              <span className="how-n serif">I.</span>
+              <span className="how-n">01</span>
               <span className="how-t"><b>Pick a name.</b> An X handle, your real name, a company, or an alias.</span>
             </div>
             <div className="how-step">
-              <span className="how-n serif">II.</span>
+              <span className="how-n">02</span>
               <span className="how-t"><b>Post the money.</b> Paid through Stripe, shown in public.</span>
             </div>
             <div className="how-step">
-              <span className="how-n serif">III.</span>
+              <span className="how-n">03</span>
               <span className="how-t"><b>Defend your place.</b> Anyone can post more than you. The record keeps every name.</span>
             </div>
           </div>
@@ -158,7 +158,7 @@ export default async function Home() {
         <section aria-label="leaderboard">
           <div className="section-head">
             <span className="board-title">The Wall</span>
-            <span className="board-note mono">
+            <span className="board-note">
               {ranked.length} {ranked.length === 1 ? "entry" : "entries"} · cheapest way in:{" "}
               <b className="gold">{formatUSD(floor)}</b>
             </span>
@@ -166,7 +166,7 @@ export default async function Home() {
 
           {first ? (
             <article className="podium-top">
-              <p className="crown">№ 01 · largest amount on the wall</p>
+              <p className="crown">#1 · largest amount on the wall</p>
               <div className="who">
                 <SeatAvatar entry={first} size="xl" />
                 <Link className="handle-xl name-link" href={"/share/" + first.slug}>{first.name}</Link>
@@ -175,12 +175,12 @@ export default async function Home() {
                 <span className="amount-xl mono">{formatUSD(first.amountUSD)}</span>
               </div>
               <Bar pct={first.amountUSD / max} gold />
-              <div className="podium-meta mono">
+              <div className="podium-meta">
                 {(() => {
                   const reign = computeReign(events, first.slug, first.createdAt);
                   return (
                     <>
-                      <span>№01 for {reignDuration(reign.since)}</span>
+                      <span>#1 for {reignDuration(reign.since)}</span>
                       {reign.challenges > 0 ? (
                         <>
                           <span>·</span>
@@ -207,7 +207,7 @@ export default async function Home() {
               {[second, third].map((e, k) =>
                 e ? (
                   <article className="podium-card" key={e.slug}>
-                    <p className="rank-tag mono">№ 0{k + 2}</p>
+                    <p className="rank-tag">#{k + 2}</p>
                     <span className="podium-card-who">
                       <SeatAvatar entry={e} size="md" />
                       <Link className="handle-lg name-link" href={"/share/" + e.slug}>{e.name}</Link>
@@ -215,7 +215,7 @@ export default async function Home() {
                     </span>
                     <div className="amount-lg mono">{formatUSD(e.amountUSD)}</div>
                     {(e.views ?? 0) > 0 ? (
-                      <div className="views-inline mono">{(e.views ?? 0).toLocaleString("en-US")} views</div>
+                      <div className="views-inline">{(e.views ?? 0).toLocaleString("en-US")} views</div>
                     ) : null}
                     <Bar pct={e.amountUSD / max} />
                   </article>
@@ -282,14 +282,14 @@ export default async function Home() {
 
           <div style={{ marginTop: 22, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <Link className="btn-ghost" href="/board">View the full register →</Link>
-            <Link className="board-note mono" href="/how-it-works" style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>read the rules</Link>
+            <Link className="board-note" href="/how-it-works" style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>read the rules</Link>
           </div>
 
-          <p className="wallmark mono">flexwall.lol</p>
+          <p className="wallmark">flexwall.lol</p>
         </section>
 
         <section className="terms">
-          <p className="terms-title mono">Terms of the register</p>
+          <p className="terms-title">Terms of the register</p>
           <p className="terms-text">
             Payment runs on <b>Stripe</b> — we never see or store your card.
             Every name, amount and rank is <b>public by design</b>, permanently.
@@ -306,19 +306,19 @@ export default async function Home() {
           </h3>
           <dl className="clauses">
             <div className="clause">
-              <dt><span className="cl-n serif">I.</span> Proof of nerve</dt>
+              <dt><span className="cl-n">01</span> Proof of nerve</dt>
               <dd>Talking about money costs nothing. Posting it in public with no undo is a different thing. Your entry is dated, and it stays.</dd>
             </div>
             <div className="clause">
-              <dt><span className="cl-n serif">II.</span> A place worth defending</dt>
-              <dd>There is exactly one №02. Holding it costs nothing. Taking it from you costs more than you paid. Every day nobody passes you is a day you held.</dd>
+              <dt><span className="cl-n">02</span> A place worth defending</dt>
+              <dd>There is exactly one #2. Holding it costs nothing. Taking it from you costs more than you paid. Every day nobody passes you is a day you held.</dd>
             </div>
             <div className="clause">
-              <dt><span className="cl-n serif">III.</span> A permanent record</dt>
+              <dt><span className="cl-n">03</span> A permanent record</dt>
               <dd>If someone passes you tomorrow, your name and amount stay in the register. Entries never disappear. They become the number the next person has to beat.</dd>
             </div>
             <div className="clause">
-              <dt><span className="cl-n serif">IV.</span> Moves get noticed</dt>
+              <dt><span className="cl-n">04</span> Moves get noticed</dt>
               <dd>Every takeover is a screenshot. Your name shows up in the live ticker, and every seat has a share card made for posting.</dd>
             </div>
           </dl>
