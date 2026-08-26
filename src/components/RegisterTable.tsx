@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { PublicEntry } from "@/lib/store/entries";
 import { formatUSD } from "@/lib/board";
 import OutLink from "@/components/OutLink";
@@ -12,6 +12,12 @@ export default function RegisterTable({ initial, founders }: { initial: PublicEn
   const founderSet = new Set(founders ?? []);
   const [rows, setRows] = useState<PublicEntry[]>(initial);
   const [query, setQuery] = useState("");
+  // Rang/montant modifié depuis le dernier rafraîchissement → flash bref,
+  // le feedback visible d'un outbid en direct.
+  const [flash, setFlash] = useState<ReadonlySet<string>>(new Set());
+  const prevRef = useRef<Map<string, { rank: number; amount: number }>>(
+    new Map(initial.map((e, i) => [e.slug, { rank: i + 1, amount: e.amountUSD }]))
+  );
 
   useEffect(() => {
     let alive = true;
@@ -20,7 +26,29 @@ export default function RegisterTable({ initial, founders }: { initial: PublicEn
         const res = await fetch("/api/board", { cache: "no-store" });
         if (!res.ok) return;
         const data = await res.json();
-        if (alive && Array.isArray(data.entries)) setRows(data.entries);
+        if (!alive || !Array.isArray(data.entries)) return;
+        const next = data.entries;
+        const changed: string[] = [];
+        const prev = prevRef.current;
+        next.forEach((e: PublicEntry, i: number) => {
+          const p = prev.get(e.slug);
+          if (!p || p.rank !== i + 1 || p.amount !== e.amountUSD) changed.push(e.slug);
+        });
+        prevRef.current = new Map(
+          next.map((e: PublicEntry, i: number) => [e.slug, { rank: i + 1, amount: e.amountUSD }])
+        );
+        setRows(next);
+        if (changed.length > 0) {
+          setFlash((f) => new Set([...f, ...changed]));
+          setTimeout(() => {
+            if (!alive) return;
+            setFlash((f) => {
+              const n = new Set(f);
+              changed.forEach((s) => n.delete(s));
+              return n;
+            });
+          }, 1900);
+        }
       } catch {
         /* réseau instable : on garde l'affichage courant */
       }
@@ -58,7 +86,7 @@ export default function RegisterTable({ initial, founders }: { initial: PublicEn
         {filtered.map((e, i) => {
           const rank = rows.findIndex((x) => x.slug === e.slug) + 1;
           return (
-            <div className="rowi" key={e.slug}>
+            <div className={"rowi" + (flash.has(e.slug) ? " flash" : "")} key={e.slug}>
               <div
                 className="row-bar"
                 style={{ width: Math.max(1.5, (e.amountUSD / max) * 100) + "%" }}

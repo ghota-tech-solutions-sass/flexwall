@@ -13,6 +13,7 @@ terraform/cron.tfplan
 .tmp/
 .bun-cache/
 shot-*.png
+shots/
 # docs de travail internes — jamais dans le repo
 IDEA.md
 LAUNCH-X.md
