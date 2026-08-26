@@ -55,7 +55,9 @@ export function passedMail(
   to: string,
   opts: { name: string; byName: string; byAmountUSD: number; newRank: number; total: number; toReclaimUSD: number; link: string },
 ): EmailMessage {
-  const subject = "You got outbid.";
+  // Le nom et le montant dans l'objet : c'est ce qui fait ouvrir. La phrase
+  // "You got outbid." reste, en titre du message.
+  const subject = `${opts.byName} took your spot for ${formatUSD(opts.byAmountUSD)}.`;
   const reclaim = formatUSD(opts.toReclaimUSD);
   const text = `${opts.byName} paid ${formatUSD(opts.byAmountUSD)} and took your spot. Someone wanted it more.\nYou are now #${opts.newRank} of ${opts.total}.\n\nTake it back (+${reclaim}):\n${opts.link}\n\nTop-ups have no minimum. No refunds.\nYou get this email because your spot on flexwall.lol lost a rank.`;
   const html = shell(

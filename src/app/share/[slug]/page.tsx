@@ -12,6 +12,7 @@ import SiteFooter from "@/components/SiteFooter";
 import SiteNav from "@/components/SiteNav";
 import { identityLink } from "@/lib/identity-link";
 import { LinkIcon, XLogo } from "@/components/OutLink";
+import { SITE_NAME, X_CREATOR } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -19,18 +20,49 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const ranked = rankEntries(await listEntriesSafe());
   const e = ranked.find((x) => x.slug === slug);
-  if (!e) return { title: "Unknown spot", robots: { index: false, follow: true } };
+  if (!e) {
+    return {
+      title: "Unknown spot",
+      description: "Nobody holds this name on the wall. It could be yours.",
+      alternates: { canonical: "/share/" + slug },
+      robots: { index: false, follow: true },
+    };
+  }
   const rank = ranked.findIndex((x) => x.slug === slug) + 1;
-  const title = e.name + " is #" + rank + " on flexwall.lol";
-  const description =
-    "#" + rank + " · $" + e.amountUSD.toLocaleString("en-US") +
-    ". Outbid them for $" + (e.amountUSD + 1).toLocaleString("en-US") + ".";
+  const amount = "$" + e.amountUSD.toLocaleString("en-US");
+  const next = "$" + (e.amountUSD + 1).toLocaleString("en-US");
+  const title = `${e.name} is #${rank} on ${SITE_NAME}`;
+  const description = `${e.name} paid ${amount} to be #${rank}. Take it for ${next}.`;
+  // Le montant sert de cache-buster : X, Slack et iMessage indexent l'image
+  // OG par URL. Sans lui, la preview d'une place reste figée sur le montant
+  // du premier scrape — or c'est justement le nombre qui doit bouger.
+  const image = {
+    url: `/share/${slug}/opengraph-image?v=${e.amountUSD}`,
+    width: 1200,
+    height: 630,
+    type: "image/png",
+    alt: `${e.name} is #${rank} on Flexwall for ${amount}.`,
+  };
   return {
     title: { absolute: title },
     description,
     alternates: { canonical: "/share/" + slug },
-    openGraph: { type: "profile", url: "/share/" + slug, title, description },
-    twitter: { card: "summary_large_image", title, description },
+    openGraph: {
+      type: "profile",
+      siteName: SITE_NAME,
+      locale: "en_US",
+      url: "/share/" + slug,
+      title,
+      description,
+      images: [image],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image.url],
+      creator: X_CREATOR,
+    },
   };
 }
 
@@ -75,15 +107,24 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
       <SiteNav total={total} variant="link" />
       <div className="page">
         <section className="hero" style={{ paddingBottom: 8 }}>
-          <p className="eyebrow">share card</p>
+          <p className="eyebrow">a spot on the wall</p>
           <h1 className="h1 seat-head" style={{ fontSize: "clamp(30px,4.5vw,46px)" }}>
             <SeatAvatar entry={e} size="xl" />
             <span>#{rank} · <em className="green">{e.name}</em></span>
           </h1>
+          <p className="me-amount mono">{formatUSD(e.amountUSD)}</p>
+          {/* Le visiteur arrive ici depuis X sans rien savoir du site : lui dire
+              ce que c'est et ce qu'il peut faire, avant les outils du titulaire. */}
           <p className="subline">
-            {"$" + e.amountUSD.toLocaleString("en-US")} paid for this spot. Post it, dare
-            someone to outbid it.
+            {e.name} paid {formatUSD(e.amountUSD)} to sit at #{rank} of {ranked.length} on
+            flexwall.lol — a leaderboard where your rank is whatever you paid.
+            Anyone can take this spot.
           </p>
+          <div className="share-actions" style={{ justifyContent: "flex-start", marginTop: 18 }}>
+            <button className="btn-outbid btn-outbid-xl mono" data-open-entry data-amount={e.amountUSD + 1}>
+              OUTBID FOR {formatUSD(e.amountUSD + 1)}
+            </button>
+          </div>
           {e.linkTitle || e.linkDescription ? (
             <p className="seat-site">
               {e.linkTitle}
@@ -145,7 +186,7 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
         ) : null}
 
         <div className="share-actions" style={{ justifyContent: "flex-start", marginTop: 30 }}>
-          <button className="btn-outbid btn-outbid-xl mono" data-open-entry data-amount={e.amountUSD + 1}>
+          <button className="btn-outbid mono" data-open-entry data-amount={e.amountUSD + 1}>
             OUTBID FOR {formatUSD(e.amountUSD + 1)}
           </button>
           <Link className="btn-ghost" href="/">← the wall</Link>

@@ -98,6 +98,9 @@ input { font: inherit; }
   white-space: nowrap;
 }
 .btn-primary:hover { background: var(--gold-bright); border-color: var(--gold-bright); }
+/* Dans la barre : contour seul, pour laisser un seul or plein par écran. */
+.topbar .btn-primary { background: transparent; color: var(--gold); border-color: var(--gold-line); }
+.topbar .btn-primary:hover { background: var(--gold); color: #000; border-color: var(--gold); }
 .btn-ghost {
   display: inline-flex; align-items: center; justify-content: center;
   font-family: var(--mono); font-size: 13px; font-weight: 500;
@@ -130,13 +133,18 @@ input { font: inherit; }
   background: var(--gold); color: #000; border-color: var(--gold);
 }
 .btn-outbid-xl {
-  font-size: 16px; font-weight: 700;
-  padding: 14px 26px;
+  font-size: 17px; font-weight: 700;
+  padding: 16px 40px;
   border-width: 1px; border-color: var(--gold);
 }
+/* Colonne de droite du wall : largeur fixe pour que les montants et les
+   boutons s'alignent au pixel d'une ligne à l'autre, comme une cotation. */
+.list .btn-outbid { min-width: 178px; }
 
-/* ── Hero ── */
-.hero { padding: 56px 0 34px; }
+/* ── Hero ──
+   Volontairement court : le titre reste gros, mais rien ne doit repousser
+   le montant du #1 sous la ligne de flottaison sur un portable 800px. */
+.hero { padding: 40px 0 26px; }
 .eyebrow {
   display: inline-flex; align-items: center; gap: 9px;
   font-family: var(--mono); font-size: 12.5px; font-weight: 500;
@@ -157,13 +165,13 @@ input { font: inherit; }
 }
 .h1 em { font-style: normal; color: var(--gold); }
 .hero-sub {
-  margin-top: 18px; font-size: 18px; color: var(--ink); font-weight: 500;
+  margin-top: 14px; font-size: 18px; color: var(--ink); font-weight: 500;
 }
 .hero-sub-dim { color: var(--muted); font-weight: 400; }
 .subline { margin-top: 16px; color: var(--muted); max-width: 52ch; font-size: 16px; line-height: 1.55; }
 .subline b { color: var(--ink); font-weight: 700; }
-.hero-ctas { display: flex; gap: 10px; align-items: center; margin-top: 26px; flex-wrap: wrap; }
-.cta-note { font-family: var(--mono); font-size: 12px; color: var(--faint); margin-top: 12px; }
+.hero-ctas { display: flex; gap: 10px; align-items: center; margin-top: 20px; flex-wrap: wrap; }
+.cta-note { font-family: var(--mono); font-size: 12px; color: var(--faint); margin-top: 10px; }
 
 /* ── Bandeau du dernier mouvement ── */
 .livebar {
@@ -174,12 +182,14 @@ input { font: inherit; }
 .livebar b { color: var(--ink); font-weight: 600; }
 .livebar-when { margin-left: auto; color: var(--faint); font-size: 12.5px; white-space: nowrap; }
 
-/* ── La place #1 ── */
+/* ── La place #1 ──
+   Hiérarchie voulue : rang > montant > nom. Le montant du #1 est le seul
+   aplat d'or massif de la page — c'est lui qui doit donner envie d'être là. */
 .wall { margin-top: 22px; }
 .top-seat {
   border: 1px solid var(--gold-line);
   background: var(--card);
-  padding: 22px 24px 24px;
+  padding: 34px 34px 32px;
 }
 .top-head {
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
@@ -190,49 +200,66 @@ input { font: inherit; }
 }
 .top-meta { font-family: var(--mono); font-size: 12.5px; color: var(--muted); text-align: right; }
 .top-who {
-  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  margin-top: 18px;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-top: 16px;
 }
-.top-name { font-weight: 700; font-size: clamp(20px, 3.6vw, 28px); letter-spacing: -0.01em; }
+.top-name {
+  font-family: var(--mono); font-weight: 600; font-size: 18px;
+  color: var(--muted); letter-spacing: 0;
+}
+.top-verified { color: var(--gold); font-size: 13px; }
 .top-amount {
-  margin-top: 8px;
-  font-size: clamp(44px, 9vw, 80px); font-weight: 700;
-  line-height: 1; letter-spacing: -0.03em;
-  color: var(--ink);
+  margin-top: 12px;
+  /* Le plancher doit descendre sous 44px : à 320px de large, 9vw ne suffit
+     pas et le dernier chiffre de $14,200,000 sortait de la carte. */
+  font-size: clamp(28px, 11vw, 80px); font-weight: 700;
+  line-height: 1; letter-spacing: 0;
+  color: var(--gold);
 }
 .top-amount-empty { color: var(--faint); }
-.top-seat .btn-outbid-xl { margin-top: 20px; width: 100%; }
-.top-note { margin-top: 12px; font-size: 13.5px; color: var(--muted); }
+.top-seat .btn-outbid-xl { margin-top: 24px; }
+.top-note { margin-top: 14px; font-size: 13.5px; color: var(--muted); }
 
 /* ── Le classement ── */
-.list { border-top: 1px solid var(--line); margin-top: 14px; }
+.list { margin-top: 14px; }
 .rowi {
   position: relative;
   display: grid; grid-template-columns: 52px minmax(0, 1fr) auto;
   align-items: center; gap: 12px;
-  padding: 14px 10px; margin: 0 -10px;
+  padding: 12px 10px; margin: 0 -10px;
   border-bottom: 1px solid var(--line);
   overflow: hidden;
   transition: background .12s;
 }
 .rowi:hover { background: rgba(255, 255, 255, .025); }
+/* Barre de proportion (registre complet) : aplat, pas de dégradé. */
 .row-bar {
   position: absolute; left: 0; top: 0; bottom: 0; width: 0;
-  background: linear-gradient(90deg, var(--gold-dim), transparent 80%);
+  background: var(--gold-dim);
   pointer-events: none;
 }
-/* Flash subtil quand un rang ou un montant bouge entre deux rafraîchissements. */
-@keyframes row-flash { from { background: var(--gold-dim); } to { background: transparent; } }
-.rowi.flash { animation: row-flash 1.8s ease-out; }
+/* Flash subtil quand un rang ou un montant bouge entre deux rafraîchissements.
+   Sur une couche ::after en opacity : animer `background` sur la ligne
+   entière repeint à chaque frame et entre en conflit avec le :hover. */
+@keyframes row-flash { from { opacity: 1; } to { opacity: 0; } }
+@keyframes amt-lift { from { transform: translateY(4px); color: var(--gold); } }
+.rowi::after {
+  content: ""; position: absolute; inset: 0;
+  background: var(--gold-dim); opacity: 0; pointer-events: none;
+}
+.rowi.flash::after { animation: row-flash 1.2s ease-out; }
+.rowi.flash .amt-md { animation: amt-lift .35s cubic-bezier(.2, .8, .2, 1); }
 .rk {
   font-size: 16px; font-weight: 700;
   color: var(--ink); position: relative;
 }
+.rk-hash { color: var(--faint); font-weight: 400; }
 .hcell { position: relative; min-width: 0; }
 .handle-md { font-weight: 600; font-size: 15.5px; display: inline-flex; align-items: center; }
+/* Décor non cliquable : gris. L'or reste au montant et au bouton outbid. */
 .vdot {
   display: inline-block; width: 6px; height: 6px; border-radius: 50%;
-  background: var(--gold); margin-left: 8px;
+  background: var(--line-3); margin-left: 8px;
 }
 .pass-hint {
   font-size: 12.5px; color: var(--muted);
@@ -242,9 +269,9 @@ input { font: inherit; }
 .acell { position: relative; display: flex; align-items: center; gap: 14px; justify-content: flex-end; }
 .amt-md {
   font-family: var(--mono); font-weight: 700;
-  font-size: 17px; white-space: nowrap; letter-spacing: -0.01em;
+  font-size: 17px; white-space: nowrap; letter-spacing: 0;
 }
-.views-inline { color: var(--faint); font-size: 12px; }
+.views-inline { color: var(--faint); font-size: 12px; margin-left: 10px; }
 
 .wall-foot {
   margin-top: 18px; display: flex; justify-content: space-between; align-items: baseline;
@@ -256,8 +283,8 @@ input { font: inherit; }
 
 /* ── Filigrane capture d'écran ── */
 .wallmark {
-  margin-top: 10px; text-align: right;
-  font-size: 11.5px; color: var(--faint);
+  margin-top: 30px; text-align: center;
+  font-size: 11.5px; color: var(--faint); letter-spacing: 0.08em;
 }
 
 /* ── L'aveu ── */
@@ -274,12 +301,18 @@ input { font: inherit; }
 .terms-text b { color: var(--ink); font-weight: 600; }
 
 /* ── Modale ── */
+/* Aligné en haut et scrollable : clavier ouvert sur un téléphone, le viewport
+   tombe sous la hauteur de la modale et le bouton de paiement devenait
+   inatteignable. Recentré dès qu'il y a de la place. */
 .overlay {
   position: fixed; inset: 0; z-index: 60;
   background: rgba(0, 0, 0, 0.75);
-  display: none; align-items: center; justify-content: center; padding: 20px;
+  display: none; align-items: flex-start; justify-content: center;
+  overflow-y: auto;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
 }
 .overlay.open { display: flex; }
+@media (min-height: 700px) { .overlay { align-items: center; } }
 .modal {
   position: relative;
   width: 100%; max-width: 460px;
@@ -302,6 +335,9 @@ input { font: inherit; }
   background: var(--bg);
   border: 1px solid var(--line-2);
   padding: 12px 13px;
+  /* 16px minimum : en dessous, Safari iOS zoome à chaque focus et ne
+     revient jamais en arrière. */
+  font-size: 16px;
   color: var(--ink); outline: none;
   transition: border-color .15s;
 }
@@ -316,7 +352,7 @@ input { font: inherit; }
   display: flex; align-items: center; gap: 8px;
 }
 .preview.hot { border-color: var(--gold-line); background: var(--gold-dim); color: var(--ink); }
-.preview .rank-big { font-family: var(--mono); color: var(--gold); font-weight: 700; }
+.preview .rank-big { font-family: var(--mono); color: var(--gold); font-weight: 700; font-size: 20px; }
 .preview .passes { color: var(--red); }
 .submit-full {
   margin-top: 12px; width: 100%;
@@ -339,6 +375,13 @@ input { font: inherit; }
   z-index: 1;
 }
 .modal-close:hover { color: var(--ink); background: rgba(255, 255, 255, .08); }
+
+/* Le montant, juste après le paiement : même traitement que le mur. */
+.me-amount {
+  margin-top: 10px;
+  font-size: clamp(30px, 6vw, 52px); font-weight: 700;
+  line-height: 1; color: var(--gold);
+}
 
 /* ── Formulaire « my spot » ── */
 .entry h2 { font-family: var(--mono); font-weight: 700; font-size: 20px; }
@@ -390,24 +433,43 @@ footer {
 
 /* ── Responsive ── */
 @media (max-width: 640px) {
-  .hero { padding: 38px 0 26px; }
+  .hero { padding: 28px 0 22px; }
   .hero-sub { font-size: 16px; }
   .btn-take { width: 100%; }
   .total-chip { display: none; }
-  .top-seat { padding: 18px 16px 20px; }
+  .top-seat { padding: 20px 16px 22px; }
+  .top-seat .btn-outbid-xl { width: 100%; padding: 0 20px; min-height: 52px; font-size: 15px; }
   .rowi { grid-template-columns: 40px minmax(0, 1fr) auto; gap: 10px; }
-  .rk { font-size: 14.5px; }
+  .rk { font-size: 15px; }
   .amt-md { font-size: 15.5px; }
   .acell { flex-direction: column; align-items: flex-end; gap: 6px; }
-  .btn-outbid { font-size: 11px; padding: 5px 9px; }
+  /* Cibles tactiles : 44px de haut minimum sur tout ce qui se tape. */
+  .btn-outbid { font-size: 11.5px; padding: 0 10px; min-height: 44px; }
+  .list .btn-outbid { min-width: 0; }
+  .views-inline { display: none; }
+  .links a { padding: 11px 0; }
+  .modal-close { width: 44px; height: 44px; top: 4px; right: 4px; }
+  footer a, .wall-foot-link { padding: 8px 0; display: inline-block; }
+  .topbar-in { padding: 8px 16px; }
   .why-block { padding: 20px 16px 22px; }
   .why-grid { grid-template-columns: 1fr; }
   .no-prize { margin-top: 64px; }
 }
 
+/* Retour au tap : sans état actif, taper OUTBID ne renvoyait rien jusqu'à
+   l'ouverture de la modale. */
+.btn-outbid:active, .btn-take:active, .submit-full:active,
+.btn-primary:active, .btn-ghost:active, .submit:active {
+  transform: translateY(1px); transition-duration: 0s;
+}
+.btn-outbid:active { background: var(--gold); color: #000; }
+button, a { -webkit-tap-highlight-color: transparent; }
+
 @media (prefers-reduced-motion: reduce) {
   .livedot { animation: none; }
-  .rowi.flash { animation: none; }
+  .rowi.flash::after, .rowi.flash .amt-md { animation: none; }
+  .btn-outbid:active, .btn-take:active, .submit-full:active,
+  .btn-primary:active, .btn-ghost:active, .submit:active { transform: none; }
   html { scroll-behavior: auto; }
 }
 
@@ -459,7 +521,7 @@ footer {
 .row-sub { font-size: 12.5px; }
 .row-sub .views { color: var(--faint); }
 
-.fstar { color: var(--gold); margin-left: 6px; font-size: .9em; }
+.fstar { color: var(--faint); margin-left: 6px; font-size: .9em; }
 
 .mail-link { color: var(--gold); text-decoration: none; }
 .mail-link:hover { text-decoration: underline; text-underline-offset: 3px; }

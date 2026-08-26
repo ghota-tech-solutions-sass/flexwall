@@ -3,15 +3,15 @@ import SiteFooter from "@/components/SiteFooter";
 import SiteNav from "@/components/SiteNav";
 import { dynamicFloor, FLOOR_TIERS, formatUSD } from "@/lib/board";
 import { listEntriesSafe, totalOnDisplay } from "@/lib/board-server";
+import { pageMetadata } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "How it works",
-  description: "The rules of the wall: pick a name, post the money, take your place, defend it.",
-  alternates: { canonical: "/how-it-works" },
-  openGraph: { url: "/how-it-works", title: "How it works · flexwall.lol", description: "Pick a name, post the money, take your place, defend it." },
-};
+  description: "Pick a spot, pay for it, defend it. Someone can always outbid you.",
+  path: "/how-it-works",
+});
 
 const steps: [string, string, string][] = [
   ["01", "Pick a spot", "Choose how much you're willing to pay. Any name works: an X handle, your real name, a company, an alias."],
@@ -62,7 +62,7 @@ export default async function HowItWorksPage() {
             The floor rises <em className="gold">as the wall fills.</em>
           </h3>
           <p className="subline" style={{ marginTop: 8 }}>
-            Early names lock in the low price. Later names pay full price.
+            Early names lock in the low price. Everyone after pays the new floor.
           </p>
           <div className="list" style={{ marginTop: 18 }}>
             {[

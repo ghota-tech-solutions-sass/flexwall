@@ -89,12 +89,26 @@ export default function SeatLookup({
       });
       if (res.status === 429) setError("Too many requests. Try again in an hour.");
       else if (res.status === 503) setError("Email links aren't available yet. Open this page in the browser you paid from.");
-      else if (!res.ok) setError("Something went wrong. Try again.");
+      else if (!res.ok) setError("That didn't go through. Try again.");
       else setSent(true);
     } catch {
       setError("Network error. Try again.");
     }
     setState("idle");
+  }
+
+  // Le webhook Stripe peut écrire la place une seconde après le retour de
+  // checkout : tant que la session est valide et que le fetch n'a pas répondu,
+  // on attend. Sans ça, chaque paiement réussi affichait d'abord
+  // "that spot isn't on the wall anymore".
+  const claiming = Boolean(authedSlug) && !seat && (state === "loading" || !triedAuto);
+
+  if (claiming) {
+    return (
+      <div style={{ maxWidth: 560 }}>
+        <p className="note">Writing your name to the wall…</p>
+      </div>
+    );
   }
 
   return (
@@ -106,8 +120,10 @@ export default function SeatLookup({
             {sent
               ? "If that email holds a spot, a link is on its way. It works for 30 minutes."
               : authedSlug
-                ? "Session found but the spot is no longer on the wall."
-                : "Enter the email you used at checkout and we will send you a link. Or open this page in the browser you paid from."}
+                ? welcome
+                  ? "Payment received. Your spot is being written to the wall — refresh in a few seconds."
+                  : "We found your session, but that spot isn't on the wall anymore."
+                : "Enter the email you used at checkout and we'll send you a link. Or open this page in the browser you paid from."}
           </p>
           {!sent ? (
             <div className="form-line">
@@ -203,7 +219,7 @@ export default function SeatLookup({
             style={{ marginTop: 20 }}
             onClick={() => { setSeat(null); setEmail(""); }}
           >
-            close this view
+            close
           </button>
         </>
       )}
