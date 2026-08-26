@@ -63,8 +63,8 @@ export default async function AboutPage() {
       <div className="page">
         <section className="hero" style={{ paddingBottom: 10 }}>
           <p className="eyebrow">about</p>
-          <h1 className="h1 serif" style={{ fontSize: "clamp(34px,5vw,52px)" }}>
-            A wall that ranks <em className="green">money.</em>
+          <h1 className="h1" style={{ fontSize: "clamp(34px,5vw,52px)" }}>
+            A wall that ranks <em>money.</em>
           </h1>
           <p className="subline">
             Inspired by{" "}

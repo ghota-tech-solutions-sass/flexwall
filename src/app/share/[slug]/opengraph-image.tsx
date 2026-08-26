@@ -26,33 +26,32 @@ export default async function OgImage({ params }: { params: Promise<{ slug: stri
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          background: "#0f0e0a",
-          color: "#eae3d0",
-          fontFamily: "serif",
+          background: "#000000",
+          color: "#e7e9ea",
+          fontFamily: "sans-serif",
         }}
       >
-        <div style={{ position: "absolute", top: 14, left: 14, right: 14, bottom: 14, border: "2px solid #3d3620", display: "flex" }} />
-        <div style={{ position: "absolute", top: 24, left: 24, right: 24, bottom: 24, border: "1px solid #292519", display: "flex" }} />
-        <div style={{ fontSize: 26, letterSpacing: 18, color: "#c8a457", marginBottom: 28 }}>✦ FLEXWALL.LOL ✦</div>
+        <div style={{ position: "absolute", top: 20, left: 20, right: 20, bottom: 20, border: "1px solid #2f3336", display: "flex" }} />
+        <div style={{ fontSize: 26, letterSpacing: 6, color: "#e2b340", marginBottom: 28 }}>FLEXWALL.LOL</div>
         {e ? (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <div style={{ fontSize: 190, fontStyle: "italic", fontWeight: 700, color: rank === 1 ? "#e0bf74" : "#eae3d0", lineHeight: 1 }}>
+            <div style={{ fontSize: 190, fontWeight: 800, color: rank === 1 ? "#f2c75c" : "#e7e9ea", lineHeight: 1 }}>
               {"#" + String(rank).padStart(2, "0")}
             </div>
             <div style={{ fontSize: 48, fontWeight: 600, marginTop: 18 }}>{e.name}</div>
-            <div style={{ fontSize: 44, color: "#c8a457", marginTop: 10 }}>
+            <div style={{ fontSize: 44, color: "#e2b340", marginTop: 10 }}>
               {"$" + Math.round(e.amountUSD).toLocaleString("en-US")}
             </div>
             {founder ? (
-              <div style={{ marginTop: 16, fontSize: 20, letterSpacing: 6, color: "#e0bf74", border: "1px solid #4a4030", padding: "6px 16px" }}>
+              <div style={{ marginTop: 16, fontSize: 20, letterSpacing: 6, color: "#f2c75c", border: "1px solid #2f3336", padding: "6px 16px" }}>
                 FOUNDING 100
               </div>
             ) : null}
           </div>
         ) : (
-          <div style={{ fontSize: 64, fontStyle: "italic", color: "#a2977c" }}>this seat is still empty</div>
+          <div style={{ fontSize: 60, fontWeight: 700, color: "#8b98a5" }}>this seat is still empty</div>
         )}
-        <div style={{ position: "absolute", bottom: 44, fontSize: 24, color: "#6b6250", display: "flex" }}>
+        <div style={{ position: "absolute", bottom: 44, fontSize: 24, color: "#71767b", display: "flex" }}>
           the open register of private fortunes · no refunds
         </div>
       </div>

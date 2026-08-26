@@ -32,11 +32,11 @@ export default async function MePage({
       <div className="page">
         <section className="hero" style={{ paddingBottom: 20 }}>
           <p className="eyebrow">{welcome ? "payment received" : "my seat · private by default"}</p>
-          <h1 className="h1 serif" style={{ fontSize: "clamp(34px,5vw,52px)" }}>
+          <h1 className="h1" style={{ fontSize: "clamp(34px,5vw,52px)" }}>
             {welcome ? (
-              <>You are <em className="green">on the wall.</em></>
+              <>You are <em>on the wall.</em></>
             ) : (
-              <>Your money, <em className="green">your place.</em></>
+              <>Your money, <em>your place.</em></>
             )}
           </h1>
           <p className="subline">

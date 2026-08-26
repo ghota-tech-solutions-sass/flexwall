@@ -137,7 +137,7 @@ export default function SeatLookup({
             <h3 style={{ fontSize: "clamp(30px,4vw,44px)" }}>
               #{seat.rank} <span style={{ color: "var(--faint)" }}>of</span> {seat.total}
             </h3>
-            <p className="subline mono" style={{ marginTop: 10, fontSize: 15 }}>
+            <p className="subline" style={{ marginTop: 10, fontSize: 15 }}>
               <b>{seat.name}</b> · {formatUSD(seat.amountUSD)} on display since{" "}
               {new Date(seat.createdAt).toLocaleDateString("en-US", { dateStyle: "medium" })}
             </p>
@@ -148,7 +148,7 @@ export default function SeatLookup({
               </p>
             ) : (
               <p className="pass-hint green" style={{ fontSize: 13, marginTop: 10 }}>
-                you hold №01. Nothing above you.
+                you hold #1. Nothing above you.
               </p>
             )}
             <div className="share-actions" style={{ justifyContent: "flex-start", marginTop: 16 }}>

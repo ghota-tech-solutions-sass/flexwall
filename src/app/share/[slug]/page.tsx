@@ -46,7 +46,7 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
         <div className="page">
           <section className="hero">
             <p className="eyebrow">unknown seat</p>
-            <h1 className="h1 serif">This place is still <em className="green">empty.</em></h1>
+            <h1 className="h1">This place is still <em>empty.</em></h1>
             <p className="subline">No one holds this name on the register. It could be yours.</p>
             <Link className="btn-primary" href="/?enter=1">Enter the list</Link>
           </section>
@@ -75,15 +75,15 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
       <div className="page">
         <section className="hero" style={{ paddingBottom: 8 }}>
           <p className="eyebrow">share card</p>
-          <h1 className="h1 serif seat-head" style={{ fontSize: "clamp(30px,4.5vw,46px)" }}>
+          <h1 className="h1 seat-head" style={{ fontSize: "clamp(30px,4.5vw,46px)" }}>
             <SeatAvatar entry={e} size="xl" />
             <span>#{rank} · <em className="green">{e.name}</em></span>
           </h1>
-          <p className="subline mono">
+          <p className="subline">
             {"$" + e.amountUSD.toLocaleString("en-US")} on public display. Download, post, dare someone.
           </p>
           {e.linkTitle || e.linkDescription ? (
-            <p className="seat-site mono">
+            <p className="seat-site">
               {e.linkTitle}
               {e.linkTitle && e.linkDescription ? " — " : ""}
               {e.linkDescription}
@@ -102,7 +102,7 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
         <ShareCard rank={rank} name={e.name} amountUSD={e.amountUSD} founder={founders.has(e.slug)} />
 
         <SeatViewPing slug={e.slug} />
-        <div className="share-meta mono">
+        <div className="share-meta">
           <span>rank #{rank} of {ranked.length}</span>
           <span>·</span>
           <span>on the wall since {new Date(e.createdAt).toLocaleDateString("en-US", { dateStyle: "medium" })}</span>
@@ -116,7 +116,7 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
           <div style={{ marginTop: 34, maxWidth: 640 }}>
             <div className="section-head">
               <span className="board-title" style={{ fontSize: 15 }}>Money trail</span>
-              <span className="board-note mono">{history.length} payment{history.length > 1 ? "s" : ""} · public record</span>
+              <span className="board-note">{history.length} payment{history.length > 1 ? "s" : ""} · public record</span>
             </div>
             <div className="list">
               {chronological.map((ev, i) => (
