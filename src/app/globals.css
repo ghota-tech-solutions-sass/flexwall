@@ -119,10 +119,10 @@ input { font: inherit; }
 /* Le bouton du produit : OUTBID. Bordure or, fond noir, il s'allume au survol. */
 .btn-outbid {
   display: inline-flex; align-items: center; justify-content: center;
-  color: var(--gold); border: 1px solid var(--gold-line);
+  color: var(--gold); border: 1px solid var(--gold);
   background: transparent;
-  font-size: 12px; font-weight: 600; letter-spacing: 0.05em;
-  padding: 7px 12px; white-space: nowrap;
+  font-size: 12.5px; font-weight: 700; letter-spacing: 0.05em;
+  padding: 8px 13px; white-space: nowrap;
   font-variant-numeric: tabular-nums;
   transition: background .12s, color .12s, border-color .12s;
 }
@@ -151,7 +151,7 @@ input { font: inherit; }
 @keyframes pulse { 50% { opacity: .3; } }
 .h1 {
   font-family: var(--mono);
-  font-weight: 700; font-size: clamp(27px, 5.4vw, 50px);
+  font-weight: 700; font-size: clamp(28px, 5.6vw, 56px);
   line-height: 1.12; letter-spacing: -0.02em;
   max-width: 21ch;
 }
@@ -221,9 +221,12 @@ input { font: inherit; }
   background: linear-gradient(90deg, var(--gold-dim), transparent 80%);
   pointer-events: none;
 }
+/* Flash subtil quand un rang ou un montant bouge entre deux rafraîchissements. */
+@keyframes row-flash { from { background: var(--gold-dim); } to { background: transparent; } }
+.rowi.flash { animation: row-flash 1.8s ease-out; }
 .rk {
-  font-size: 15px; font-weight: 600;
-  color: var(--muted); position: relative;
+  font-size: 16px; font-weight: 700;
+  color: var(--ink); position: relative;
 }
 .hcell { position: relative; min-width: 0; }
 .handle-md { font-weight: 600; font-size: 15.5px; display: inline-flex; align-items: center; }
@@ -393,7 +396,7 @@ footer {
   .total-chip { display: none; }
   .top-seat { padding: 18px 16px 20px; }
   .rowi { grid-template-columns: 40px minmax(0, 1fr) auto; gap: 10px; }
-  .rk { font-size: 13.5px; }
+  .rk { font-size: 14.5px; }
   .amt-md { font-size: 15.5px; }
   .acell { flex-direction: column; align-items: flex-end; gap: 6px; }
   .btn-outbid { font-size: 11px; padding: 5px 9px; }
@@ -404,6 +407,7 @@ footer {
 
 @media (prefers-reduced-motion: reduce) {
   .livedot { animation: none; }
+  .rowi.flash { animation: none; }
   html { scroll-behavior: auto; }
 }
 
