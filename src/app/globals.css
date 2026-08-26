@@ -161,7 +161,10 @@ input { font: inherit; }
   font-family: var(--mono);
   font-weight: 700; font-size: clamp(28px, 5.6vw, 56px);
   line-height: 1.12; letter-spacing: -0.02em;
-  max-width: 21ch;
+  /* 23ch, pas 21 : "expensive leaderboard." mesure 21,3ch, et à 21ch il
+     manquait 9px pour que le titre tienne en deux lignes. La marge couvre
+     aussi la police de repli, plus large que Plex Mono. */
+  max-width: 23ch;
 }
 .h1 em { font-style: normal; color: var(--gold); }
 .hero-sub {
