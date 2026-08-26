@@ -21,8 +21,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const rank = ranked.findIndex((x) => x.slug === slug) + 1;
   const title = e.name + " is #" + rank + " on flexwall.lol";
   const description =
-    "#" + rank + ": " + e.name + ", $" + e.amountUSD.toLocaleString("en-US") +
-    " on public display. Beat it.";
+    "#" + rank + " · $" + e.amountUSD.toLocaleString("en-US") +
+    ". Outbid them for $" + (e.amountUSD + 1).toLocaleString("en-US") + ".";
   return {
     title: { absolute: title },
     description,
@@ -45,10 +45,10 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
         <SiteNav variant="link" />
         <div className="page">
           <section className="hero">
-            <p className="eyebrow">unknown seat</p>
-            <h1 className="h1">This place is still <em>empty.</em></h1>
-            <p className="subline">No one holds this name on the register. It could be yours.</p>
-            <Link className="btn-primary" href="/?enter=1">Enter the list</Link>
+            <p className="eyebrow">unknown spot</p>
+            <h1 className="h1">Nobody here <em>yet.</em></h1>
+            <p className="subline">This name isn&rsquo;t on the wall. It could be.</p>
+            <Link className="btn-primary" href="/?enter=1">Take a spot</Link>
           </section>
           <SiteFooter left="flexwall.lol" />
         </div>
@@ -80,7 +80,8 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
             <span>#{rank} · <em className="green">{e.name}</em></span>
           </h1>
           <p className="subline">
-            {"$" + e.amountUSD.toLocaleString("en-US")} on public display. Download, post, dare someone.
+            {"$" + e.amountUSD.toLocaleString("en-US")} paid for this spot. Post it, dare
+            someone to outbid it.
           </p>
           {e.linkTitle || e.linkDescription ? (
             <p className="seat-site">
@@ -143,8 +144,8 @@ export default async function SharePage({ params }: { params: Promise<{ slug: st
         ) : null}
 
         <div className="share-actions" style={{ justifyContent: "flex-start", marginTop: 30 }}>
-          <Link className="btn-take" href={"/?enter=1&amount=" + (e.amountUSD + 1)}>
-            Beat this seat for {formatUSD(e.amountUSD + 1)}
+          <Link className="btn-outbid btn-outbid-xl mono" href={"/?enter=1&amount=" + (e.amountUSD + 1)}>
+            OUTBID FOR {formatUSD(e.amountUSD + 1)}
           </Link>
           <Link className="btn-ghost" href="/">← the wall</Link>
         </div>

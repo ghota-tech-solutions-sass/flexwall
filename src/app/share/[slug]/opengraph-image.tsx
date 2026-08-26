@@ -52,7 +52,9 @@ export default async function OgImage({ params }: { params: Promise<{ slug: stri
           <div style={{ fontSize: 60, fontWeight: 700, color: "#8b98a5" }}>this seat is still empty</div>
         )}
         <div style={{ position: "absolute", bottom: 44, fontSize: 24, color: "#71767b", display: "flex" }}>
-          the open register of private fortunes · no refunds
+          {e
+            ? "outbid them for $" + (e.amountUSD + 1).toLocaleString("en-US")
+            : "pay more. take the spot."}
         </div>
       </div>
     ),

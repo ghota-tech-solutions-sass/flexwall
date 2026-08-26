@@ -101,12 +101,12 @@ export default function SeatLookup({
     <div style={{ maxWidth: 560 }}>
       {!seat ? (
         <form onSubmit={submit} className="entry" style={{ marginTop: 0 }}>
-          <h2>{sent ? "Check your inbox" : "Find my seat"}</h2>
+          <h2>{sent ? "Check your inbox" : "Find my spot"}</h2>
           <p className="note">
             {sent
-              ? "If that email holds a seat, a link is on its way. It works for 30 minutes."
+              ? "If that email holds a spot, a link is on its way. It works for 30 minutes."
               : authedSlug
-                ? "Session found but the seat is no longer on the wall."
+                ? "Session found but the spot is no longer on the wall."
                 : "Enter the email you used at checkout and we will send you a link. Or open this page in the browser you paid from."}
           </p>
           {!sent ? (
@@ -133,7 +133,7 @@ export default function SeatLookup({
       ) : (
         <>
           <div className="why-block" style={{ marginTop: 24 }}>
-            <p className="section-label">your seat</p>
+            <p className="section-label">your spot</p>
             <h3 style={{ fontSize: "clamp(30px,4vw,44px)" }}>
               #{seat.rank} <span style={{ color: "var(--faint)" }}>of</span> {seat.total}
             </h3>
@@ -143,17 +143,19 @@ export default function SeatLookup({
             </p>
             {seat.toPassAbove ? (
               <p className="pass-hint" style={{ fontSize: 13, marginTop: 10 }}>
-                next move: +{formatUSD(seat.toPassAbove.neededUSD)} passes{" "}
+                +{formatUSD(seat.toPassAbove.neededUSD)} outbids{" "}
                 <b>{seat.toPassAbove.name}</b> and takes #{Math.max(1, seat.rank - 1)}
               </p>
             ) : (
               <p className="pass-hint green" style={{ fontSize: 13, marginTop: 10 }}>
-                you hold #1. Nothing above you.
+                You hold #1. Nobody above you. For now.
               </p>
             )}
             <div className="share-actions" style={{ justifyContent: "flex-start", marginTop: 16 }}>
               <a className="btn-take" href={topUpHref(seat)}>
-                {seat.toPassAbove ? `Top up +${formatUSD(seat.toPassAbove.neededUSD)}` : "Top up"}
+                {seat.toPassAbove
+                  ? `Outbid ${seat.toPassAbove.name} · +${formatUSD(seat.toPassAbove.neededUSD)}`
+                  : "Top up"}
               </a>
               <a className="btn-ghost" href={`/?enter=1&name=${encodeURIComponent(seat.name)}`}>Add any amount</a>
             </div>
@@ -161,11 +163,11 @@ export default function SeatLookup({
 
           <div className={"share-prompt" + (welcome ? " hot" : "")}>
             <div>
-              <p className="section-label">{welcome ? "tell them" : "share your seat"}</p>
+              <p className="section-label">{welcome ? "tell them" : "share your spot"}</p>
               <p className="share-prompt-text">
                 {welcome
-                  ? "Your seat is live. Post it, and see who comes to take it."
-                  : "Post your rank and dare someone to pass it."}
+                  ? "Your spot is live. Post it and see who comes to take it."
+                  : "Post your rank and dare someone to outbid it."}
               </p>
             </div>
             <div className="share-actions" style={{ marginTop: 0 }}>

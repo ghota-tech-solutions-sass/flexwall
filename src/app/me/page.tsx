@@ -31,19 +31,25 @@ export default async function MePage({
       <SiteNav total={total} variant="link" />
       <div className="page">
         <section className="hero" style={{ paddingBottom: 20 }}>
-          <p className="eyebrow">{welcome ? "payment received" : "my seat · private by default"}</p>
-          <h1 className="h1" style={{ fontSize: "clamp(34px,5vw,52px)" }}>
+          <p className="eyebrow">{welcome ? "payment received" : "my spot · private by default"}</p>
+          <h1 className="h1" style={{ fontSize: "clamp(28px,4.5vw,44px)" }}>
             {welcome ? (
-              <>You are <em>on the wall.</em></>
+              <>You&rsquo;re <em>on the wall.</em></>
             ) : (
-              <>Your money, <em>your place.</em></>
+              <>Your spot.</>
             )}
           </h1>
           <p className="subline">
-            Your rank, your payments, and who sits right above you.
+            {welcome ? (
+              <b>Good luck keeping it.</b>
+            ) : (
+              "Your rank, your payments, and who sits right above you."
+            )}
             {authedSlug
               ? " Your session is active."
-              : " Pay from this browser and your seat opens here on its own. From anywhere else, ask for a link by email."}
+              : welcome
+                ? ""
+                : " Pay from this browser and your spot opens here on its own. From anywhere else, ask for a link by email."}
           </p>
         </section>
         <SeatLookup authedSlug={authedSlug} welcome={welcome} linkExpired={linkExpired} />

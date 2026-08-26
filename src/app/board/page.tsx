@@ -27,12 +27,12 @@ export default async function BoardPage() {
       <SiteNav total={total} />
       <div className="page">
         <section className="hero" style={{ paddingBottom: 10 }}>
-          <p className="eyebrow"><span className="livedot" /> full register · every entry</p>
-          <h1 className="h1" style={{ fontSize: "clamp(34px,5vw,52px)" }}>
-            The <em>complete</em> register.
+          <p className="eyebrow"><span className="livedot" /> the full list · live</p>
+          <h1 className="h1" style={{ fontSize: "clamp(28px,4.5vw,44px)" }}>
+            Every name. <em>Every dollar.</em>
           </h1>
           <p className="subline">
-            {ranked.length} {ranked.length === 1 ? "entry" : "entries"} · {formatUSD(total)} on public display.
+            {ranked.length} {ranked.length === 1 ? "name" : "names"} · {formatUSD(total)} paid onto the wall.
             Search a name. The list refreshes on its own.
           </p>
         </section>

@@ -63,14 +63,14 @@ export default async function AboutPage() {
       <div className="page">
         <section className="hero" style={{ paddingBottom: 10 }}>
           <p className="eyebrow">about</p>
-          <h1 className="h1" style={{ fontSize: "clamp(34px,5vw,52px)" }}>
-            A wall that ranks <em>money.</em>
+          <h1 className="h1" style={{ fontSize: "clamp(28px,4.5vw,44px)" }}>
+            Yes, people <em>really pay.</em>
           </h1>
           <p className="subline">
             Inspired by{" "}
             <a className="mail-link" href="https://outbid.lol" target="_blank" rel="noopener noreferrer nofollow">outbid.lol</a>{" "}
             and the pay-to-be-seen wave around it, stripped of everything except the part
-            people actually came for: the rank.
+            people actually came for: the spot.
           </p>
         </section>
 
@@ -132,7 +132,7 @@ export default async function AboutPage() {
         </div>
 
         <div style={{ marginTop: 28, display: "flex", gap: 12 }}>
-          <Link className="btn-take" href="/?enter=1">Enter the list</Link>
+          <Link className="btn-take" href="/?enter=1">Take a spot</Link>
           <Link className="btn-ghost" href="/how-it-works">Read the rules</Link>
         </div>
 

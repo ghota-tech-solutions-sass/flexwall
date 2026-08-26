@@ -72,8 +72,8 @@ export async function POST(req: NextRequest) {
             currency: "usd",
             unit_amount: amount * 100,
             product_data: {
-              name: identity.name + " · flexwall entry",
-              description: "Non-refundable entry. Your rank is your amount.",
+              name: identity.name + " · a spot on flexwall.lol",
+              description: "Non-refundable. Your rank is what you pay. Someone can always outbid you.",
             },
           },
         },

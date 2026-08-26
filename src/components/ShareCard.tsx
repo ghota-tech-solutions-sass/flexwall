@@ -35,35 +35,35 @@ export default function ShareCard({ rank, name, amountUSD, founder }: Props) {
 
     // wordmark
     ctx.fillStyle = "#e2b340";
-    ctx.font = "700 22px -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, Arial, sans-serif";
-    ctx.fillText("FLEXWALL.LOL", W / 2, 92);
+    ctx.font = "700 22px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.fillText("F L E X W A L L", W / 2, 92);
 
-    // rang géant — ambre pour le n°1, blanc sinon
-    ctx.font = "800 200px -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, Arial, sans-serif";
-    ctx.fillStyle = rank === 1 ? "#f2c75c" : "#e7e9ea";
+    // rang géant — or pour le n°1, blanc sinon
+    ctx.font = "700 200px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.fillStyle = rank === 1 ? "#f2c75c" : "#ececec";
     ctx.fillText("#" + String(rank).padStart(2, "0"), W / 2, 320);
 
     // nom + étoile fondateur
-    ctx.fillStyle = "#e7e9ea";
+    ctx.fillStyle = "#ececec";
     ctx.font = "700 46px -apple-system, BlinkMacSystemFont, \"Segoe UI\", Helvetica, Arial, sans-serif";
     ctx.fillText((founder ? "★ " : "") + name, W / 2, 402);
 
     // montant
     ctx.fillStyle = "#e2b340";
-    ctx.font = "500 44px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.font = "600 44px ui-monospace, SFMono-Regular, Menlo, monospace";
     ctx.fillText("$" + amountUSD.toLocaleString("en-US"), W / 2, 470);
 
     // séparateur
-    ctx.strokeStyle = "#2f3336";
+    ctx.strokeStyle = "#2c2c31";
     ctx.beginPath();
     ctx.moveTo(W / 2 - 220, 520);
     ctx.lineTo(W / 2 + 220, 520);
     ctx.stroke();
 
-    // footer
+    // footer — la mécanique, pas un slogan
     ctx.fillStyle = "#71767b";
     ctx.font = "400 22px ui-monospace, SFMono-Regular, Menlo, monospace";
-    ctx.fillText("the open register of private fortunes · no refunds", W / 2, 585);
+    ctx.fillText("outbid me for $" + (amountUSD + 1).toLocaleString("en-US") + " · flexwall.lol", W / 2, 585);
 
     setReady(true);
   }, [rank, name, amountUSD, founder]);
