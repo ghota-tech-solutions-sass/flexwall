@@ -12,9 +12,10 @@
   --line: #292519;
   --line-2: #3d3620;
   --card: #14120c;
-  --green: #9cb380;
-  --green-dim: rgba(156, 179, 128, 0.13);
-  --green-glow: rgba(156, 179, 128, 0.3);
+  --green: #a8bd8a;
+  --green-dim: rgba(168, 189, 138, 0.12);
+  --green-line: rgba(168, 189, 138, 0.36);
+  --green-glow: rgba(168, 189, 138, 0.3);
   --gold: #c8a457;
   --gold-bright: #e0bf74;
   --gold-dim: rgba(200, 164, 87, 0.14);
@@ -120,6 +121,37 @@ input { font: inherit; }
 
 /* ── Hero ── */
 .hero { padding: 60px 0 34px; }
+.hero-grid {
+  display: grid; grid-template-columns: minmax(0, 1fr) 264px;
+  gap: 44px; align-items: start;
+}
+
+/* ── Tampon du prix d'entrée : le contrepoint vert billet du certificat or ── */
+.entry-stamp {
+  position: relative; margin-top: 44px;
+  border: 1px solid var(--green-line);
+  background: var(--card);
+  padding: 20px 22px 18px;
+}
+.entry-stamp::before {
+  content: ""; position: absolute; inset: 4px;
+  border: 1px solid var(--line); pointer-events: none;
+}
+.entry-stamp > * { position: relative; }
+.stamp-label {
+  font-size: 11.5px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--green);
+}
+.stamp-amount {
+  font-size: 42px; font-weight: 600; color: var(--ink);
+  line-height: 1.05; margin-top: 8px;
+}
+.stamp-note { font-size: 12px; color: var(--green); margin-top: 6px; }
+.stamp-rule {
+  margin-top: 14px; padding-top: 13px;
+  border-top: 1px solid var(--line);
+  font-size: 13.5px; color: var(--muted); line-height: 1.55;
+}
 .eyebrow {
   display: inline-flex; align-items: center; gap: 10px;
   font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.2em;
@@ -127,7 +159,7 @@ input { font: inherit; }
 }
 .livedot {
   width: 7px; height: 7px;
-  background: var(--gold);
+  background: var(--green);
   transform: rotate(45deg);
   animation: pulse 2.6s ease-in-out infinite;
 }
@@ -315,6 +347,7 @@ input { font: inherit; }
 .modal > * { position: relative; }
 .modal h2 { font-family: var(--font-display); font-weight: 500; font-size: 27px; }
 .modal .sub { color: var(--muted); font-size: 14.5px; margin: 6px 0 22px; }
+.modal .sub b { color: var(--ink); font-weight: 600; }
 .form-line { display: grid; grid-template-columns: 1fr auto; gap: 11px; }
 .modal .form-line { grid-template-columns: 1fr 1fr; }
 @media (max-width: 480px) {
@@ -340,7 +373,8 @@ input { font: inherit; }
   display: flex; align-items: center; gap: 8px;
 }
 .preview.hot { border-color: var(--gold-line); color: var(--ink); }
-.preview .rank-big { color: var(--gold-bright); font-weight: 600; }
+.preview.hot { border-color: var(--green-line); }
+.preview .rank-big { color: var(--green); font-weight: 600; }
 .preview .passes { color: var(--red); }
 .submit-full {
   margin-top: 14px; width: 100%;
@@ -407,6 +441,9 @@ footer {
   .btn-take { width: 100%; text-align: center; }
   .row-claim { display: none; }
   .why-block { padding: 26px 20px 24px; }
+  .hero-grid { grid-template-columns: 1fr; gap: 26px; }
+  .entry-stamp { margin-top: 0; }
+  .hero-ctas .btn-ghost { width: 100%; text-align: center; }
   .clause dd { margin-left: 0; }
 }
 
@@ -443,7 +480,7 @@ footer {
 .share-canvas { width: 100%; height: auto; border: 1px solid var(--line-2); }
 .share-actions { display: flex; gap: 12px; justify-content: center; margin-top: 16px; }
 
-.hero-ctas { display: flex; gap: 14px; align-items: center; margin-top: 28px; flex-wrap: wrap; }
+.hero-ctas { display: flex; gap: 12px; align-items: center; margin-top: 28px; flex-wrap: wrap; }
 .btn-take {
   background: var(--gold); color: #171207;
   font-family: var(--font-mono), ui-monospace, monospace;
@@ -457,6 +494,7 @@ footer {
 .btn-take:active { transform: translateY(1px); }
 .cta-note {
   font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+  margin-top: 12px;
 }
 
 .trust-rail {

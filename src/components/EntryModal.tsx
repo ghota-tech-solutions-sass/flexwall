@@ -20,14 +20,16 @@ interface Props {
 export default function EntryModal({ floor, tierNote, paymentsConfigured, board }: Props) {
   const [open, setOpen] = useState(false);
   const [handle, setHandle] = useState("");
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(String(floor));
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     function onOpen(e: Event) {
+      // Opening with no preset starts at the floor, so the preview lights up
+      // immediately and the entry price is never a guess.
       const preset = (e as CustomEvent).detail?.amount;
-      if (typeof preset === "number" && preset > 0) setAmount(String(preset));
+      setAmount(String(typeof preset === "number" && preset > 0 ? preset : floor));
       setState("idle");
       setMessage("");
       setOpen(true);
@@ -54,7 +56,7 @@ export default function EntryModal({ floor, tierNote, paymentsConfigured, board 
       const name = params.get("name");
       const amt = Number(params.get("amount"));
       if (name) setHandle(name);
-      if (amt > 0) setAmount(String(Math.round(amt)));
+      setAmount(String(amt > 0 ? Math.round(amt) : floor));
       setOpen(true);
       window.history.replaceState(null, "", window.location.pathname);
     }
@@ -63,21 +65,23 @@ export default function EntryModal({ floor, tierNote, paymentsConfigured, board 
       document.removeEventListener("click", onClick);
       window.removeEventListener("keydown", onKey);
     };
-  }, []);
+  }, [floor]);
 
   const parsed = Number(amount);
   const preview = useMemo(() => {
-    if (!parsed || parsed < 1 || !handle.trim()) return null;
+    if (!parsed || parsed < 1) return null;
     // Same name already on the wall = top-up: rank the cumulative total, no floor.
-    const slug = makeIdentity(handle)?.slug;
+    // With no name typed yet the amount alone still previews a rank.
+    const slug = handle.trim() ? makeIdentity(handle)?.slug : undefined;
     const existing = slug ? board.find((e) => e.slug === slug) : undefined;
-    if (!existing && parsed < floor) return null;
+    if (!existing && parsed < floor) return { belowFloor: true as const };
     const total = parsed + (existing?.amountUSD ?? 0);
     const others = existing ? board.filter((e) => e.slug !== existing.slug) : board;
     const better = others.filter((e) => e.amountUSD >= total).length; // égalité : premier arrivé garde l'avantage
     const rank = better + 1;
+    // Landing past the last name is still a seat, not a rejection.
     const displaced = rank <= others.length ? others[rank - 1] : null;
-    return { rank, displaced, onBoard: rank <= others.length, topup: Boolean(existing), total };
+    return { belowFloor: false as const, rank, displaced, topup: Boolean(existing), total };
   }, [parsed, handle, board, floor]);
 
   async function submit(e: React.FormEvent) {
@@ -126,8 +130,8 @@ export default function EntryModal({ floor, tierNote, paymentsConfigured, board 
         <button className="modal-close" aria-label="Close" onClick={() => setOpen(false)}>×</button>
         <h2>Enter the list</h2>
         <p className="sub">
-          Your money goes on public display. Your rank is your amount.
-          Ties go to whoever arrived first.
+          A new name starts at <b>{fmtUsd(floor)}</b>. Post more and you rank higher —
+          your rank is your amount, and ties go to whoever arrived first.
         </p>
 
         <form onSubmit={submit}>
@@ -156,26 +160,27 @@ export default function EntryModal({ floor, tierNote, paymentsConfigured, board 
             />
           </div>
 
-          <div className={"preview" + (preview ? " hot" : "")} aria-live="polite">
-            {preview ? (
-              preview.onBoard ? (
-                <span>
-                  <span className="rank-big">#{preview.rank}</span>
-                  {preview.topup ? <span> with {fmtUsd(preview.total)} total</span> : null}
-                  {preview.displaced ? (
-                    <span>
-                      {" "}passes{" "}
-                      <span className="passes">{preview.displaced.name}</span>
-                    </span>
-                  ) : (
-                    <span> bottom of the wall. Welcome.</span>
-                  )}
-                </span>
-              ) : (
-                <span>below the floor. The minimum is {fmtUsd(floor)}.</span>
-              )
-            ) : (
+          <div
+            className={"preview" + (preview && !preview.belowFloor ? " hot" : "")}
+            aria-live="polite"
+          >
+            {!preview ? (
               <span>type an amount to see the rank it would take</span>
+            ) : preview.belowFloor ? (
+              <span>below the floor. A new name starts at {fmtUsd(floor)}.</span>
+            ) : (
+              <span>
+                <span className="rank-big">#{preview.rank}</span>
+                {preview.topup ? <span> with {fmtUsd(preview.total)} total</span> : null}
+                {preview.displaced ? (
+                  <span>
+                    {" "}passes{" "}
+                    <span className="passes">{preview.displaced.name}</span>
+                  </span>
+                ) : (
+                  <span> — you are on the wall.</span>
+                )}
+              </span>
             )}
           </div>
 

@@ -86,32 +86,44 @@ export default async function Home() {
           </div>
         ) : null}
         <section className="hero">
-          <p className="eyebrow"><span className="livedot" /> the open register of private fortunes · est. MMXXV</p>
-          <h1 className="h1">
-            Money,<em>ranked.</em>
-          </h1>
-          <p className="subline">
-            One rule: <b>pick the name above yours, put up more money,
-            take their place.</b> Every entry is public, permanent and paid.
-            Minimum {formatUSD(floor)}{tierNote ? " (" + tierNote.replace("founding price, ", "") + ")" : ""}.
-          </p>
+          <div className="hero-grid">
+            <div className="hero-main">
+              <p className="eyebrow"><span className="livedot" /> the open register of private fortunes · est. MMXXV</p>
+              <h1 className="h1">
+                Money,<em>ranked.</em>
+              </h1>
+              <p className="subline">
+                Put <b>any amount from {formatUSD(floor)}</b> on public display and take your
+                place in the register. Post more than the name above you and you pass them.
+                Every entry is public, permanent and paid.
+              </p>
 
-          <div className="hero-ctas">
-            {first ? (
-              <button
-                className="btn-take"
-                data-open-entry
-                data-amount={first.amountUSD + 1}
-              >
-                Take №01 for {formatUSD(first.amountUSD + 1)}
-              </button>
-            ) : (
-              <button className="btn-take" data-open-entry>Be the first name</button>
-            )}
-            <span className="cta-note mono">
-              Stripe checkout · ranked in seconds · permanent record
-              {tierNote ? <b className="floor-chip"> ★ {tierNote}</b> : null}
-            </span>
+              <div className="hero-ctas">
+                <button className="btn-take" data-open-entry data-amount={floor}>
+                  Get on the wall — {formatUSD(floor)}
+                </button>
+                {first ? (
+                  <button
+                    className="btn-ghost"
+                    data-open-entry
+                    data-amount={first.amountUSD + 1}
+                  >
+                    or take №01 for {formatUSD(first.amountUSD + 1)}
+                  </button>
+                ) : null}
+              </div>
+              <p className="cta-note mono">Stripe checkout · ranked in seconds · no account needed</p>
+            </div>
+
+            <aside className="entry-stamp">
+              <p className="stamp-label mono">Entry price</p>
+              <p className="stamp-amount mono">{formatUSD(floor)}</p>
+              <p className="stamp-note mono">{tierNote ?? "the floor for a new name"}</p>
+              <p className="stamp-rule">
+                Any amount at or above the floor buys a place. Your rank is whatever
+                you post — nothing else.
+              </p>
+            </aside>
           </div>
 
           <div className="how-strip mono">
@@ -146,7 +158,10 @@ export default async function Home() {
         <section aria-label="leaderboard">
           <div className="section-head">
             <span className="board-title">The Wall</span>
-            <span className="board-note mono">{ranked.length} {ranked.length === 1 ? "entry" : "entries"} · ties go to whoever arrived first</span>
+            <span className="board-note mono">
+              {ranked.length} {ranked.length === 1 ? "entry" : "entries"} · cheapest way in:{" "}
+              <b className="gold">{formatUSD(floor)}</b>
+            </span>
           </div>
 
           {first ? (
