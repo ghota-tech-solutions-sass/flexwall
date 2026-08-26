@@ -315,9 +315,10 @@ input { font: inherit; }
 .modal > * { position: relative; }
 .modal h2 { font-family: var(--font-display); font-weight: 500; font-size: 27px; }
 .modal .sub { color: var(--muted); font-size: 14.5px; margin: 6px 0 22px; }
-.modal .form-line { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+.form-line { display: grid; grid-template-columns: 1fr auto; gap: 11px; }
+.modal .form-line { grid-template-columns: 1fr 1fr; }
 @media (max-width: 480px) {
-  .modal .form-line { grid-template-columns: 1fr; }
+  .form-line, .modal .form-line { grid-template-columns: 1fr; }
   .modal { padding: 26px 20px 22px; }
   .page { padding: 0 18px 60px; }
 }
@@ -362,6 +363,23 @@ input { font: inherit; }
 }
 .modal-close:hover { color: var(--ink); }
 .modal { position: relative; }
+
+/* ── Seat lookup form (my seat) — same engraving as the modal ── */
+.entry h2 { font-family: var(--font-display); font-weight: 500; font-size: 27px; }
+.entry .note { color: var(--muted); font-size: 14.5px; margin: 6px 0 18px; max-width: 56ch; }
+.submit {
+  background: var(--gold); color: #171207;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-weight: 600; font-size: 12.5px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 12px 20px;
+  border: 1px solid var(--gold);
+  transition: background .15s, transform .05s;
+  white-space: nowrap;
+}
+.submit:hover:not(:disabled) { background: var(--gold-bright); border-color: var(--gold-bright); }
+.submit:active { transform: translateY(1px); }
+.submit:disabled { opacity: .5; cursor: wait; }
 
 /* ── Confirmation ── */
 .confirm { padding: 130px 0 0; }
