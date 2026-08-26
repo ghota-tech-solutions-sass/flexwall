@@ -124,14 +124,14 @@ export default function EntryModal({ floor, tierNote, paymentsConfigured, board 
       }}
       role="dialog"
       aria-modal="true"
-      aria-label="Enter the list"
+      aria-label="Take a spot"
     >
       <div className="modal">
         <button className="modal-close" aria-label="Close" onClick={() => setOpen(false)}>×</button>
-        <h2>Enter the list</h2>
+        <h2>Take a spot</h2>
         <p className="sub">
-          A new name starts at <b>{fmtUsd(floor)}</b>. Post more and you rank higher —
-          your rank is your amount, and ties go to whoever arrived first.
+          New names start at <b>{fmtUsd(floor)}</b>. Your rank is what you pay.
+          Someone can always pay more.
         </p>
 
         <form onSubmit={submit}>
@@ -165,31 +165,35 @@ export default function EntryModal({ floor, tierNote, paymentsConfigured, board 
             aria-live="polite"
           >
             {!preview ? (
-              <span>type an amount to see the rank it would take</span>
+              <span>type an amount to see the spot it buys</span>
             ) : preview.belowFloor ? (
-              <span>below the floor. A new name starts at {fmtUsd(floor)}.</span>
+              <span>below the floor — new names start at {fmtUsd(floor)}.</span>
             ) : (
               <span>
-                <span className="rank-big">#{preview.rank}</span>
-                {preview.topup ? <span> with {fmtUsd(preview.total)} total</span> : null}
+                you&rsquo;re buying <span className="rank-big">#{preview.rank}</span>
+                {preview.topup ? <span> ({fmtUsd(preview.total)} total)</span> : null}
                 {preview.displaced ? (
                   <span>
-                    {" "}passes{" "}
-                    <span className="passes">{preview.displaced.name}</span>
+                    {" "}— <span className="passes">{preview.displaced.name}</span> holds it
+                    for {fmtUsd(preview.displaced.amountUSD)}
                   </span>
                 ) : (
-                  <span> — you are on the wall.</span>
+                  <span> — nobody to outbid. Yet.</span>
                 )}
               </span>
             )}
           </div>
 
           <button className="submit-full" type="submit" disabled={state === "loading"}>
-            {state === "loading" ? "Opening checkout…" : preview?.topup ? "Top up my seat" : "Put it on the wall"}
+            {state === "loading"
+              ? "Opening checkout…"
+              : parsed > 0
+                ? "Pay " + fmtUsd(parsed)
+                : "Pay"}
           </button>
           <div className={"feedback" + (state === "error" ? " err" : "")}>{message}</div>
           <p className="fineprint">
-            Minimum {fmtUsd(floor)} for a new name · top-ups have no minimum · same name adds to the same seat · no refunds
+            Minimum {fmtUsd(floor)} for a new name · same name adds to the same spot · no refunds
             {tierNote ? <b className="floor-note"> · {tierNote}</b> : null}
           </p>
         </form>

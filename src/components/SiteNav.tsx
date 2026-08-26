@@ -22,23 +22,21 @@ export default function SiteNav({
   return (
     <div className="topbar">
       <div className="topbar-in">
-        <Link className="wordmark" href="/">FLEXWALL.LOL</Link>
+        <Link className="wordmark" href="/">FLEXWALL<span className="wordmark-tld">.lol</span></Link>
         <nav className="links">
           <Link href="/">Wall</Link>
-          <Link href="/board">Full register</Link>
           <Link href="/how-it-works">How it works</Link>
-          <Link href="/me">My seat</Link>
-          <Link href="/about">About</Link>
+          <Link href="/me">My spot</Link>
         </nav>
         {typeof total === "number" && total > 0 ? (
-          <span className="total-chip" title="Total amount posted on the wall">
+          <span className="total-chip" title="Total amount paid onto the wall">
             <span className="gold mono">{totalLabel(total)}</span> on the wall
           </span>
         ) : <span />}
         {variant === "modal" ? (
-          <button className="btn-primary" data-open-entry>Enter the list</button>
+          <button className="btn-primary" data-open-entry>Take a spot</button>
         ) : (
-          <Link className="btn-primary" href="/?enter=1">Enter the list</Link>
+          <Link className="btn-primary" href="/?enter=1">Take a spot</Link>
         )}
       </div>
     </div>

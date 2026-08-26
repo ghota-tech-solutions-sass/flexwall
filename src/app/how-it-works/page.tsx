@@ -14,10 +14,9 @@ export const metadata: Metadata = {
 };
 
 const steps: [string, string, string][] = [
-  ["01", "Pick a name", "An X handle, your real name, your company, or an alias. The first payment sets the display name. Later payments under the same name add to the same seat."],
-  ["02", "Post the money", "Checkout runs on Stripe. The amount you post goes on public display next to your name. The current minimum is shown below. It rises as the wall fills."],
-  ["03", "Take your place", "Your rank is your amount. Bigger amount, higher place. Ties go to whoever arrived first."],
-  ["04", "Defend it", "Anyone can post more than you and take your spot. Top up to take it back, or let the record show the takeover."],
+  ["01", "Pick a spot", "Choose how much you're willing to pay. Any name works: an X handle, your real name, a company, an alias."],
+  ["02", "Get ranked", "Your name takes the position your money deserves. Ties go to whoever arrived first."],
+  ["03", "Defend it", "Someone can pay more and take it from you. Pay again to take it back. That's the whole game."],
 ];
 
 export default async function HowItWorksPage() {
@@ -26,10 +25,10 @@ export default async function HowItWorksPage() {
   const total = totalOnDisplay(entries);
   const dynamicRules = [
     `Minimum entry right now: ${formatUSD(floor)}. The floor rises as the wall fills.`,
-    "Every amount is public and permanent. There is no undo.",
-    "No refunds. Entries are final.",
-    "The wall shows declared display amounts, not verified net worth.",
-    "Same name, same seat: posting again adds to your total. Top-ups have no minimum.",
+    "Every name, amount and rank is public and permanent. There is no undo.",
+    "No refunds. You're buying a spot on a leaderboard. You knew that.",
+    "The wall shows what people paid, not what they're worth.",
+    "Same name, same spot: paying again adds to your total. Top-ups have no minimum.",
     "Illegal or abusive display names are removed without refund.",
   ];
 
@@ -39,8 +38,8 @@ export default async function HowItWorksPage() {
       <div className="page">
         <section className="hero" style={{ paddingBottom: 8 }}>
           <p className="eyebrow">how it works</p>
-          <h1 className="h1" style={{ fontSize: "clamp(34px,5vw,52px)" }}>
-            Four moves. <em>One wall.</em>
+          <h1 className="h1" style={{ fontSize: "clamp(28px,4.5vw,44px)" }}>
+            Pay. Rank. <em>Get outbid.</em>
           </h1>
         </section>
 
@@ -73,7 +72,7 @@ export default async function HowItWorksPage() {
                 t.floor,
                 Math.max(0, t.at - entries.length),
               ]),
-            ].map(([label, f, remaining], i, arr) => (
+            ].map(([label, f, remaining], i) => (
               <div className="rowi" key={i}>
                 <span className="rk mono">{String(i + 1).padStart(2, "0")}</span>
                 <div className="hcell">

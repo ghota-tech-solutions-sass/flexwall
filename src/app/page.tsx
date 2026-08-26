@@ -12,23 +12,6 @@ import { stripeEnabled } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
-function Bar({ pct, gold }: { pct: number; gold?: boolean }) {
-  const w = Math.max(1.2, pct * 100);
-  return (
-    <div className="bar-wrap">
-      <div
-        className="bar-fill"
-        style={{
-          width: w + "%",
-          background: gold
-            ? "linear-gradient(90deg, rgba(226,179,64,.9), rgba(226,179,64,.2))"
-            : "linear-gradient(90deg, rgba(139,152,165,.55), rgba(139,152,165,.12))",
-        }}
-      />
-    </div>
-  );
-}
-
 export default async function Home() {
   const entries = await listEntriesSafe();
   const ranked = rankEntries(entries);
@@ -39,202 +22,106 @@ export default async function Home() {
     console.error("events unavailable:", error);
   }
   const lastMove = events[0];
-  const moveRank = lastMove ? new Map(rankEntries(entries).map((e, i) => [e.slug, i + 1])).get(lastMove.slug) : undefined;
+  const moveRank = lastMove ? new Map(ranked.map((e, i) => [e.slug, i + 1])).get(lastMove.slug) : undefined;
   const total = totalOnDisplay(entries);
-  const max = ranked.length > 0 ? Math.max(ranked[0].amountUSD, 1) : 1;
   const floor = dynamicFloor(ranked.length);
   const tierNote = tierNoteFor(ranked.length);
   const founders = founderSlugs(entries);
 
-  const recent = entries
-    .slice()
-    .sort((a, b) => b.updatedAt - a.updatedAt)
-    .slice(0, 10);
-  const rankOf = new Map(ranked.map((e, i) => [e.slug, i + 1]));
-  const tickerItems = recent.length > 0 ? [...recent, ...recent] : [];
-
   const first = ranked[0];
-  const second = ranked[1];
-  const third = ranked[2];
-  const rest = ranked.slice(3);
-
-  // "+$X pour passer @y" — calculé côté serveur pour chaque ligne
-  function passHint(i: number): { delta: number; target: string } | null {
-    if (i === 0 || !ranked[i - 1]) return null;
-    const above = ranked[i - 1];
-    const me = ranked[i];
-    const delta = above.amountUSD - me.amountUSD + 1;
-    if (delta <= 0) return null;
-    return { delta, target: above.name };
-  }
+  const rest = ranked.slice(1);
 
   return (
     <>
       <SiteNav total={total} />
 
       <div className="page">
+        <section className="hero">
+          <h1 className="h1">
+            The internet&rsquo;s most expensive leaderboard.
+          </h1>
+          <p className="hero-sub">
+            Pay more. Take the spot.{" "}
+            <span className="hero-sub-dim">Someone can always outbid you.</span>
+          </p>
+          <div className="hero-ctas">
+            <button className="btn-take" data-open-entry data-amount={floor}>
+              Get on the wall — {formatUSD(floor)}
+            </button>
+          </div>
+          <p className="cta-note">
+            Stripe checkout · no account · no refunds
+            {tierNote ? <> · {tierNote}</> : null}
+          </p>
+        </section>
+
         {lastMove ? (
           <div className="livebar">
             <span className="livedot" />
             <span>
-              <b>{lastMove.name}</b>{" "}
-              {lastMove.type === "entry" ? "entered the wall" : "topped up"} with{" "}
-              <span className="green">{formatUSD(lastMove.amountUSD)}</span>
+              <b>{lastMove.name}</b> paid{" "}
+              <span className="gold mono">{formatUSD(lastMove.amountUSD)}</span>
               {moveRank ? <> · now #{moveRank}</> : null}
             </span>
             <span className="livebar-when">{timeAgo(lastMove.ts)}</span>
           </div>
         ) : null}
-        <section className="hero">
-          <div className="hero-grid">
-            <div className="hero-main">
-              <p className="eyebrow"><span className="livedot" /> the open register of private fortunes · est. MMXXV</p>
-              <h1 className="h1">
-                Money,<em>ranked.</em>
-              </h1>
-              <p className="subline">
-                Put <b>any amount from {formatUSD(floor)}</b> on public display and take your
-                place in the register. Post more than the name above you and you pass them.
-                Every entry is public, permanent and paid.
-              </p>
 
-              <div className="hero-ctas">
-                <button className="btn-take" data-open-entry data-amount={floor}>
-                  Get on the wall — {formatUSD(floor)}
-                </button>
-                {first ? (
-                  <button
-                    className="btn-ghost"
-                    data-open-entry
-                    data-amount={first.amountUSD + 1}
-                  >
-                    or take #1 for {formatUSD(first.amountUSD + 1)}
-                  </button>
-                ) : null}
-              </div>
-              <p className="cta-note">Stripe checkout · ranked in seconds · no account needed</p>
-            </div>
-
-            <aside className="entry-stamp">
-              <p className="stamp-label">Entry price</p>
-              <p className="stamp-amount mono">{formatUSD(floor)}</p>
-              <p className="stamp-note">{tierNote ?? "the floor for a new name"}</p>
-              <p className="stamp-rule">
-                Any amount at or above the floor buys a place. Your rank is whatever
-                you post — nothing else.
-              </p>
-            </aside>
-          </div>
-
-          <div className="how-strip">
-            <div className="how-step">
-              <span className="how-n">01</span>
-              <span className="how-t"><b>Pick a name.</b> An X handle, your real name, a company, or an alias.</span>
-            </div>
-            <div className="how-step">
-              <span className="how-n">02</span>
-              <span className="how-t"><b>Post the money.</b> Paid through Stripe, shown in public.</span>
-            </div>
-            <div className="how-step">
-              <span className="how-n">03</span>
-              <span className="how-t"><b>Defend your place.</b> Anyone can post more than you. The record keeps every name.</span>
-            </div>
-          </div>
-
-          {tickerItems.length > 0 ? (
-            <div className="ticker" aria-hidden="true">
-              <div className="ticker-track">
-                {tickerItems.map((e, i) => (
-                  <span className="tick-item" key={e.slug + "-" + i}>
-                    <Link className="name-link" href={"/share/" + e.slug}><b>{e.name}</b></Link> holds #{rankOf.get(e.slug) ?? "—"} ·{" "}
-                    <span className="amt">{formatUSD(e.amountUSD)}</span>
-                  </span>
-                ))}
-              </div>
-            </div>
-          ) : null}
-        </section>
-
-        <section aria-label="leaderboard">
-          <div className="section-head">
-            <span className="board-title">The Wall</span>
-            <span className="board-note">
-              {ranked.length} {ranked.length === 1 ? "entry" : "entries"} · cheapest way in:{" "}
-              <b className="gold">{formatUSD(floor)}</b>
-            </span>
-          </div>
-
+        <section aria-label="leaderboard" className="wall">
           {first ? (
-            <article className="podium-top">
-              <p className="crown">#1 · largest amount on the wall</p>
-              <div className="who">
-                <SeatAvatar entry={first} size="xl" />
-                <Link className="handle-xl name-link" href={"/share/" + first.slug}>{first.name}</Link>
-                <OutLink name={first.name} size={22} />
-                {first.verified ? <span title="verified funds">✔</span> : null}
-                <span className="amount-xl mono">{formatUSD(first.amountUSD)}</span>
-              </div>
-              <Bar pct={first.amountUSD / max} gold />
-              <div className="podium-meta">
+            <article className="top-seat">
+              <div className="top-head">
+                <span className="top-rank mono">#1</span>
                 {(() => {
                   const reign = computeReign(events, first.slug, first.createdAt);
                   return (
-                    <>
-                      <span>#1 for {reignDuration(reign.since)}</span>
-                      {reign.challenges > 0 ? (
-                        <>
-                          <span>·</span>
-                          <span>{reign.challenges} challenge{reign.challenges > 1 ? "s" : ""} seen off</span>
-                        </>
-                      ) : null}
-                      <span>·</span>
-                      <span>{Math.round((first.amountUSD / (total || 1)) * 100)}% of everything on this wall</span>
-                      {(first.views ?? 0) > 0 ? (
-                        <>
-                          <span>·</span>
-                          <span>{(first.views ?? 0).toLocaleString("en-US")} view{(first.views ?? 0) > 1 ? "s" : ""}</span>
-                        </>
-                      ) : null}
-                    </>
+                    <span className="top-meta">
+                      held for {reignDuration(reign.since)}
+                      {reign.challenges > 0
+                        ? ` · ${reign.challenges} challenge${reign.challenges > 1 ? "s" : ""} survived`
+                        : ""}
+                    </span>
                   );
                 })()}
               </div>
+              <div className="top-who">
+                <SeatAvatar entry={first} size="xl" />
+                <Link className="top-name name-link" href={"/share/" + first.slug}>{first.name}</Link>
+                <OutLink name={first.name} size={20} />
+                {first.verified ? <span title="verified funds">✔</span> : null}
+              </div>
+              <div className="top-amount mono">{formatUSD(first.amountUSD)}</div>
+              <button
+                className="btn-outbid btn-outbid-xl mono"
+                data-open-entry
+                data-amount={first.amountUSD + 1}
+              >
+                OUTBID FOR {formatUSD(first.amountUSD + 1)}
+              </button>
+              <p className="top-note">
+                Pay {formatUSD(first.amountUSD + 1)} and this spot is yours. Until it isn&rsquo;t.
+              </p>
             </article>
-          ) : null}
+          ) : (
+            <article className="top-seat">
+              <div className="top-head">
+                <span className="top-rank mono">#1</span>
+                <span className="top-meta">nobody. yet.</span>
+              </div>
+              <div className="top-amount mono top-amount-empty">$0</div>
+              <button className="btn-outbid btn-outbid-xl mono" data-open-entry data-amount={floor}>
+                TAKE #1 FOR {formatUSD(floor)}
+              </button>
+              <p className="top-note">The wall is empty. This is the cheapest #1 will ever be.</p>
+            </article>
+          )}
 
-          {second || third ? (
-            <div className="podium-row">
-              {[second, third].map((e, k) =>
-                e ? (
-                  <article className="podium-card" key={e.slug}>
-                    <p className="rank-tag">#{k + 2}</p>
-                    <span className="podium-card-who">
-                      <SeatAvatar entry={e} size="md" />
-                      <Link className="handle-lg name-link" href={"/share/" + e.slug}>{e.name}</Link>
-                      <OutLink name={e.name} />
-                    </span>
-                    <div className="amount-lg mono">{formatUSD(e.amountUSD)}</div>
-                    {(e.views ?? 0) > 0 ? (
-                      <div className="views-inline">{(e.views ?? 0).toLocaleString("en-US")} views</div>
-                    ) : null}
-                    <Bar pct={e.amountUSD / max} />
-                  </article>
-                ) : null
-              )}
-            </div>
-          ) : null}
-
-          <div className="list" style={{ marginTop: rest.length > 0 ? 26 : 0 }}>
+          <div className="list">
             {rest.map((e, k) => {
-              const i = k + 3;
-              const hint = passHint(i);
+              const rank = k + 2;
               return (
                 <div className="rowi" key={e.slug}>
-                  <div
-                    className="row-bar"
-                    style={{ width: Math.max(1.5, (e.amountUSD / max) * 100) + "%" }}
-                  />
-                  <span className="rk mono">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="rk mono">#{rank}</span>
                   <div className="hcell">
                     <span className="handle-md">
                       <SeatAvatar entry={e} />
@@ -243,90 +130,55 @@ export default async function Home() {
                       {founders.has(e.slug) ? <span className="fstar" title="founding 100">★</span> : null}
                       {e.verified ? <span className="vdot" title="verified funds" /> : null}
                     </span>
-                    <div className="pass-hint">
-                      {hint ? (
-                        <>+{formatUSD(hint.delta)} passes <b>{hint.target}</b></>
-                      ) : null}
-                      {(e.views ?? 0) > 0 ? (
-                        <span className="views-inline">{hint ? " · " : ""}{(e.views ?? 0).toLocaleString("en-US")} views</span>
-                      ) : null}
-                    </div>
+                    {(e.views ?? 0) > 0 ? (
+                      <div className="pass-hint">
+                        <span className="views-inline">{(e.views ?? 0).toLocaleString("en-US")} views</span>
+                      </div>
+                    ) : null}
                   </div>
                   <div className="acell">
-                    <div style={{ textAlign: "right" }}>
-                      <span className="amt-md">{formatUSD(e.amountUSD)}</span>
-                      <div className="takeover">
-                        enter above: <b>{formatUSD(e.amountUSD + 1)}</b>
-                      </div>
-                    </div>
+                    <span className="amt-md mono">{formatUSD(e.amountUSD)}</span>
                     <button
-                      className="row-claim"
+                      className="btn-outbid mono"
                       data-open-entry
                       data-amount={e.amountUSD + 1}
-                      title={"Surpass " + e.name + " for " + formatUSD(e.amountUSD + 1)}
+                      title={"Take #" + rank + " from " + e.name + " for " + formatUSD(e.amountUSD + 1)}
                     >
-                      surpass
+                      OUTBID {formatUSD(e.amountUSD + 1)}
                     </button>
                   </div>
                 </div>
               );
             })}
-            {ranked.length === 0 ? (
-              <div className="rowi">
-                <span className="rk">—</span>
-                <div className="hcell"><span className="handle-md" style={{ color: "var(--muted)" }}>the wall is empty. be first.</span></div>
-                <span className="amt-md" />
-              </div>
-            ) : null}
           </div>
 
-          <div style={{ marginTop: 22, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <Link className="btn-ghost" href="/board">View the full register →</Link>
-            <Link className="board-note" href="/how-it-works" style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>read the rules</Link>
-          </div>
+          {ranked.length > 1 ? (
+            <div className="wall-foot">
+              <Link className="wall-foot-link" href="/board">full list →</Link>
+              <Link className="wall-foot-link" href="/how-it-works">the rules</Link>
+            </div>
+          ) : null}
 
-          <p className="wallmark">flexwall.lol</p>
+          <p className="wallmark mono">flexwall.lol</p>
+        </section>
+
+        <section className="no-prize">
+          <p>There is no prize.</p>
+          <p>There are no perks.</p>
+          <p className="no-prize-punch">You just wanted the spot.</p>
         </section>
 
         <section className="terms">
-          <p className="terms-title">Terms of the register</p>
           <p className="terms-text">
-            Payment runs on <b>Stripe</b> — we never see or store your card.
-            Every name, amount and rank is <b>public by design</b>, permanently.
-            The wall shows what people chose to post, <b>not verified net worth</b>.
-            Entries are final and there are <b>no refunds</b> — that is what a
-            permanent public record costs.
+            Payment runs on <b>Stripe</b> — we never see your card. Every name, amount
+            and rank is <b>public, permanently</b>. The wall shows what people paid to
+            be here, not what they&rsquo;re worth. <b>No refunds.</b>
           </p>
-        </section>
-
-        <section className="why-block">
-          <p className="section-label">Why people enter</p>
-          <h3>
-            Anyone can talk about money. Almost nobody will <em>put it on public display</em> to back it up.
-          </h3>
-          <dl className="clauses">
-            <div className="clause">
-              <dt><span className="cl-n">01</span> Proof of nerve</dt>
-              <dd>Talking about money costs nothing. Posting it in public with no undo is a different thing. Your entry is dated, and it stays.</dd>
-            </div>
-            <div className="clause">
-              <dt><span className="cl-n">02</span> A place worth defending</dt>
-              <dd>There is exactly one #2. Holding it costs nothing. Taking it from you costs more than you paid. Every day nobody passes you is a day you held.</dd>
-            </div>
-            <div className="clause">
-              <dt><span className="cl-n">03</span> A permanent record</dt>
-              <dd>If someone passes you tomorrow, your name and amount stay in the register. Entries never disappear. They become the number the next person has to beat.</dd>
-            </div>
-            <div className="clause">
-              <dt><span className="cl-n">04</span> Moves get noticed</dt>
-              <dd>Every takeover is a screenshot. Your name shows up in the live ticker, and every seat has a share card made for posting.</dd>
-            </div>
-          </dl>
         </section>
 
         <EntryModal floor={floor} tierNote={tierNote} paymentsConfigured={stripeEnabled()} board={ranked} />
 
-        <SiteFooter left="flexwall.lol · season I" />
+        <SiteFooter />
       </div>
     </>
   );
