@@ -199,7 +199,7 @@ input[type="checkbox"] { width: 20px; min-height: 20px; accent-color: var(--acce
 /* ── Top bar: sticky, full width, frosted ─────── */
 .topbar { position: sticky; top: 0; z-index: 50; margin-inline: calc(50% - 50vw); background: var(--glass); -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%); border-bottom: 1px solid var(--hairline); }
 .topbar-inner { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; max-width: 1200px; height: 60px; margin: 0 auto; padding-inline: var(--gutter); }
-.brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; font-size: 17px; letter-spacing: -0.02em; text-decoration: none; white-space: nowrap; color: var(--ink); }
+.brand { justify-self: start; display: inline-flex; align-items: center; gap: 10px; font-weight: 600; font-size: 17px; letter-spacing: -0.02em; text-decoration: none; white-space: nowrap; color: var(--ink); }
 .nav { display: flex; align-items: center; gap: 2px; font-size: 14px; }
 .nav a { color: var(--ink-2); text-decoration: none; padding: 6px 12px; border-radius: 999px; transition: color 0.2s ease-out; }
 .nav a:hover, .nav a[aria-current="page"] { color: var(--ink); }
@@ -220,7 +220,9 @@ main ~ .footer { margin-top: 120px; }
 @media (max-width: 760px) { .footer { grid-template-columns: repeat(2, minmax(0, 1fr)); } .footer-brand { grid-column: 1 / -1; } }
 
 /* ── Landing ──────────────────────────────────── */
-.hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding-block: clamp(56px, 8vw, 104px) 0; }
+.hero { position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; text-align: center; padding-block: clamp(56px, 8vw, 104px) 0; }
+/* A dot grid behind the headline, fading out before the product. */
+.hero::before { content: ""; position: absolute; z-index: -1; inset: 0 calc(50% - 50vw) 30%; background-image: radial-gradient(circle, var(--hairline-strong) 1px, transparent 1.3px); background-size: 24px 24px; -webkit-mask-image: radial-gradient(ellipse 60% 70% at 50% 20%, #000 10%, transparent 70%); mask-image: radial-gradient(ellipse 60% 70% at 50% 20%, #000 10%, transparent 70%); }
 .pill-link { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 24px; padding: 5px 12px 5px 8px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--hairline-strong); font-size: 14px; color: var(--ink-2); text-decoration: none; transition: background-color 0.2s ease-out; }
 .pill-link:hover { background: var(--surface-2); }
 .pill-link svg:first-child { color: var(--accent); }
@@ -243,7 +245,9 @@ main ~ .footer { margin-top: 120px; }
 }
 
 /* The product, as it ships: a wall in a browser and the same numbers on a lock screen. */
-.showcase { position: relative; width: 100%; margin-top: clamp(48px, 6vw, 72px); padding-bottom: 40px; }
+.showcase { position: relative; isolation: isolate; width: 100%; margin-top: clamp(48px, 6vw, 72px); padding-bottom: 40px; }
+/* Light under the product, so it sits on something. */
+.showcase::before { content: ""; position: absolute; z-index: -1; inset: 8% 4% -6%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 20%, transparent), transparent); filter: blur(50px); }
 .browser { position: relative; max-width: 1040px; margin: 0 auto; border-radius: 16px; overflow: hidden; background: var(--surface); box-shadow: 0 0 0 1px var(--hairline), var(--shadow-float); text-align: left; }
 .browser-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; height: 42px; padding-inline: 14px; border-bottom: 1px solid var(--hairline); background: var(--surface-2); }
 .browser-bar .dots { display: flex; gap: 7px; }
@@ -268,7 +272,7 @@ main ~ .footer { margin-top: 120px; }
 .device-clock div:first-child { font-size: 4.6cqw; font-weight: 600; letter-spacing: 0; }
 .device-clock div:last-child { font-size: 24cqw; font-weight: 700; line-height: 1.05; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 
-.sources { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 14px 32px; padding-block: 40px; color: var(--muted); font-size: 14px; }
+.sources { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 14px 32px; margin-top: 48px; padding-block: 36px; color: var(--muted); font-size: 14px; border-block: 1px solid var(--hairline); box-shadow: 0 0 0 100vmax var(--bg); clip-path: inset(0 -100vmax); }
 .sources > span { width: 100%; text-align: center; }
 .sources a { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font-weight: 500; font-size: 15px; text-decoration: none; transition: color 0.2s ease-out; }
 .sources a:hover { color: var(--ink); }
@@ -276,6 +280,9 @@ main ~ .footer { margin-top: 120px; }
 
 /* Sections: a short head, then the proof. */
 .block { padding-block: clamp(80px, 10vw, 128px) 0; }
+/* Every other section sits on a full-width grey band, so white cards stand out. */
+.block.tinted { padding-bottom: clamp(80px, 10vw, 128px); background: var(--surface-2); box-shadow: 0 0 0 100vmax var(--surface-2); clip-path: inset(0 -100vmax); }
+.block.tinted + .block { margin-top: 0; }
 .block-head { max-width: 640px; margin-bottom: clamp(36px, 4vw, 56px); }
 .block-head.center { margin-inline: auto; text-align: center; }
 .block-head h2 { margin: 0 0 14px; font-size: clamp(32px, 4vw, 48px); }
