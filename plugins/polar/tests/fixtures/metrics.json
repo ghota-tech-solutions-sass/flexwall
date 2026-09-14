@@ -1,0 +1,25 @@
+{
+  "periods": [
+    {
+      "timestamp": "2026-09-14T00:00:00Z",
+      "active_subscriptions": 143,
+      "monthly_recurring_revenue": 274950
+    }
+  ],
+  "totals": {
+    "active_subscriptions": 143,
+    "monthly_recurring_revenue": 274950
+  },
+  "metrics": {
+    "active_subscriptions": {
+      "slug": "active_subscriptions",
+      "display_name": "Active Subscriptions",
+      "type": "scalar"
+    },
+    "monthly_recurring_revenue": {
+      "slug": "monthly_recurring_revenue",
+      "display_name": "Monthly Recurring Revenue",
+      "type": "currency"
+    }
+  }
+}

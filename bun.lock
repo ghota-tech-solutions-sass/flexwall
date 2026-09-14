@@ -16,10 +16,18 @@
       "name": "@flexwall/web",
       "version": "0.1.0",
       "dependencies": {
+        "@flexwall/plugin-bluesky": "workspace:*",
         "@flexwall/plugin-core": "workspace:*",
         "@flexwall/plugin-github": "workspace:*",
+        "@flexwall/plugin-hackernews": "workspace:*",
         "@flexwall/plugin-http": "workspace:*",
+        "@flexwall/plugin-lemon-squeezy": "workspace:*",
+        "@flexwall/plugin-npm": "workspace:*",
+        "@flexwall/plugin-plausible": "workspace:*",
+        "@flexwall/plugin-polar": "workspace:*",
+        "@flexwall/plugin-pypi": "workspace:*",
         "@flexwall/plugin-stripe": "workspace:*",
+        "@flexwall/plugin-youtube": "workspace:*",
         "@flexwall/sdk": "workspace:*",
         "@google-cloud/firestore": "^9.0.0",
         "next": "16.3.2",
@@ -40,6 +48,13 @@
         "react": "^19.0.0",
       },
     },
+    "plugins/bluesky": {
+      "name": "@flexwall/plugin-bluesky",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+    },
     "plugins/core": {
       "name": "@flexwall/plugin-core",
       "version": "0.1.0",
@@ -57,8 +72,50 @@
         "@flexwall/sdk": "workspace:*",
       },
     },
+    "plugins/hackernews": {
+      "name": "@flexwall/plugin-hackernews",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+    },
     "plugins/http": {
       "name": "@flexwall/plugin-http",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+    },
+    "plugins/lemon-squeezy": {
+      "name": "@flexwall/plugin-lemon-squeezy",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+    },
+    "plugins/npm": {
+      "name": "@flexwall/plugin-npm",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+    },
+    "plugins/plausible": {
+      "name": "@flexwall/plugin-plausible",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+    },
+    "plugins/polar": {
+      "name": "@flexwall/plugin-polar",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+    },
+    "plugins/pypi": {
+      "name": "@flexwall/plugin-pypi",
       "version": "0.1.0",
       "dependencies": {
         "@flexwall/sdk": "workspace:*",
@@ -71,6 +128,13 @@
         "@flexwall/sdk": "workspace:*",
       },
     },
+    "plugins/youtube": {
+      "name": "@flexwall/plugin-youtube",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+    },
   },
   "trustedDependencies": [
     "protobufjs",
@@ -78,13 +142,29 @@
   "packages": {
     "@emnapi/runtime": ["@emnapi/runtime@1.11.3", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-Xz4Tpyki7XyrpbUK1jR1AhdAdaXyhhY4lZ3neLodmhpuWfy2PAQN5B46sAiU4liOXGLkHypn/qU+jvfWSCYYLA=="],
 
+    "@flexwall/plugin-bluesky": ["@flexwall/plugin-bluesky@workspace:plugins/bluesky"],
+
     "@flexwall/plugin-core": ["@flexwall/plugin-core@workspace:plugins/core"],
 
     "@flexwall/plugin-github": ["@flexwall/plugin-github@workspace:plugins/github"],
 
+    "@flexwall/plugin-hackernews": ["@flexwall/plugin-hackernews@workspace:plugins/hackernews"],
+
     "@flexwall/plugin-http": ["@flexwall/plugin-http@workspace:plugins/http"],
 
+    "@flexwall/plugin-lemon-squeezy": ["@flexwall/plugin-lemon-squeezy@workspace:plugins/lemon-squeezy"],
+
+    "@flexwall/plugin-npm": ["@flexwall/plugin-npm@workspace:plugins/npm"],
+
+    "@flexwall/plugin-plausible": ["@flexwall/plugin-plausible@workspace:plugins/plausible"],
+
+    "@flexwall/plugin-polar": ["@flexwall/plugin-polar@workspace:plugins/polar"],
+
+    "@flexwall/plugin-pypi": ["@flexwall/plugin-pypi@workspace:plugins/pypi"],
+
     "@flexwall/plugin-stripe": ["@flexwall/plugin-stripe@workspace:plugins/stripe"],
+
+    "@flexwall/plugin-youtube": ["@flexwall/plugin-youtube@workspace:plugins/youtube"],
 
     "@flexwall/sdk": ["@flexwall/sdk@workspace:packages/sdk"],
 

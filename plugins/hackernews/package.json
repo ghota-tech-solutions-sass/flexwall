@@ -1,0 +1,13 @@
+{
+  "name": "@flexwall/plugin-hackernews",
+  "version": "0.1.0",
+  "description": "Hacker News for Flexwall walls.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  }
+}
