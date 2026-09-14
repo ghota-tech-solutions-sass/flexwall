@@ -24,13 +24,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   return (
     <div className="page">
       <TopBar signedIn />
-      <main style={{ maxWidth: 720 }}>
-        <p>
+      <main style={{ maxWidth: 1000 }}>
+        <div className="settings-head">
           <Link href="/edit" className="link">
-            ← Back to the editor
+            Back to the editor
           </Link>
-        </p>
-        <h1 style={{ letterSpacing: "-0.03em" }}>Settings</h1>
+          <h1 className="display">Settings</h1>
+        </div>
         {upgraded ? <p className="hint">Payment received. Pro turns on as soon as Stripe confirms, usually within a few seconds.</p> : null}
         <BillingPanel
           entitlements={owner.entitlements}

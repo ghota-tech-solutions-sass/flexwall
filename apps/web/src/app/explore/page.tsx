@@ -30,8 +30,8 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
     <div className="page">
       <TopBar signedIn={Boolean(await sessionUserId())} />
       <main>
-        <div className="prose" style={{ marginBlock: "24px 28px" }}>
-          <h1>The Wall</h1>
+        <div className="page-head">
+          <h1 className="display">The Wall</h1>
           <p>People who build in public, with the numbers to show for it. Revenue ranks only count what an owner&apos;s own Stripe account says.</p>
         </div>
         <nav className="tabs" aria-label="Sort">
@@ -42,7 +42,7 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
           ))}
         </nav>
         {entries.length === 0 ? (
-          <p className="hint">
+          <p className="empty">
             Nobody here yet. Publish your wall, tick &ldquo;List me on The Wall&rdquo;, and you&apos;re first. <Link href="/login">Make yours</Link>.
           </p>
         ) : (
@@ -53,7 +53,10 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
                   <span className="explore-rank">{i + 1}</span>
                   <span className="explore-who">
                     <strong>{e.title}</strong>
-                    <span>@{e.handle}{e.bio ? ` · ${e.bio.slice(0, 80)}` : ""}</span>
+                    <span>
+                      @{e.handle}
+                      {e.bio ? <em className="explore-bio">{e.bio.slice(0, 80)}</em> : null}
+                    </span>
                   </span>
                   <span className="explore-numbers">
                     {current !== "recent" && e.ranks[current] !== undefined ? (

@@ -17,8 +17,8 @@ export default async function PricingPage() {
     <div className="page">
       <TopBar signedIn={signedIn} />
       <main>
-        <div className="prose" style={{ marginBlock: "24px 32px" }}>
-          <h1>Pricing</h1>
+        <div className="page-head">
+          <h1 className="display">Pricing</h1>
           <p>Every wall is free and public. Pro is for when the numbers matter: verified revenue, history, a clean lock screen.</p>
           <p className="hint">Prices in US dollars, taxes included. Cancel any time from Settings.</p>
           {invitedBy ? (
