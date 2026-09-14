@@ -19,7 +19,7 @@ export interface ChannelList {
 }
 
 const channel = field.text("channel", "Channel", {
-  placeholder: "@handle or UC…",
+  placeholder: "@mkbhd",
   help: "The channel's handle, like @veritasium, or its id starting with UC.",
   maxLength: 31,
   pattern: "^(@[A-Za-z0-9._-]{3,30}|UC[A-Za-z0-9_-]{22})$",

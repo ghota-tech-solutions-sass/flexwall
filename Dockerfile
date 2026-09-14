@@ -11,7 +11,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ARG NEXT_PUBLIC_APP_URL=https://flexwall.lol
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
-RUN bun --cwd apps/web run build
+WORKDIR /repo/apps/web
+RUN bun run build
 
 FROM oven/bun:1.4-alpine AS runner
 RUN apk add --no-cache libc6-compat
