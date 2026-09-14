@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.6.1...v0.7.0) (2026-09-14)
+
+
+### Features
+
+* **web:** photographic identity for the site ([d468f3f](https://github.com/ghota-tech-solutions-sass/flexwall/commit/d468f3f99a149de96137fa4b67c0412b10e1a635))
+
 ## [0.6.1](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.6.0...v0.6.1) (2026-09-14)
 
 
