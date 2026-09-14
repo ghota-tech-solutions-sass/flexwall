@@ -61,3 +61,25 @@ Sign-in links are sent through the Gmail API as `villers@ghotatechsolutions.com`
 The service signs as `outflex-sa` (`google_service_account.mail_signer`), the
 account Workspace authorizes for domain-wide delegation (`gmail.send`, client id
 in the `mail_signer_client_id` output); `flexwall-sa` holds Token Creator on it.
+
+## Stripe settings outside Terraform
+
+The provider can't manage these; they were set in the dashboard of the Flexwall
+account (`acct_1U7NFI601gQlsn4H`) on 2026-09-14. Keep them in step with the
+legal pages.
+
+| Where | Setting |
+|---|---|
+| Settings > Business > Public details | Website `https://flexwall.lol`, support email `contact@ghotatechsolutions.com`, support URL `/legal`, privacy `/privacy`, terms `/terms` |
+| Settings > Billing > Subscriptions and emails | Emails for upcoming renewals (45 days before, as the terms promise), expiring cards and failed card payments; subscription management link `https://flexwall.lol/settings` |
+| Settings > Business > Customer emails | Receipts for successful payments and refunds |
+| Settings > Billing > Invoices | Footer with the publisher's legal mentions and VAT number; line prices shown tax included |
+| Tax | Not collecting yet: a registration must be added (France, and the EU One-Stop Shop if it applies) |
+
+Two Terraform variables wait on those settings, because Stripe refuses every
+checkout session while they are on and the account isn't ready:
+
+- `stripe_collect_terms_consent`: needs the terms URL in public details (done).
+- `stripe_automatic_tax`: needs Stripe Tax active with a registration.
+
+The pricing page's own consent box is always on and recorded with each payment.
