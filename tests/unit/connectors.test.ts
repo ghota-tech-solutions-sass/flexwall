@@ -5,7 +5,7 @@ import { CATALOG, CONNECTOR_IDS, checkFields, type ConnectorSpec } from "@/lib/c
 import { CONNECTORS } from "@/lib/connectors/registry";
 import { monthlyValue, revenueOf, toMajor } from "@/lib/connectors/stripe";
 import { decryptJson, encryptJson } from "@/lib/crypto";
-import { cacheKeysForConnection, resolveWall, valueCacheKey } from "@/lib/metrics";
+import { cacheKeysForConnection, deadline, DeadlineError, resolveWall, valueCacheKey } from "@/lib/metrics";
 import { createWall, type Wall } from "@/lib/store/walls";
 
 describe("registry", () => {
@@ -144,6 +144,15 @@ describe("resolver", () => {
     const r = await resolveWall({ config: config({ source: "http", field: "value", connection: "conn0001" }), mode: "phone", wall });
     expect(r.hero.value).toBe("$1,234");
     expect(cacheKeysForConnection(wall, "http", "conn0001")).toEqual([key]);
+  });
+
+  test("the render deadline turns a slow upstream into a fallback, without cancelling it", async () => {
+    let finished = false;
+    const slow = new Promise<number>((resolve) => setTimeout(() => ((finished = true), resolve(1)), 150));
+    await expect(deadline(slow, 20)).rejects.toBeInstanceOf(DeadlineError);
+    expect(await deadline(Promise.resolve(2), 20)).toBe(2);
+    await slow;
+    expect(finished).toBe(true);
   });
 
   test("goals on connector metrics draw a bar", async () => {

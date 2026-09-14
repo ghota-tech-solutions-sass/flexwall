@@ -82,7 +82,7 @@ export const CATALOG = {
     connection: {
       cta: "Connect Stripe",
       help:
-        "Create a restricted key in Stripe (Developers → API keys → Create restricted key) with Read access to Subscriptions and Balance, and nothing else. Full secret keys (sk_) are refused.",
+        "Create a restricted key in Stripe (Developers → API keys → Create restricted key) with Read access to Subscriptions, Balance and Coupons, and nothing else. Full secret keys (sk_) are refused.",
       fields: [
         {
           name: "key",
