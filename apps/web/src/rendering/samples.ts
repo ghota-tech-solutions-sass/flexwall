@@ -60,7 +60,7 @@ export function demoWall(today: string): Wall {
   return {
     id: "demo",
     ownerId: "demo",
-    handle: "demo" as Handle,
+    handle: "ada" as Handle,
     title: "Ada Builds",
     bio: "Indie hacker. Shipping a SaaS in public, one commit at a time.",
     theme: "daylight",

@@ -59,9 +59,12 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
           ))}
         </nav>
         {entries.length === 0 ? (
-          <p className="empty">
-            Nobody here yet. Publish your wall, tick &ldquo;List me on The Wall&rdquo;, and you&apos;re first. <Link href="/login">Make yours</Link>.
-          </p>
+          <div className="empty">
+            <p>Nobody here yet. Publish your wall, tick &ldquo;List me on The Wall&rdquo;, and you&apos;re first.</p>
+            <Link href="/login" className="btn btn-signal">
+              Make yours
+            </Link>
+          </div>
         ) : (
           <ol className="explore-list">
             {entries.map((e, i) => (

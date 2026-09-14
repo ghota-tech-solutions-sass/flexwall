@@ -21,8 +21,11 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: { "/**": ["./public/fonts/**/*"] },
   images: {
     formats: ["image/avif", "image/webp"],
-    // Only the landing page's demo renders go through the optimizer; walls stay PNG for wallpapers.
-    localPatterns: [{ pathname: "/demo/**", search: "" }],
+    // Only the landing page's photographs and demo renders go through the optimizer; walls stay PNG for wallpapers.
+    localPatterns: [
+      { pathname: "/_next/static/media/**", search: "" },
+      { pathname: "/demo/**", search: "" },
+    ],
     qualities: [75],
     minimumCacheTTL: 86400,
   },
