@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.4.1...v0.5.0) (2026-09-14)
+
+
+### Features
+
+* **design:** a product page in the manner of Apple's ([309b77f](https://github.com/ghota-tech-solutions-sass/flexwall/commit/309b77fde3e8b5f1cc9a2bf08710691aff824ea6))
+
 ## [0.4.1](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.4.0...v0.4.1) (2026-09-14)
 
 
