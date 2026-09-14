@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   addTile,
   applyLayout,
+  applyLockscreenLayout,
   attachConnection,
   bindingFor,
   dataSignature,
@@ -12,7 +13,7 @@ import {
   restoreTile,
   setBinding,
   sourcesFor,
-} from "@/components/editor/editor-model";
+} from "@/application/editor/draft";
 import { aTile, aWall } from "../builders";
 import { testCatalog } from "../fakes/test-plugin";
 
@@ -25,7 +26,7 @@ describe("Editor model", () => {
     const draft = aWall().with(aTile().withId("wide").note().at(0, 0, 2, 1)).with(aTile().withId("wide2").note().at(2, 0, 2, 1)).draft();
 
     // When
-    const result = addTile(draft, "stat", catalog, connections)!;
+    const result = addTile(draft, "stat", catalog, connections, () => "new")!;
 
     // Then
     const tile = result.draft.tiles.find((t) => t.id === result.tileId)!;
@@ -41,14 +42,14 @@ describe("Editor model", () => {
     const sources = sourcesFor(input, catalog);
 
     // Then
-    expect(sources.map((s) => s.value)).toContain("metric:analytics:visitors");
-    expect(sources.find((s) => s.value === "history:analytics:visitors:30d")?.pro).toBe(true);
-    expect(sources.find((s) => s.value === "metric:billing:mrr")?.pro).toBe(true);
+    expect(sources.map((s) => s.key)).toContain("metric:analytics:visitors");
+    expect(sources.find((s) => s.key === "history:analytics:visitors:30d")?.pro).toBe(true);
+    expect(sources.find((s) => s.key === "metric:billing:mrr")?.pro).toBe(true);
   });
 
   test("given a connected account, when its connector's metric is picked, then the binding uses that connection", () => {
     // Given
-    const source = "metric:billing:mrr";
+    const source = { kind: "metric", connector: "billing", metric: "mrr" } as const;
 
     // When
     const binding = bindingFor(source, catalog, connections);
@@ -62,7 +63,7 @@ describe("Editor model", () => {
     const draft = aWall().with(aTile().withId("s").widget("stat", {})).draft();
 
     // When
-    const next = setBinding(draft, "s", "value", bindingFor("metric:billing:mrr", catalog, connections), catalog);
+    const next = setBinding(draft, "s", "value", bindingFor({ kind: "metric", connector: "billing", metric: "mrr" }, catalog, connections), catalog);
 
     // Then
     expect(next.tiles[0].options.label).toBe("Monthly revenue");
@@ -71,10 +72,10 @@ describe("Editor model", () => {
   test("given a tile labelled with a metric's default, when the metric changes, then the label follows; a custom label stays", () => {
     // Given
     const draft = aWall().with(aTile().withId("s").stat({ label: "" })).draft();
-    const withVisitors = setBinding(draft, "s", "value", bindingFor("metric:analytics:visitors", catalog, connections), catalog);
+    const withVisitors = setBinding(draft, "s", "value", bindingFor({ kind: "metric", connector: "analytics", metric: "visitors" }, catalog, connections), catalog);
 
     // When
-    const custom = setBinding({ ...withVisitors, tiles: withVisitors.tiles.map((t) => ({ ...t, options: { ...t.options, label: "Mine" } })) }, "s", "value", bindingFor("metric:billing:mrr", catalog, connections), catalog);
+    const custom = setBinding({ ...withVisitors, tiles: withVisitors.tiles.map((t) => ({ ...t, options: { ...t.options, label: "Mine" } })) }, "s", "value", bindingFor({ kind: "metric", connector: "billing", metric: "mrr" }, catalog, connections), catalog);
 
     // Then
     expect(custom.tiles[0].options.label).toBe("Mine");
@@ -140,7 +141,7 @@ describe("Editor model", () => {
     const draft = aWall().with(aTile().withId("a").note().at(0, 0, 2, 1)).draft();
 
     // When
-    const copy = duplicateTile(draft, "a")!;
+    const copy = duplicateTile(draft, "a", () => "copy")!;
     const removed = removeTile(copy.draft, "a");
     const restored = restoreTile(removed, draft.tiles[0]);
 
@@ -149,6 +150,19 @@ describe("Editor model", () => {
     expect(copy.tileId).not.toBe("a");
     expect(restored.tiles.find((t) => t.id === "a")?.layout).toEqual({ x: 0, y: 0, w: 2, h: 1 });
     expect(restoreTile(restored, draft.tiles[0])).toBe(restored);
+  });
+
+  test("given lock screen positions, when the grid reports them unchanged, then the draft stays the same object; a taller tile is clipped to the band", () => {
+    // Given
+    const draft = aWall().with(aTile().withId("a").note()).onLockscreen("a", { x: 0, y: 2, w: 2, h: 1 }).draft();
+
+    // When
+    const same = applyLockscreenLayout(draft, [{ i: "a", x: 0, y: 2, w: 2, h: 1 }]);
+    const grown = applyLockscreenLayout(draft, [{ i: "a", x: 0, y: 2, w: 2, h: 3 }]);
+
+    // Then
+    expect(same).toBe(draft);
+    expect(grown.lockscreen.placements[0].box).toEqual({ x: 0, y: 2, w: 2, h: 2 });
   });
 
   test("given a layout change, when only positions move, then the data signature is unchanged and no refetch is needed", () => {

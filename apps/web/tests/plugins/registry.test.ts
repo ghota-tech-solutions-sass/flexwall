@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { checkPlugins } from "@flexwall/sdk";
-import { bindingFor, sourcesFor } from "@/components/editor/editor-model";
+import { bindingFor, sourcesFor } from "@/application/editor/draft";
 import { entitlementsOf } from "@/domain/user";
 import { applyDraft } from "@/domain/wall";
 import { catalog, PLUGINS } from "@/plugins/registry";
@@ -42,11 +42,11 @@ describe("Every connector metric, as a tile", () => {
         const widget = catalog.widgets().find((w) => w.inputs.some((i) => i.accepts.includes(metric.type)));
         expect(widget).toBeDefined();
         const input = widget!.inputs.find((i) => i.accepts.includes(metric.type))!;
-        const source = sourcesFor(input, catalog).find((s) => s.value === `metric:${connector.id}:${metric.id}`);
+        const source = sourcesFor(input, catalog).find((s) => s.ref.kind === "metric" && s.ref.connector === connector.id && s.ref.metric === metric.id);
         expect(source).toBeDefined();
 
         // When
-        const binding = bindingFor(source!.value, catalog, connections.map((c) => ({ id: c.id, connector: c.connector, label: c.label, public: {}, createdAt: 0 })))!;
+        const binding = bindingFor(source!.ref, catalog, connections.map((c) => ({ id: c.id, connector: c.connector, label: c.label, public: {}, createdAt: 0 })))!;
         if (binding.kind === "metric") for (const f of metric.params ?? []) binding.params[f.key] = "placeholder" in f && f.placeholder ? f.placeholder : "example";
         const [w, h] = widget!.size.default;
         const draft = aWall().with(aTile().withId("t").widget(widget!.id, {}).input(input.key, binding).at(0, 0, w, h)).draft();

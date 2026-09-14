@@ -59,3 +59,14 @@ export function formatPercent(ratio: number, signed = false): string {
 export function daysBetween(from: string, to: string): number {
   return Math.round((Date.parse(to + "T00:00:00Z") - Date.parse(from + "T00:00:00Z")) / 86_400_000);
 }
+
+/** Separators people type inside numbers: "1 240", "1,240", "1_240". */
+const TYPED_SEPARATORS = /[\s,_]/g;
+
+/** A number as someone types it, or null when it isn't one. Empty input is null too. */
+export function parseTypedNumber(raw: string): number | null {
+  const cleaned = raw.replace(TYPED_SEPARATORS, "");
+  if (cleaned === "") return null;
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : null;
+}

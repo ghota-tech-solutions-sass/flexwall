@@ -1,83 +1,85 @@
-import { defaultsFor, type FieldValues, type Value, type ValueType, type WidgetInputDef } from "@flexwall/sdk";
-import type { Catalog } from "@/domain/catalog";
-import type { BrowsableCatalog } from "@/plugins/catalog";
+import { defaultsFor, type FieldValues, type Value, type WidgetInputDef } from "@flexwall/sdk";
+import type { BrowsableCatalog, Catalog } from "@/domain/catalog";
 import type { ConnectionView } from "@/domain/connection";
-import { firstFreeSpot, heightOf, LOCK_COLUMNS, LOCK_ROWS, WALL_COLUMNS, type Box } from "@/domain/layout";
-import type { Binding, Tile, WallDraft } from "@/domain/wall";
+import { firstFreeSpot, LOCK_COLUMNS, LOCK_ROWS, overlaps, WALL_COLUMNS, type Box } from "@/domain/layout";
+import { sourceKey, TYPEABLE_VALUE_TYPES, type SourceRef, type TypeableValueType } from "@/domain/source";
+import { DEFAULT_VISIBILITY, HISTORY_DAYS, HISTORY_WINDOWS, type Binding, type Tile, type WallDraft } from "@/domain/wall";
 
 /**
- * Everything the editor does to a draft, as pure functions. Components call
- * these and render the result; the rules live here where they can be tested.
+ * Everything the editor does to a draft, as pure functions. The editor store
+ * calls these and keeps the result; the rules live here where they can be tested.
  */
 
-let counter = 0;
-export function newTileId(): string {
-  counter = (counter + 1) % 1000;
-  return `t${Date.now().toString(36)}${counter.toString(36)}`;
-}
+/** Makes tile ids. Injected so tests get predictable ones. */
+export type NewTileId = () => string;
+
+/** Widget options that name a tile. `label` is also filled from a metric when the owner hasn't typed one. */
+export const LABEL_OPTION_KEY = "label";
+export const TITLE_OPTION_KEY = "title";
+
+/** Group of the sources the owner types by hand. */
+export const TYPED_SOURCE_GROUP = "Typed by you";
+
+const TYPED_LABELS: Record<TypeableValueType, string> = { number: "A number I type", text: "Text I type" };
 
 /** A source a widget input can pick, as the editor lists it. */
 export interface SourceOption {
-  value: string;
+  ref: SourceRef;
+  /** `sourceKey(ref)`, for keys and comparisons. */
+  key: string;
   label: string;
   group: string;
   pro: boolean;
 }
 
-export function staticValueFor(type: ValueType): Value {
+export function staticValueFor(type: TypeableValueType): Value {
   switch (type) {
     case "number":
       return { type: "number", value: 0 };
     case "text":
       return { type: "text", value: "" };
-    case "series":
-      return { type: "series", points: [] };
-    case "calendar":
-      return { type: "calendar", days: [] };
   }
+}
+
+function option(ref: SourceRef, label: string, group: string, pro: boolean): SourceOption {
+  return { ref, key: sourceKey(ref), label, group, pro };
 }
 
 /** Every way to feed an input: a typed value, a metric, or a number's history. */
 export function sourcesFor(input: WidgetInputDef, catalog: BrowsableCatalog): SourceOption[] {
   const options: SourceOption[] = [];
-  const typeable = input.accepts.filter((t) => t === "number" || t === "text");
-  for (const t of typeable) options.push({ value: `static:${t}`, label: t === "number" ? "A number I type" : "Text I type", group: "Typed by you", pro: false });
+  for (const type of TYPEABLE_VALUE_TYPES) {
+    if (input.accepts.includes(type)) options.push(option({ kind: "static", type }, TYPED_LABELS[type], TYPED_SOURCE_GROUP, false));
+  }
   for (const connector of catalog.connectors()) {
+    const pro = connector.tier === "pro";
     for (const metric of connector.metrics) {
-      const group = connector.name;
-      const pro = connector.tier === "pro";
-      if (input.accepts.includes(metric.type)) options.push({ value: `metric:${connector.id}:${metric.id}`, label: metric.name, group, pro });
-      if (metric.type === "number" && input.accepts.includes("series")) {
-        options.push({ value: `history:${connector.id}:${metric.id}:30d`, label: `${metric.name}, 30-day history`, group, pro: true });
-        options.push({ value: `history:${connector.id}:${metric.id}:90d`, label: `${metric.name}, 90-day history`, group, pro: true });
+      if (input.accepts.includes(metric.type)) options.push(option({ kind: "metric", connector: connector.id, metric: metric.id }, metric.name, connector.name, pro));
+      if (metric.type !== "number" || !input.accepts.includes("series")) continue;
+      // History shows on the public page with Pro, whatever the connector's tier.
+      for (const window of HISTORY_WINDOWS) {
+        options.push(option({ kind: "history", connector: connector.id, metric: metric.id, window }, `${metric.name}, ${HISTORY_DAYS[window]}-day history`, connector.name, true));
       }
     }
   }
   return options;
 }
 
-export function sourceValueOf(binding: Binding | undefined): string {
-  if (!binding) return "";
-  if (binding.kind === "static") return `static:${binding.value.type}`;
-  return binding.history ? `history:${binding.connector}:${binding.metric}:${binding.history}` : `metric:${binding.connector}:${binding.metric}`;
-}
-
 /** The binding for a picked source, keeping params the owner already typed for the same field names. */
-export function bindingFor(source: string, catalog: Catalog, connections: readonly ConnectionView[], previous?: Binding): Binding | undefined {
-  const [kind, a, b, c] = source.split(":");
-  if (kind === "static") return { kind: "static", value: staticValueFor(a as ValueType) };
-  const connector = catalog.connector(a);
-  const metric = catalog.metric(a, b);
+export function bindingFor(ref: SourceRef, catalog: Catalog, connections: readonly ConnectionView[], previous?: Binding): Binding | undefined {
+  if (ref.kind === "static") return { kind: "static", value: staticValueFor(ref.type) };
+  const connector = catalog.connector(ref.connector);
+  const metric = catalog.metric(ref.connector, ref.metric);
   if (!connector || !metric) return undefined;
   const kept = previous?.kind === "metric" ? previous.params : {};
   const params: FieldValues = { ...defaultsFor(metric.params ?? []) };
   for (const f of metric.params ?? []) if (kept[f.key] !== undefined) params[f.key] = kept[f.key];
   const connection = connector.auth ? (connections.find((x) => x.connector === connector.id)?.id ?? null) : null;
-  return { kind: "metric", connector: connector.id, metric: metric.id, params, connection, history: kind === "history" ? (c as "30d" | "90d") : null };
+  return { kind: "metric", connector: connector.id, metric: metric.id, params, connection, history: ref.kind === "history" ? ref.window : null };
 }
 
 /** A new tile of `widgetId`, placed in the first free spot, fed by sensible defaults. */
-export function addTile(draft: WallDraft, widgetId: string, catalog: BrowsableCatalog, connections: readonly ConnectionView[]): { draft: WallDraft; tileId: string } | null {
+export function addTile(draft: WallDraft, widgetId: string, catalog: BrowsableCatalog, connections: readonly ConnectionView[], newId: NewTileId): { draft: WallDraft; tileId: string } | null {
   const widget = catalog.widget(widgetId);
   if (!widget) return null;
   const [w, h] = widget.size.default;
@@ -92,10 +94,10 @@ export function addTile(draft: WallDraft, widgetId: string, catalog: BrowsableCa
     if (input.optional) continue;
     const sources = sourcesFor(input, catalog);
     const first = sources.find((s) => !s.pro) ?? sources[0];
-    const binding = first ? bindingFor(first.value, catalog, connections) : undefined;
+    const binding = first ? bindingFor(first.ref, catalog, connections) : undefined;
     if (binding) inputs[input.key] = binding;
   }
-  const tile: Tile = { id: newTileId(), widget: widget.id, inputs, options: defaultsFor(widget.options), visibility: "public", layout };
+  const tile: Tile = { id: newId(), widget: widget.id, inputs, options: defaultsFor(widget.options), visibility: DEFAULT_VISIBILITY, layout };
   return { draft: { ...draft, tiles: [...draft.tiles, tile] }, tileId: tile.id };
 }
 
@@ -112,7 +114,7 @@ export function removeTile(draft: WallDraft, tileId: string): WallDraft {
 }
 
 /** A copy of a tile in the first free spot, or null when the tile is gone. */
-export function duplicateTile(draft: WallDraft, tileId: string): { draft: WallDraft; tileId: string } | null {
+export function duplicateTile(draft: WallDraft, tileId: string, newId: NewTileId): { draft: WallDraft; tileId: string } | null {
   const tile = draft.tiles.find((t) => t.id === tileId);
   if (!tile) return null;
   const layout = firstFreeSpot(
@@ -121,51 +123,64 @@ export function duplicateTile(draft: WallDraft, tileId: string): { draft: WallDr
     tile.layout.h,
     WALL_COLUMNS
   );
-  const copy: Tile = { ...tile, id: newTileId(), layout };
+  const copy: Tile = { ...tile, id: newId(), layout };
   return { draft: { ...draft, tiles: [...draft.tiles, copy] }, tileId: copy.id };
 }
 
-/** Puts a tile back where it was, after an undo. Its lock screen placement doesn't come back. */
+/** Puts a tile back where it was, after an undo, or in the first free spot if that place was taken. Its lock screen placement doesn't come back. */
 export function restoreTile(draft: WallDraft, tile: Tile): WallDraft {
   if (draft.tiles.some((t) => t.id === tile.id)) return draft;
-  const taken = draft.tiles.some((t) => t.layout.x < tile.layout.x + tile.layout.w && tile.layout.x < t.layout.x + t.layout.w && t.layout.y < tile.layout.y + tile.layout.h && tile.layout.y < t.layout.y + t.layout.h);
-  const layout = taken ? firstFreeSpot(draft.tiles.map((t) => t.layout), tile.layout.w, tile.layout.h, WALL_COLUMNS) : tile.layout;
+  const layout = draft.tiles.some((t) => overlaps(t.layout, tile.layout))
+    ? firstFreeSpot(
+        draft.tiles.map((t) => t.layout),
+        tile.layout.w,
+        tile.layout.h,
+        WALL_COLUMNS
+      )
+    : tile.layout;
   return { ...draft, tiles: [...draft.tiles, { ...tile, layout }] };
+}
+
+type MetricBinding = Extract<Binding, { kind: "metric" }>;
+
+/** Gives metric inputs a new connection where `next` returns one; `undefined` leaves the input alone. */
+function rebind(draft: WallDraft, next: (binding: MetricBinding) => string | null | undefined): WallDraft {
+  let changed = false;
+  const tiles = draft.tiles.map((tile) => {
+    let inputs = tile.inputs;
+    for (const [key, binding] of Object.entries(tile.inputs)) {
+      if (binding.kind !== "metric") continue;
+      const connection = next(binding);
+      if (connection === undefined) continue;
+      inputs = { ...inputs, [key]: { ...binding, connection } };
+    }
+    if (inputs === tile.inputs) return tile;
+    changed = true;
+    return { ...tile, inputs };
+  });
+  return changed ? { ...draft, tiles } : draft;
 }
 
 /** A freshly connected account feeds every metric of its connector still waiting for one. */
 export function attachConnection(draft: WallDraft, connection: ConnectionView, known: readonly ConnectionView[]): WallDraft {
   const ids = new Set(known.map((c) => c.id));
-  let changed = false;
-  const tiles = draft.tiles.map((tile) => {
-    let inputs = tile.inputs;
-    for (const [key, binding] of Object.entries(tile.inputs)) {
-      if (binding.kind !== "metric" || binding.connector !== connection.connector) continue;
-      if (binding.connection && ids.has(binding.connection)) continue;
-      inputs = { ...inputs, [key]: { ...binding, connection: connection.id } };
-    }
-    if (inputs === tile.inputs) return tile;
-    changed = true;
-    return { ...tile, inputs };
-  });
-  return changed ? { ...draft, tiles } : draft;
+  const waiting = (b: MetricBinding) => b.connector === connection.connector && !(b.connection && ids.has(b.connection));
+  return rebind(draft, (b) => (waiting(b) ? connection.id : undefined));
 }
 
 /** Tiles fed by a removed account fall back to another account of the same connector, or wait for one. */
 export function detachConnection(draft: WallDraft, removed: ConnectionView, remaining: readonly ConnectionView[]): WallDraft {
   const fallback = remaining.find((c) => c.connector === removed.connector)?.id ?? null;
-  let changed = false;
-  const tiles = draft.tiles.map((tile) => {
-    let inputs = tile.inputs;
-    for (const [key, binding] of Object.entries(tile.inputs)) {
-      if (binding.kind !== "metric" || binding.connection !== removed.id) continue;
-      inputs = { ...inputs, [key]: { ...binding, connection: fallback } };
-    }
-    if (inputs === tile.inputs) return tile;
-    changed = true;
-    return { ...tile, inputs };
+  return rebind(draft, (b) => (b.connection === removed.id ? fallback : undefined));
+}
+
+/** Points one input at an account. */
+export function setConnection(draft: WallDraft, tileId: string, key: string, connectionId: string): WallDraft {
+  return updateTile(draft, tileId, (tile) => {
+    const binding = tile.inputs[key];
+    if (binding?.kind !== "metric") return tile;
+    return { ...tile, inputs: { ...tile.inputs, [key]: { ...binding, connection: connectionId } } };
   });
-  return changed ? { ...draft, tiles } : draft;
 }
 
 /** Sets an input's binding and, for a fresh metric, offers its default label to the widget. */
@@ -175,19 +190,19 @@ export function setBinding(draft: WallDraft, tileId: string, key: string, bindin
     if (binding) inputs[key] = binding;
     else delete inputs[key];
     const options = { ...tile.options };
-    const hasLabel = catalog.widget(tile.widget)?.options.some((f) => f.key === "label") ?? false;
+    const hasLabel = catalog.widget(tile.widget)?.options.some((f) => f.key === LABEL_OPTION_KEY) ?? false;
     if (binding?.kind === "metric" && hasLabel) {
       const previous = tile.inputs[key];
       const previousDefault = previous?.kind === "metric" ? catalog.metric(previous.connector, previous.metric)?.defaults?.label : undefined;
       const next = catalog.metric(binding.connector, binding.metric)?.defaults?.label;
-      if (next && (!options.label || options.label === previousDefault)) options.label = next;
+      if (next && (!options[LABEL_OPTION_KEY] || options[LABEL_OPTION_KEY] === previousDefault)) options[LABEL_OPTION_KEY] = next;
     }
     return { ...tile, inputs, options };
   });
 }
 
 /** Applies positions from the grid library, ignoring anything it reports for unknown tiles. */
-export function applyLayout(draft: WallDraft, layout: readonly { i: string; x: number; y: number; w: number; h: number }[]): WallDraft {
+export function applyLayout(draft: WallDraft, layout: readonly ({ i: string } & Box)[]): WallDraft {
   const byId = new Map(layout.map((l) => [l.i, l]));
   let changed = false;
   const tiles = draft.tiles.map((t) => {
@@ -217,12 +232,18 @@ export function removeFromLockscreen(draft: WallDraft, tileId: string): WallDraf
   return { ...draft, lockscreen: { ...draft.lockscreen, placements: draft.lockscreen.placements.filter((p) => p.tileId !== tileId) } };
 }
 
-export function applyLockscreenLayout(draft: WallDraft, layout: readonly { i: string; x: number; y: number; w: number; h: number }[]): WallDraft {
+/** Applies lock screen positions from the grid library, clipped to the rows the band has. Unchanged positions keep the draft as is. */
+export function applyLockscreenLayout(draft: WallDraft, layout: readonly ({ i: string } & Box)[]): WallDraft {
+  let changed = false;
   const placements = draft.lockscreen.placements.map((p) => {
     const l = layout.find((x) => x.i === p.tileId);
-    return l ? { tileId: p.tileId, box: { x: l.x, y: l.y, w: l.w, h: Math.min(l.h, LOCK_ROWS - l.y) } } : p;
+    if (!l) return p;
+    const box = { x: l.x, y: l.y, w: l.w, h: Math.min(l.h, LOCK_ROWS - l.y) };
+    if (box.x === p.box.x && box.y === p.box.y && box.w === p.box.w && box.h === p.box.h) return p;
+    changed = true;
+    return { tileId: p.tileId, box };
   });
-  return { ...draft, lockscreen: { ...draft.lockscreen, placements } };
+  return changed ? { ...draft, lockscreen: { ...draft.lockscreen, placements } } : draft;
 }
 
 /** The part of a draft that changes what values are needed. Layout and options don't. */
@@ -230,4 +251,8 @@ export function dataSignature(draft: WallDraft): string {
   return JSON.stringify(draft.tiles.map((t) => [t.id, t.inputs]));
 }
 
-export { heightOf };
+/** The name a tile goes by in lists: its label or title when it has one, else its widget's name. */
+export function tileName(tile: Tile, catalog: Catalog): string {
+  const own = tile.options[LABEL_OPTION_KEY] || tile.options[TITLE_OPTION_KEY];
+  return own ? String(own) : (catalog.widget(tile.widget)?.name ?? tile.widget);
+}

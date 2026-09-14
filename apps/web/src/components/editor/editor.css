@@ -297,3 +297,9 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; height: 22px; 
   .ed-foot { position: static; }
   .ed-toast { left: 50%; }
 }
+
+/* Lock screen surface */
+.lock-panel { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); gap: 32px; align-items: start; }
+.phone-watermark { position: absolute; width: 100%; text-align: center; }
+.lock-steps { padding-left: 1.2em; margin: 0; }
+@media (max-width: 900px) { .lock-panel { grid-template-columns: minmax(0, 1fr); justify-items: center; } }

@@ -1,19 +1,29 @@
 // Rendered inside the Editor client boundary.
 import { useState } from "react";
+import { WIDGET_CATEGORIES, type WidgetCategory } from "@flexwall/sdk";
+import { canAddTile } from "@/application/editor/store";
+import { PAID_TILE_LIMIT } from "@/domain/user";
 import { catalog } from "@/plugins/registry";
+import { ROUTES } from "@/presentation/routes";
+import { useEditor, useEditorActions } from "./EditorContext";
 import { CategoryIcon, PlusIcon, SearchIcon } from "./icons";
 
-const CATEGORIES: { id: string; label: string }[] = [
-  { id: "numbers", label: "Numbers" },
-  { id: "charts", label: "Charts" },
-  { id: "progress", label: "Progress" },
-  { id: "time", label: "Time" },
-  { id: "content", label: "Content" },
-];
+const CATEGORY_LABELS: Record<WidgetCategory, string> = {
+  numbers: "Numbers",
+  charts: "Charts",
+  progress: "Progress",
+  time: "Time",
+  content: "Content",
+};
 
 /** Every installed widget, by category. Community widgets show up here with nothing else to change. */
-export function Library({ onAdd, disabled, limitMessage, count, max }: { onAdd: (widgetId: string) => void; disabled: boolean; limitMessage: string | null; count: number; max: number }) {
+export function Library() {
   const [query, setQuery] = useState("");
+  const count = useEditor((s) => s.draft.tiles.length);
+  const { maxTiles, paid } = useEditor((s) => s.entitlements);
+  const canAdd = useEditor(canAddTile);
+  const actions = useEditorActions();
+
   const q = query.trim().toLowerCase();
   const widgets = catalog.widgets().filter((w) => !q || `${w.name} ${w.description}`.toLowerCase().includes(q));
 
@@ -21,29 +31,35 @@ export function Library({ onAdd, disabled, limitMessage, count, max }: { onAdd: 
     <div className="ed-library">
       <div className="ed-library-head">
         <h2>Add a tile</h2>
-        <span className="ed-meter" title={`${count} of ${max} tiles`}>
-          {count}/{max}
+        <span className="ed-meter" title={`${count} of ${maxTiles} tiles`}>
+          {count}/{maxTiles}
         </span>
       </div>
       <label className="ed-search">
         <SearchIcon size={14} />
         <input type="search" placeholder="Search tiles" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search tiles" />
       </label>
-      {limitMessage ? (
+      {canAdd ? null : (
         <p className="ed-callout">
-          {limitMessage} <a href="/pricing">Go Pro</a> for up to 60.
+          {paid ? (
+            "This wall is full."
+          ) : (
+            <>
+              Free walls hold {maxTiles} tiles. <a href={ROUTES.pricing}>Go Pro</a> for up to {PAID_TILE_LIMIT}.
+            </>
+          )}
         </p>
-      ) : null}
-      {CATEGORIES.map((cat) => {
-        const inCategory = widgets.filter((w) => w.category === cat.id);
+      )}
+      {WIDGET_CATEGORIES.map((category) => {
+        const inCategory = widgets.filter((w) => w.category === category);
         if (!inCategory.length) return null;
         return (
-          <section key={cat.id}>
-            <h3>{cat.label}</h3>
+          <section key={category}>
+            <h3>{CATEGORY_LABELS[category]}</h3>
             <ul className="library">
               {inCategory.map((w) => (
                 <li key={w.id}>
-                  <button type="button" disabled={disabled} onClick={() => onAdd(w.id)}>
+                  <button type="button" disabled={!canAdd} onClick={() => actions.addTile(w.id)}>
                     <span className="ed-glyph small">
                       <CategoryIcon category={w.category} size={15} />
                     </span>

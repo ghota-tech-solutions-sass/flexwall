@@ -1,5 +1,6 @@
 // Rendered inside the Editor client boundary.
 import type { ReactNode } from "react";
+import type { WidgetCategory } from "@flexwall/sdk";
 
 /** Line icons drawn on a 20 grid, 1.5 stroke, so they sit at the same weight as 14px text. */
 function Icon({ children, size = 16 }: { children: ReactNode; size?: number }) {
@@ -96,7 +97,7 @@ export const LockIcon = (p: P) => (
 );
 
 /** One glyph per widget category, used by the library and the inspector header. */
-export function CategoryIcon({ category, size }: { category: string; size?: number }) {
+export function CategoryIcon({ category, size }: { category: WidgetCategory; size?: number }) {
   switch (category) {
     case "numbers":
       return (
@@ -124,7 +125,7 @@ export function CategoryIcon({ category, size }: { category: string; size?: numb
           <path d="M10 6v4l2.5 2" />
         </Icon>
       );
-    default:
+    case "content":
       return (
         <Icon size={size}>
           <rect x="3.5" y="3.5" width="13" height="13" rx="2.5" />

@@ -2,77 +2,79 @@
 import { useEffect, useState } from "react";
 import ReactGridLayout, { noCompactor, type Layout } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
-import { GAP_UNITS, themeBackground, type Theme } from "@flexwall/sdk";
-import type { TileState } from "@/application/use-cases/resolve-wall";
-import { DEVICE_IDS, DEVICES, LOCK_COLUMNS, LOCK_ROWS, type DeviceId } from "@/domain/layout";
-import type { WallDraft } from "@/domain/wall";
+import { CELL_UNITS, GAP_UNITS, themeBackground } from "@flexwall/sdk";
+import { tileName } from "@/application/editor/draft";
+import { DEFAULT_DEVICE, DEVICE_IDS, DEVICES, LOCK_COLUMNS, LOCK_ROWS, lockscreenGeometry, WATERMARK, type DeviceId } from "@/domain/layout";
+import { APP_LOCALE } from "@/domain/time";
 import { catalog } from "@/plugins/registry";
 import { TileBody } from "@/rendering/tile";
-import { applyLockscreenLayout, placeOnLockscreen, removeFromLockscreen } from "./editor-model";
+import { COPIED_FEEDBACK_MS } from "@/presentation/feedback";
+import { useEditor, useEditorActions } from "./EditorContext";
+import { useEditorTheme } from "./WallCanvas";
 
-interface Props {
-  draft: WallDraft;
-  states: Record<string, TileState>;
-  theme: Theme;
-  today: string;
-  lockscreenUrl: string;
-  watermark: boolean;
-  onChange: (next: (d: WallDraft) => WallDraft) => void;
-  onRotated: (path: string) => void;
-}
-
+/** Width of the phone preview's screen, in CSS pixels. */
 const SCREEN_WIDTH = 316;
+/** The phone frame around the screen, on each side. */
+const BEZEL = 12;
+
+const isDeviceId = (value: string): value is DeviceId => (DEVICE_IDS as readonly string[]).includes(value);
 
 /** The lock screen: pick tiles, arrange them under the clock, and the Shortcut that sets it every morning. */
-export function LockscreenPanel({ draft, states, theme, today, lockscreenUrl, watermark, onChange, onRotated }: Props) {
-  const [error, setError] = useState<string | null>(null);
+export function LockscreenPanel({ appUrl }: { appUrl: string }) {
+  const theme = useEditorTheme();
+  const tiles = useEditor((s) => s.draft.tiles);
+  const lockscreen = useEditor((s) => s.draft.lockscreen);
+  const states = useEditor((s) => s.states);
+  const today = useEditor((s) => s.today);
+  const error = useEditor((s) => s.lockscreenError);
+  const lockscreenPath = useEditor((s) => s.lockscreenPath);
+  const watermark = useEditor((s) => s.entitlements.watermark);
+  const actions = useEditorActions();
+
   const [copied, setCopied] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => setNow(new Date()), []);
 
-  const device = DEVICES[draft.lockscreen.device as DeviceId] ?? DEVICES["iphone-17-pro"];
-  const height = (SCREEN_WIDTH * device.h) / device.w;
-  const margin = SCREEN_WIDTH * 0.075;
-  const gridWidth = SCREEN_WIDTH - margin * 2;
-  const px = gridWidth / (LOCK_COLUMNS * 100 + (LOCK_COLUMNS - 1) * GAP_UNITS);
-  const gridHeight = (LOCK_ROWS * 100 + (LOCK_ROWS - 1) * GAP_UNITS) * px;
-  const top = Math.max(height * 0.4, height * 0.87 - gridHeight);
-  const placed = new Set(draft.lockscreen.placements.map((p) => p.tileId));
-
-  const layout: Layout = draft.lockscreen.placements.map((p) => ({ i: p.tileId, ...p.box, maxH: LOCK_ROWS }));
+  const deviceId = isDeviceId(lockscreen.device) ? lockscreen.device : DEFAULT_DEVICE;
+  const geometry = lockscreenGeometry(SCREEN_WIDTH, DEVICES[deviceId]);
+  const placed = new Set(lockscreen.placements.map((p) => p.tileId));
+  const layout: Layout = lockscreen.placements.map((p) => ({ i: p.tileId, ...p.box, maxH: LOCK_ROWS }));
+  const lockscreenUrl = appUrl + lockscreenPath;
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "minmax(0, auto) minmax(0, 1fr)", gap: 32, alignItems: "start" }}>
-      <div className="phone" style={{ width: SCREEN_WIDTH + 24, aspectRatio: "auto", height: height + 24 }}>
-        <div className="phone-screen" style={{ ...themeBackground(theme), height }}>
+    <div className="lock-panel">
+      <div className="phone" style={{ width: SCREEN_WIDTH + BEZEL * 2, aspectRatio: "auto", height: geometry.height + BEZEL * 2 }}>
+        <div className="phone-screen" style={{ ...themeBackground(theme), height: geometry.height }}>
           <div className={`phone-clock${theme.mode === "light" ? " dark" : ""}`}>
-            <div>{now?.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</div>
-            <div>{now?.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: false })}</div>
+            <div>{now?.toLocaleDateString(APP_LOCALE, { weekday: "long", month: "long", day: "numeric" })}</div>
+            <div>{now?.toLocaleTimeString(APP_LOCALE, { hour: "numeric", minute: "2-digit", hour12: false })}</div>
           </div>
-          <div style={{ position: "absolute", left: margin, top, width: gridWidth, height: gridHeight }}>
+          <div style={{ position: "absolute", left: geometry.margin, top: geometry.top, width: geometry.gridWidth, height: geometry.gridHeight }}>
             <ReactGridLayout
-              width={gridWidth}
+              width={geometry.gridWidth}
               layout={layout}
-              gridConfig={{ cols: LOCK_COLUMNS, rowHeight: 100 * px, margin: [GAP_UNITS * px, GAP_UNITS * px], containerPadding: [0, 0], maxRows: LOCK_ROWS }}
+              gridConfig={{ cols: LOCK_COLUMNS, rowHeight: CELL_UNITS * geometry.scale, margin: [GAP_UNITS * geometry.scale, GAP_UNITS * geometry.scale], containerPadding: [0, 0], maxRows: LOCK_ROWS }}
               compactor={noCompactor}
               resizeConfig={{ enabled: true, handles: ["se"] }}
-              onLayoutChange={(next) => onChange((d) => applyLockscreenLayout(d, next))}
-              onDragStop={(next) => onChange((d) => applyLockscreenLayout(d, next))}
-              onResizeStop={(next) => onChange((d) => applyLockscreenLayout(d, next))}
+              onLayoutChange={actions.arrangeLockscreen}
+              onDragStop={actions.arrangeLockscreen}
+              onResizeStop={actions.arrangeLockscreen}
             >
-              {draft.lockscreen.placements.map((p) => {
-                const tile = draft.tiles.find((t) => t.id === p.tileId);
+              {lockscreen.placements.map((p) => {
+                const tile = tiles.find((t) => t.id === p.tileId);
                 if (!tile) return <div key={p.tileId} />;
                 return (
                   <div key={p.tileId} className="grid-item">
-                    <TileBody tile={tile} state={states[tile.id]} box={{ w: p.box.w, h: p.box.h }} theme={theme} surface="lockscreen" u={(n) => n * px} today={today} catalog={catalog} />
+                    <TileBody tile={tile} state={states[tile.id]} box={{ w: p.box.w, h: p.box.h }} theme={theme} surface="lockscreen" u={(n) => n * geometry.scale} today={today} catalog={catalog} />
                   </div>
                 );
               })}
             </ReactGridLayout>
           </div>
           {watermark ? (
-            <div style={{ position: "absolute", bottom: height * 0.035, width: "100%", textAlign: "center", fontSize: 9, letterSpacing: 1.2, color: theme.muted }}>FLEXWALL.LOL</div>
+            <div className="phone-watermark" style={{ bottom: geometry.watermark.bottom, fontSize: geometry.watermark.fontSize, letterSpacing: geometry.watermark.letterSpacing, color: theme.muted }}>
+              {WATERMARK.text}
+            </div>
           ) : null}
         </div>
       </div>
@@ -81,30 +83,16 @@ export function LockscreenPanel({ draft, states, theme, today, lockscreenUrl, wa
         <section>
           <h3>On the lock screen</h3>
           <p className="hint">Private tiles can go here too: it&apos;s your phone.</p>
-          {draft.tiles.map((t) => {
-            const widget = catalog.widget(t.widget);
-            const label = String(t.options.label || t.options.title || widget?.name || t.id);
-            return (
-              <label key={t.id} className="check">
-                <input
-                  type="checkbox"
-                  checked={placed.has(t.id)}
-                  onChange={(e) => {
-                    setError(null);
-                    if (!e.target.checked) return onChange((d) => removeFromLockscreen(d, t.id));
-                    const result = placeOnLockscreen(draft, t.id, catalog);
-                    if ("error" in result) setError(result.error);
-                    else onChange(() => result.draft);
-                  }}
-                />
-                {label} <span className="hint">({widget?.name})</span>
-              </label>
-            );
-          })}
+          {tiles.map((t) => (
+            <label key={t.id} className="check">
+              <input type="checkbox" checked={placed.has(t.id)} onChange={(e) => actions.toggleLockscreen(t.id, e.target.checked)} />
+              {tileName(t, catalog)} <span className="hint">({catalog.widget(t.widget)?.name})</span>
+            </label>
+          ))}
           {error ? <p className="error">{error}</p> : null}
           <label className="field">
             <span>Phone</span>
-            <select value={draft.lockscreen.device} onChange={(e) => onChange((d) => ({ ...d, lockscreen: { ...d.lockscreen, device: e.target.value as DeviceId } }))}>
+            <select value={deviceId} onChange={(e) => isDeviceId(e.target.value) && actions.setDevice(e.target.value)}>
               {DEVICE_IDS.map((id) => (
                 <option key={id} value={id}>
                   {DEVICES[id].label}
@@ -123,25 +111,18 @@ export function LockscreenPanel({ draft, states, theme, today, lockscreenUrl, wa
               onClick={async () => {
                 await navigator.clipboard.writeText(lockscreenUrl).catch(() => undefined);
                 setCopied(true);
-                setTimeout(() => setCopied(false), 1500);
+                setTimeout(() => setCopied(false), COPIED_FEEDBACK_MS);
               }}
             >
               {copied ? "Copied" : "Copy link"}
             </button>
           </div>
-          <ol className="hint" style={{ paddingLeft: "1.2em", margin: 0 }}>
+          <ol className="hint lock-steps">
             <li>Shortcuts, then Automation, then +, then Time of Day, 7:00, Daily, Run Immediately.</li>
             <li>Add “Get Contents of URL” with the link above.</li>
             <li>Add “Set Wallpaper Photo”, Lock Screen, preview off.</li>
           </ol>
-          <button
-            type="button"
-            className="link"
-            onClick={async () => {
-              const res = await fetch("/api/wall/lockscreen-link", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
-              if (res.ok) onRotated((await res.json()).lockscreenPath);
-            }}
-          >
+          <button type="button" className="link" onClick={() => void actions.rotateLockscreenLink()}>
             Make a new link (the old one stops working)
           </button>
         </section>

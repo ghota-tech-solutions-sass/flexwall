@@ -1,13 +1,7 @@
 import { checkPlugins, type ConnectorDef, type PluginDef, type Theme, type WidgetDef } from "@flexwall/sdk";
-import type { Catalog } from "@/domain/catalog";
+import type { BrowsableCatalog } from "@/domain/catalog";
 
-/** A catalog the editor can also list from. */
-export interface BrowsableCatalog extends Catalog {
-  connectors(): ConnectorDef[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  widgets(): WidgetDef<any>[];
-  themes(): Theme[];
-}
+export type { BrowsableCatalog };
 
 /** Indexes a list of plugins. Throws on the mistakes `checkPlugins` finds, so a broken plugin fails at startup. */
 export function createCatalog(plugins: readonly PluginDef[], defaultThemeId: string): BrowsableCatalog {

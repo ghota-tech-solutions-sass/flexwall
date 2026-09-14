@@ -12,3 +12,11 @@ export interface Catalog {
   theme(id: string): Theme | null;
   defaultTheme(): Theme;
 }
+
+/** A catalog that can also be listed, for the editor's library and pickers. */
+export interface BrowsableCatalog extends Catalog {
+  connectors(): ConnectorDef[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  widgets(): WidgetDef<any>[];
+  themes(): Theme[];
+}
