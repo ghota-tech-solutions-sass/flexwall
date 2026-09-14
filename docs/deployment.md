@@ -7,15 +7,16 @@ your own host, see [self-hosting.md](self-hosting.md).
 
 | What | Where | Changed by |
 |---|---|---|
-| Cloud Run service `flexwall`, secrets, Artifact Registry, IAM, YouTube key | `terraform/` | Terraform Apply workflow |
+| Project, Firestore, Cloud Run service `flexwall`, domain mappings, secrets, Artifact Registry, IAM, YouTube key | `terraform/` | Terraform Apply workflow |
 | Stripe products, prices, customer portal, webhook | `terraform/stripe.tf` | Terraform Apply workflow |
 | The running image | `flexwall-repo/flexwall:<sha>` | CI, on a release |
-| Stripe secret key | Secret Manager `outflex-stripe-secret-key` | By hand, never Terraform |
+| Stripe secret key (versions of `outflex-stripe-secret-key`) | Secret Manager | By hand, never Terraform |
 
-Everything runs in the GCP project `ghota-outflex-prod`, `europe-west1`. The
-project and its Firestore database predate the platform and belong to the
-`terraform/outflex` state; this configuration reads them. Terraform state is in
-`gs://micro-sass-478507-tfstate/terraform/flexwall`.
+Everything runs in the GCP project `ghota-outflex-prod`, `europe-west1`, with
+state in `gs://micro-sass-478507-tfstate/terraform/flexwall`. The project hosted
+the previous flexwall.lol app: its id, `outflex-sa` and
+`outflex-stripe-secret-key` keep their names because renaming them would cost
+the project, a Workspace authorization or the live key.
 
 ## Releasing
 
@@ -46,31 +47,17 @@ Secrets Terraform generates, and what replacing them costs:
 | `flexwall-encryption-key` | Makes every stored connector credential unreadable. `prevent_destroy` guards it. |
 | `flexwall-stripe-webhook-secret` | Follows the webhook endpoint; harmless. |
 
-## Moving flexwall.lol to this service
+## Domain
 
-Until then the service answers on its run.app URL and `app_url` follows it
-(sign-in links, Stripe redirects, the webhook). A domain maps to one service at
-a time, and the current mappings belong to the `terraform/outflex` state:
-
-```bash
-# 1. In the outflex repository: stop managing and delete the old mappings
-terraform -chdir=terraform state rm 'google_cloud_run_domain_mapping.domain[0]' 'google_cloud_run_domain_mapping.www[0]'
-gcloud beta run domain-mappings delete --domain flexwall.lol --region europe-west1 --project ghota-outflex-prod
-gcloud beta run domain-mappings delete --domain www.flexwall.lol --region europe-west1 --project ghota-outflex-prod
-
-# 2. Here: set enable_domain_mapping = true (variables.tf), merge, apply
-```
-
-The apply creates both mappings, points `app_url`, the Stripe webhook and the
-portal return URL at `https://flexwall.lol`. DNS stays as it is (the domain
-already resolves to Cloud Run); the certificate takes up to an hour, during
-which the domain doesn't serve HTTPS. Then set the repository variable
-`NEXT_PUBLIC_APP_URL` (or leave the default) and release.
+`flexwall.lol` and `www.flexwall.lol` map to the service when
+`enable_domain_mapping` is true, and `app_url` (sign-in links, Stripe
+redirects, the webhook, the portal) follows. Turned off, the app answers on its
+run.app URL. A domain maps to one service at a time; a new mapping takes up to
+an hour to get its certificate.
 
 ## Email
 
 Sign-in links are sent through the Gmail API as `villers@ghotatechsolutions.com`.
-The service signs as `outflex-sa`, which is already authorized for
-domain-wide delegation (`gmail.send`); `flexwall-sa` holds Token Creator on it.
-To sign as `flexwall-sa` instead, authorize the `service_account_client_id`
-output in the Workspace admin console, then set `email_signer_account_id = ""`.
+The service signs as `outflex-sa` (`google_service_account.mail_signer`), the
+account Workspace authorizes for domain-wide delegation (`gmail.send`, client id
+in the `mail_signer_client_id` output); `flexwall-sa` holds Token Creator on it.
