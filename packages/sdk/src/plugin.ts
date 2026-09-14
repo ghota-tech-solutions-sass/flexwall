@@ -1,5 +1,5 @@
 import type { ConnectorDef } from "./connector";
-import type { Theme } from "./theme";
+import { themeProblems, type Theme } from "./theme";
 import type { WidgetDef } from "./widget";
 
 /**
@@ -68,7 +68,11 @@ export function checkPlugins(plugins: readonly PluginDef[]): string[] {
         keys.add(f.key);
       }
     }
-    for (const t of p.themes ?? []) once("theme", t.id, `plugin ${p.id}, theme ${t.id}`);
+    for (const t of p.themes ?? []) {
+      const where = `plugin ${p.id}, theme ${t.id}`;
+      once("theme", t.id, where);
+      for (const problem of themeProblems(t)) problems.push(`${where}: ${problem}`);
+    }
   }
   return problems;
 }

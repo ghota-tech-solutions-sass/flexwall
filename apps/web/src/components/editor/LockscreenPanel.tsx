@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import ReactGridLayout, { noCompactor, type Layout } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
-import { GAP_UNITS, type Theme } from "@flexwall/sdk";
+import { GAP_UNITS, themeBackground, type Theme } from "@flexwall/sdk";
 import type { TileState } from "@/application/use-cases/resolve-wall";
 import { DEVICE_IDS, DEVICES, LOCK_COLUMNS, LOCK_ROWS, type DeviceId } from "@/domain/layout";
 import type { WallDraft } from "@/domain/wall";
@@ -44,7 +44,7 @@ export function LockscreenPanel({ draft, states, theme, today, lockscreenUrl, wa
   return (
     <div style={{ display: "grid", gridTemplateColumns: "minmax(0, auto) minmax(0, 1fr)", gap: 32, alignItems: "start" }}>
       <div className="phone" style={{ width: SCREEN_WIDTH + 24, aspectRatio: "auto", height: height + 24 }}>
-        <div className="phone-screen" style={{ background: theme.page, height }}>
+        <div className="phone-screen" style={{ ...themeBackground(theme), height }}>
           <div className={`phone-clock${theme.mode === "light" ? " dark" : ""}`}>
             <div>{now?.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</div>
             <div>{now?.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: false })}</div>

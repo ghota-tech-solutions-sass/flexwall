@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
-import { GAP_UNITS, type Theme } from "@flexwall/sdk";
+import { GAP_UNITS, themeBackground, type Theme } from "@flexwall/sdk";
 import type { TileState } from "@/application/use-cases/resolve-wall";
 import type { Catalog } from "@/domain/catalog";
 import { DEVICES, LOCK_COLUMNS, LOCK_ROWS, type Box, type DeviceId } from "@/domain/layout";
@@ -100,7 +100,7 @@ export function lockscreenImage(input: { device: DeviceId; placed: Placed[]; sta
   const top = Math.max(height * 0.4, height * 0.87 - gridHeight);
 
   return png(
-    <div style={{ display: "flex", width: "100%", height: "100%", position: "relative", background: input.theme.page, ...(input.theme.wallpaper ? { backgroundImage: input.theme.wallpaper } : {}) }}>
+    <div style={{ display: "flex", width: "100%", height: "100%", position: "relative", ...themeBackground(input.theme) }}>
       <Grid placed={input.placed} states={input.states} theme={input.theme} catalog={input.catalog} today={input.today} scale={scale} left={margin} top={top} surface="lockscreen" />
       {input.watermark ? (
         <div style={{ position: "absolute", bottom: height * 0.035, left: 0, right: 0, display: "flex", justifyContent: "center", fontSize: 11 * (width / 402), letterSpacing: 1.5 * (width / 402), color: input.theme.muted }}>
@@ -131,7 +131,7 @@ function card(text: CardText, input: { placed: Placed[]; states: Record<string, 
   const titleSize = text.title.length > 28 ? 44 : 54;
 
   return png(
-    <div style={{ display: "flex", width: "100%", height: "100%", position: "relative", background: theme.page, ...(theme.wallpaper ? { backgroundImage: theme.wallpaper } : {}), color: theme.ink, fontFamily: theme.body.family }}>
+    <div style={{ display: "flex", width: "100%", height: "100%", position: "relative", ...themeBackground(theme), color: theme.ink, fontFamily: theme.body.family }}>
       <div style={{ position: "absolute", left: 64, top: 64, width: 360, bottom: 64, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", fontSize: 28, color: theme.muted }}>{text.kicker}</div>

@@ -7,34 +7,39 @@
 /** Fonts the host provides on every surface. */
 export type FontFamily = "Grotesk" | "Inter" | "Serif" | "Mono" | "Archivo" | "Archivo Wide" | "Geist";
 
+/**
+ * One flat color. Hosts put it where CSS and Satori only take a color
+ * (`background-color`, text, borders), so a gradient here would be dropped.
+ */
+export type Color = `#${string}` | `rgb(${string})` | `rgba(${string})` | `hsl(${string})` | `hsla(${string})`;
+
+/** One or more gradient layers, comma separated, the first one starting the value. */
+export type Gradient = `linear-gradient(${string})` | `radial-gradient(${string})`;
+
 export interface Theme {
   id: string;
   name: string;
   tier: "free" | "pro";
   /** Tells the host which way to tint chrome drawn around tiles (and the iOS clock). */
   mode: "dark" | "light";
-  /** Behind the whole wall. */
-  page: string;
-  /**
-   * Optional background drawn over `page`, like a phone wallpaper. Any CSS
-   * background made of linear-gradient and radial-gradient layers: pages and
-   * images both draw it.
-   */
-  wallpaper?: string;
+  /** Solid ground behind the whole wall. Also the color of text drawn on `ink`. */
+  page: Color;
+  /** Optional gradients drawn over `page`, like a phone wallpaper. Pages and images both draw it. */
+  wallpaper?: Gradient;
   /** Tile background and border. */
-  tile: string;
-  tileBorder: string;
+  tile: Color;
+  tileBorder: Color;
   /** Optional box-shadow for tiles. Keep it soft: it is drawn on images too. */
   tileShadow?: string;
-  ink: string;
-  muted: string;
-  accent: string;
-  positive: string;
-  negative: string;
+  ink: Color;
+  muted: Color;
+  accent: Color;
+  positive: Color;
+  negative: Color;
   /** Empty part of bars and tracks. */
-  track: string;
+  track: Color;
   /** Heatmap levels 0 to 4. */
-  heat: [string, string, string, string, string];
+  heat: [Color, Color, Color, Color, Color];
   /** Corner radius of tiles, in units (a hundredth of a grid cell). */
   radius: number;
   /** `advance` overrides the average figure width in em when a theme tracks its display font tighter or looser. */
@@ -63,4 +68,30 @@ export function displayAdvance(theme: Pick<Theme, "display">): number {
 
 export function defineTheme(theme: Theme): Theme {
   return theme;
+}
+
+/** The ground of a theme as style properties. Every surface paints a theme through this, so none can forget the wallpaper. */
+export function themeBackground(theme: Pick<Theme, "page" | "wallpaper">): { backgroundColor: Color; backgroundImage?: Gradient } {
+  return theme.wallpaper ? { backgroundColor: theme.page, backgroundImage: theme.wallpaper } : { backgroundColor: theme.page };
+}
+
+const COLOR = /^(#[0-9a-f]{3,8}|(rgb|rgba|hsl|hsla)\([^()]*\))$/i;
+const GRADIENT = /^(linear|radial)-gradient\(/i;
+
+const COLOR_KEYS = ["page", "tile", "tileBorder", "ink", "muted", "accent", "positive", "negative", "track"] as const satisfies readonly (keyof Theme)[];
+
+/**
+ * What the types promise, checked at runtime for plugins built without them:
+ * colors where hosts need a color, gradients only in the wallpaper.
+ */
+export function themeProblems(theme: Theme): string[] {
+  const problems: string[] = [];
+  const check = (name: string, value: string) => {
+    if (COLOR.test(value.trim())) return;
+    problems.push(`${name} must be one flat color (hex, rgb or hsl), got "${value}"${GRADIENT.test(value.trim()) ? ": move gradients to wallpaper" : ""}`);
+  };
+  for (const key of COLOR_KEYS) check(key, theme[key]);
+  theme.heat.forEach((value, level) => check(`heat[${level}]`, value));
+  if (theme.wallpaper !== undefined && !GRADIENT.test(theme.wallpaper.trim())) problems.push(`wallpaper must be linear-gradient or radial-gradient layers, got "${theme.wallpaper}"`);
+  return problems;
 }

@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { SealCheckIcon } from "@phosphor-icons/react/ssr";
-import type { Theme } from "@flexwall/sdk";
+import { themeBackground, type Theme } from "@flexwall/sdk";
 import type { TileState } from "@/application/use-cases/resolve-wall";
 import type { Catalog } from "@/domain/catalog";
 import { mobileLayout, type Box } from "@/domain/layout";
@@ -59,7 +59,7 @@ export function WallGrids(props: WallViewProps) {
 
 /** Colors and fonts for the page around the grid. */
 export function wallStyle(theme: Theme): CSSProperties {
-  return { backgroundColor: theme.page, ...(theme.wallpaper ? { backgroundImage: theme.wallpaper } : {}), color: theme.ink, fontFamily: theme.body.family };
+  return { ...themeBackground(theme), color: theme.ink, fontFamily: theme.body.family };
 }
 
 /** The theme as CSS variables, for the chrome a page draws around the tiles. */
@@ -70,8 +70,8 @@ export function wallVars(theme: Theme): CSSProperties {
     ["--wall-tile" as string]: theme.tile,
     ["--wall-border" as string]: theme.tileBorder,
     ["--wall-positive" as string]: theme.positive,
-    ["--wall-on-ink" as string]: theme.mode === "dark" ? "#0c0d10" : "#ffffff",
-    // Menus and bars need a solid ground even when tiles are translucent.
-    ["--wall-solid" as string]: theme.mode === "dark" ? "#17181c" : "#ffffff",
+    // A theme's page is a flat color by contract: readable on ink, and a solid ground for menus over translucent tiles.
+    ["--wall-on-ink" as string]: theme.page,
+    ["--wall-solid" as string]: theme.page,
   };
 }

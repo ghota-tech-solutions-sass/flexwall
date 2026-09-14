@@ -1,7 +1,7 @@
 // Rendered inside the Editor client boundary.
 import ReactGridLayout, { useContainerWidth, verticalCompactor, type Layout } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
-import { GAP_UNITS, type Theme } from "@flexwall/sdk";
+import { GAP_UNITS, themeBackground, type Theme } from "@flexwall/sdk";
 import type { TileState } from "@/application/use-cases/resolve-wall";
 import { WALL_COLUMNS } from "@/domain/layout";
 import { BIO_MAX, TITLE_MAX, type Tile, type WallDraft } from "@/domain/wall";
@@ -45,7 +45,7 @@ export function WallCanvas({ draft, states, theme, today, selected, onSelect, on
   });
 
   return (
-    <div className="canvas-frame" style={{ background: theme.wallpaper ? `${theme.wallpaper}, ${theme.page}` : theme.page, color: theme.ink, colorScheme: theme.mode }}>
+    <div className="canvas-frame" style={{ ...themeBackground(theme), color: theme.ink, colorScheme: theme.mode }}>
       <header className="canvas-head">
         <input
           className="canvas-title"

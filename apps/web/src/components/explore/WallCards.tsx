@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { SealCheckIcon } from "@phosphor-icons/react/ssr";
-import type { Leaderboard, Theme } from "@flexwall/sdk";
+import { themeBackground, type Leaderboard, type Theme } from "@flexwall/sdk";
 import type { ExploreEntry } from "@/application/use-cases/explore";
 import { boardValue, updatedAgo } from "@/presentation/explore/boards";
 
@@ -11,8 +11,7 @@ function initialOf(entry: ExploreEntry): string {
 
 function themeStyle(theme: Theme): CSSProperties {
   return {
-    background: theme.page,
-    ...(theme.wallpaper ? { backgroundImage: theme.wallpaper } : {}),
+    ...themeBackground(theme),
     color: theme.ink,
     ["--card-tile" as string]: theme.tile,
     ["--card-tile-border" as string]: theme.tileBorder,

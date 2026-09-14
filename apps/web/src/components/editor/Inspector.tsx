@@ -1,6 +1,6 @@
 // Rendered inside the Editor client boundary.
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
-import { formatValue, type ConnectorDef, type FieldValue, type InputValue, type WidgetInputDef } from "@flexwall/sdk";
+import { formatValue, themeBackground, type ConnectorDef, type FieldValue, type InputValue, type WidgetInputDef } from "@flexwall/sdk";
 import type { TileState } from "@/application/use-cases/resolve-wall";
 import type { ConnectionView } from "@/domain/connection";
 import type { Entitlements } from "@/domain/user";
@@ -428,7 +428,7 @@ function WallPanel({ draft, entitlements, connections, onChange, onConnected, on
         <div className="ed-themes" role="radiogroup" aria-label="Theme">
           {themes.map((t) => (
             <button key={t.id} type="button" role="radio" aria-checked={draft.theme === t.id} className="ed-theme" onClick={() => onChange((d) => ({ ...d, theme: t.id }))}>
-              <span className="ed-theme-swatch" style={{ background: t.wallpaper ? `${t.wallpaper}, ${t.page}` : t.page }}>
+              <span className="ed-theme-swatch" style={themeBackground(t)}>
                 <i style={{ background: t.tile, boxShadow: `inset 0 0 0 1px ${t.tileBorder}` }}>
                   <b style={{ background: t.accent }} />
                 </i>
@@ -443,7 +443,7 @@ function WallPanel({ draft, entitlements, connections, onChange, onConnected, on
             </button>
           ))}
         </div>
-        {theme?.tier === "pro" && !entitlements.proThemes ? <p className="ed-note">Your public page uses Night until you go <a href="/pricing">Pro</a>.</p> : null}
+        {theme?.tier === "pro" && !entitlements.proThemes ? <p className="ed-note">Your public page uses {catalog.defaultTheme().name} until you go <a href="/pricing">Pro</a>.</p> : null}
       </Group>
 
       <Group title="Visibility">
