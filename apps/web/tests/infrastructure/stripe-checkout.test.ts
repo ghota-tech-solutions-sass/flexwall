@@ -5,6 +5,7 @@ const base = {
   customerId: "cus_1",
   userId: "u1",
   consent: { termsVersion: "2026-09-14", acceptedAt: Date.UTC(2026, 8, 14, 9, 0, 0) },
+  referralDiscount: false,
   successUrl: "https://flexwall.test/settings?upgraded=1",
   cancelUrl: "https://flexwall.test/pricing",
 };
@@ -12,7 +13,7 @@ const base = {
 describe("Checkout session", () => {
   test("given an accepted consent, when a subscription checkout is built, then the terms version and immediate start travel with it", () => {
     // Given
-    const input = { ...base, plan: "monthly" as const, priceId: "price_monthly", options: { automaticTax: false, collectTermsConsent: false } };
+    const input = { ...base, plan: "monthly" as const, priceId: "price_monthly", options: { automaticTax: false, collectTermsConsent: false, referralCoupon: null } };
 
     // When
     const params = checkoutSessionParams(input);
@@ -26,7 +27,7 @@ describe("Checkout session", () => {
 
   test("given the lifetime plan, when its checkout is built, then the one-off payment gets an invoice", () => {
     // Given
-    const input = { ...base, plan: "lifetime" as const, priceId: "price_lifetime", options: { automaticTax: false, collectTermsConsent: false } };
+    const input = { ...base, plan: "lifetime" as const, priceId: "price_lifetime", options: { automaticTax: false, collectTermsConsent: false, referralCoupon: null } };
 
     // When
     const params = checkoutSessionParams(input);
@@ -38,7 +39,7 @@ describe("Checkout session", () => {
 
   test("given Stripe Tax switched on, when a checkout is built, then the buyer's address and tax id are collected so VAT can be computed", () => {
     // Given
-    const input = { ...base, plan: "yearly" as const, priceId: "price_yearly", options: { automaticTax: true, collectTermsConsent: true } };
+    const input = { ...base, plan: "yearly" as const, priceId: "price_yearly", options: { automaticTax: true, collectTermsConsent: true, referralCoupon: null } };
 
     // When
     const params = checkoutSessionParams(input);
@@ -53,7 +54,7 @@ describe("Checkout session", () => {
 
   test("given Stripe Tax off, when a checkout is built, then no tax option is sent that would make Stripe refuse the session", () => {
     // Given
-    const input = { ...base, plan: "yearly" as const, priceId: "price_yearly", options: { automaticTax: false, collectTermsConsent: false } };
+    const input = { ...base, plan: "yearly" as const, priceId: "price_yearly", options: { automaticTax: false, collectTermsConsent: false, referralCoupon: null } };
 
     // When
     const params = checkoutSessionParams(input);
@@ -65,12 +66,36 @@ describe("Checkout session", () => {
 
   test("given no configured price, when a checkout is built, then the inline price includes taxes like the configured ones", () => {
     // Given
-    const input = { ...base, plan: "monthly" as const, priceId: null, options: { automaticTax: false, collectTermsConsent: false } };
+    const input = { ...base, plan: "monthly" as const, priceId: null, options: { automaticTax: false, collectTermsConsent: false, referralCoupon: null } };
 
     // When
     const params = checkoutSessionParams(input);
 
     // Then
     expect(params.line_items?.[0]?.price_data).toMatchObject({ currency: "usd", unit_amount: 600, tax_behavior: "inclusive" });
+  });
+
+  test("given a referred buyer and a configured coupon, when a checkout is built, then the invitee discount replaces promotion codes", () => {
+    // Given
+    const input = { ...base, referralDiscount: true, plan: "monthly" as const, priceId: "price_monthly", options: { automaticTax: false, collectTermsConsent: false, referralCoupon: "coupon_ref" } };
+
+    // When
+    const params = checkoutSessionParams(input);
+
+    // Then
+    expect(params.discounts).toEqual([{ coupon: "coupon_ref" }]);
+    expect(params.allow_promotion_codes).toBeUndefined();
+  });
+
+  test("given a referred buyer but no coupon configured, when a checkout is built, then promotion codes stay available", () => {
+    // Given
+    const input = { ...base, referralDiscount: true, plan: "yearly" as const, priceId: "price_yearly", options: { automaticTax: false, collectTermsConsent: false, referralCoupon: null } };
+
+    // When
+    const params = checkoutSessionParams(input);
+
+    // Then
+    expect(params.discounts).toBeUndefined();
+    expect(params.allow_promotion_codes).toBe(true);
   });
 });

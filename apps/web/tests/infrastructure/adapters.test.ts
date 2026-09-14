@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { BlockedRequestError } from "@flexwall/sdk";
 import { guardedFetch, isPrivateAddress, validateTarget } from "@/infrastructure/net/guarded-fetch";
 import { db, resetMemoryDb } from "@/infrastructure/persistence/db";
-import { DbEventLog, DbHandles, DbSnapshots, DbUsers, DbValueCache, DbWalls } from "@/infrastructure/persistence/repositories";
+import { DbEventLog, DbHandles, DbReferrals, DbSnapshots, DbUsers, DbValueCache, DbWalls } from "@/infrastructure/persistence/repositories";
 import { AesSecretBox } from "@/infrastructure/security/secret-box";
 import { HmacTokenService } from "@/infrastructure/security/tokens";
-import { aTile, aUser, aWall } from "../builders";
+import { aReferral, aTile, aUser, aWall } from "../builders";
 import { FixedClock } from "../fakes";
 
 /**
@@ -29,6 +29,23 @@ describe("Repositories", () => {
 
     // Then
     expect(byEmail?.id).toBe(byCustomer?.id);
+  });
+
+  test("given referrals from two referrers, when read by invitee and by referrer, then each finds its own", async () => {
+    // Given
+    const referrals = new DbReferrals(db());
+    const referrer = `r-${crypto.randomUUID()}`;
+    await referrals.save(aReferral().from(referrer).to(`a-${referrer}`).build());
+    await referrals.save(aReferral().from(referrer).to(`b-${referrer}`).converted().build());
+    await referrals.save(aReferral().from(`other-${referrer}`).to(`c-${referrer}`).build());
+
+    // When
+    const byReferee = await referrals.byReferee(`b-${referrer}`);
+    const byReferrer = await referrals.byReferrer(referrer);
+
+    // Then
+    expect(byReferee?.status).toBe("converted");
+    expect(byReferrer.map((r) => r.refereeId).sort()).toEqual([`a-${referrer}`, `b-${referrer}`]);
   });
 
   test("given a claimed handle, when someone else claims it, then the registry refuses atomically", async () => {

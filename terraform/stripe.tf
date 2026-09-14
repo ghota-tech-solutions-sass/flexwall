@@ -133,6 +133,24 @@ resource "stripe_price" "lifetime" {
 }
 
 # =============================================================================
+# REFERRALS
+# =============================================================================
+
+# An invitee's first payment, on any plan, is 20% off. The app applies it at
+# checkout while the invitee's referral hasn't converted.
+resource "stripe_coupon" "referral" {
+  name        = "Invited to Flexwall: 20% off"
+  percent_off = 20
+  duration    = "once"
+
+  metadata = {
+    app     = "flexwall"
+    purpose = "referral"
+    managed = "terraform"
+  }
+}
+
+# =============================================================================
 # CUSTOMER PORTAL
 # =============================================================================
 
@@ -206,6 +224,8 @@ resource "stripe_webhook_endpoint" "billing" {
     "customer.subscription.created",
     "customer.subscription.updated",
     "customer.subscription.deleted",
+    # A refund soon after an invitee's first payment takes back the referrer's month.
+    "charge.refunded",
   ]
 
   metadata = {

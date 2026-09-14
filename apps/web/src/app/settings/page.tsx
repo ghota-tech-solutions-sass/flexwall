@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { TopBar } from "@/components/site/Chrome";
 import { BillingPanel } from "@/components/settings/BillingPanel";
 import { ConnectionsManager } from "@/components/settings/ConnectionsManager";
+import { ReferralPanel } from "@/components/settings/ReferralPanel";
 import { container } from "@/composition";
 import { DomainError } from "@/domain/errors";
 import { sessionUserId } from "@/presentation/http";
@@ -18,6 +19,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     throw e;
   });
   const { upgraded } = await searchParams;
+  const program = await container().getReferralProgram.execute({ userId });
 
   return (
     <div className="page">
@@ -30,7 +32,14 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         </p>
         <h1 style={{ letterSpacing: "-0.03em" }}>Settings</h1>
         {upgraded ? <p className="hint">Payment received. Pro turns on as soon as Stripe confirms, usually within a few seconds.</p> : null}
-        <BillingPanel entitlements={owner.entitlements} subscription={owner.user.subscription} hasCustomer={Boolean(owner.user.stripeCustomerId)} />
+        <BillingPanel
+          entitlements={owner.entitlements}
+          paidPlan={owner.paidPlan}
+          bonusProUntil={owner.user.bonusProUntil ?? null}
+          subscription={owner.user.subscription}
+          hasCustomer={Boolean(owner.user.stripeCustomerId)}
+        />
+        {program ? <ReferralPanel program={program} /> : null}
         <ConnectionsManager initial={owner.connections} paid={owner.entitlements.paid} />
         <section className="panel">
           <h2>Account</h2>

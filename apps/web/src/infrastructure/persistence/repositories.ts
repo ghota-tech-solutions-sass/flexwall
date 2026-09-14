@@ -5,6 +5,7 @@ import type {
   ConnectionRepository,
   EventLog,
   HandleRegistry,
+  ReferralRepository,
   SnapshotStore,
   UserRepository,
   ValueCache,
@@ -12,6 +13,7 @@ import type {
 } from "@/application/ports";
 import type { Connection } from "@/domain/connection";
 import type { Handle } from "@/domain/handle";
+import type { Referral } from "@/domain/referral";
 import type { User } from "@/domain/user";
 import type { Wall } from "@/domain/wall";
 import type { Db, Doc } from "./db";
@@ -38,6 +40,14 @@ export class DbHandles implements HandleRegistry {
   async ownerOf(handle: Handle) {
     return ((await this.db.get<{ userId: string }>("handles", handle))?.userId as string) ?? null;
   }
+}
+
+/** One document per invitee, keyed by their user id. */
+export class DbReferrals implements ReferralRepository {
+  constructor(private readonly db: Db) {}
+  byReferee = (refereeId: string) => this.db.get<Doc>("referrals", refereeId) as Promise<Referral | null>;
+  byReferrer = (referrerId: string) => this.db.where("referrals", [["referrerId", referrerId]]) as unknown as Promise<Referral[]>;
+  save = (referral: Referral) => this.db.set("referrals", referral.id, asDoc(referral));
 }
 
 export class DbWalls implements WallRepository {

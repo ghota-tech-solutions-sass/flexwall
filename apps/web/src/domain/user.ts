@@ -21,6 +21,10 @@ export interface User {
   stripeCustomerId: string | null;
   subscription: Subscription | null;
   lifetime: boolean;
+  /** The user who invited this one, if any. Accounts created before referrals have it undefined. */
+  referredBy: string | null;
+  /** Epoch ms until which referral rewards keep Pro on. Accounts created before referrals have it undefined. */
+  bonusProUntil: number | null;
 }
 
 export type Plan = "free" | "pro" | "lifetime";
@@ -44,7 +48,10 @@ export const PAID_TILE_LIMIT = 60;
 /** A failed renewal keeps Pro this long while Stripe retries the card. */
 export const PAST_DUE_GRACE_MS = 7 * 24 * 60 * 60 * 1000;
 
-export function planOf(user: Pick<User, "lifetime" | "subscription">, now: number): Plan {
+type PlanFacts = Pick<User, "lifetime" | "subscription"> & { bonusProUntil?: number | null };
+
+/** What the user pays for, ignoring referral rewards: decides whether they can subscribe again. */
+export function paidPlanOf(user: PlanFacts, now: number): Plan {
   if (user.lifetime) return "lifetime";
   const s = user.subscription;
   if (!s) return "free";
@@ -53,8 +60,15 @@ export function planOf(user: Pick<User, "lifetime" | "subscription">, now: numbe
   return "free";
 }
 
+/** The plan in force: what they pay for, or Pro while referral rewards last. */
+export function planOf(user: PlanFacts, now: number): Plan {
+  const paid = paidPlanOf(user, now);
+  if (paid !== "free") return paid;
+  return (user.bonusProUntil ?? 0) > now ? "pro" : "free";
+}
+
 /** The only place that turns a plan into what a user may do. */
-export function entitlementsOf(user: Pick<User, "lifetime" | "subscription">, now: number): Entitlements {
+export function entitlementsOf(user: PlanFacts, now: number): Entitlements {
   const plan = planOf(user, now);
   const paid = plan !== "free";
   return {
@@ -79,5 +93,7 @@ export function newUser(input: { id: string; email: string; now: number; timeZon
     stripeCustomerId: null,
     subscription: null,
     lifetime: false,
+    referredBy: null,
+    bonusProUntil: null,
   };
 }

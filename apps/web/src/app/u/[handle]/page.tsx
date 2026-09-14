@@ -54,7 +54,7 @@ export default async function PublicWallPage({ params }: Props) {
         </header>
         <WallGrids tiles={wall.tiles} states={states} theme={theme} today={today} catalog={c.catalog} />
         <footer className="wall-footer" style={{ color: theme.muted }}>
-          {entitlements.branding ? <Link href="/">Made with Flexwall. Make yours →</Link> : <span />}
+          {entitlements.branding ? <Link href={`/r/${wall.handle}`}>Made with Flexwall. Make yours →</Link> : <span />}
           <Link href={`/report?handle=${wall.handle}`}>Report this wall</Link>
         </footer>
       </main>
