@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.2.0...v0.3.0) (2026-09-14)
+
+
+### Features
+
+* **billing:** consent to the terms and immediate start before checkout, taxes included ([10bb2ba](https://github.com/ghota-tech-solutions-sass/flexwall/commit/10bb2bae5b9b0dd6262806d79edffa77f41c9787))
+* **legal:** legal notice, terms of sale and privacy policy in French and English ([127580b](https://github.com/ghota-tech-solutions-sass/flexwall/commit/127580b854012114964d8ece35997cb189a1bea5))
+
 ## [0.2.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.1.0...v0.2.0) (2026-09-14)
 
 
