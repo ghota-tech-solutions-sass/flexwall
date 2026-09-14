@@ -24,6 +24,15 @@ export class DomainError extends Error {
     super(message);
     this.name = "DomainError";
   }
+
+  /**
+   * Next bundles each route separately, so a use case built in one bundle can
+   * throw another bundle's copy of this class. Recognise it by shape instead
+   * of identity, or domain errors turn into 500s in production.
+   */
+  static [Symbol.hasInstance](value: unknown): boolean {
+    return value instanceof Error && value.name === "DomainError" && typeof (value as { code?: unknown }).code === "string";
+  }
 }
 
 export const notFound = (what: string) => new DomainError("not_found", `${what} doesn't exist.`);
