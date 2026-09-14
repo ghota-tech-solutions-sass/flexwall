@@ -67,10 +67,7 @@ describe("stripe plugin", () => {
     let expanded = 0;
     const ctx = fakeContext({
       "https://api.stripe.com/v1/balance": { available: [{ currency: "eur" }], pending: [] },
-      "https://api.stripe.com/v1/subscriptions": (init) => {
-        void init;
-        return { data: [], has_more: false };
-      },
+      "https://api.stripe.com/v1/subscriptions": { data: [], has_more: false },
       "https://api.stripe.com/v1/balance_transactions": { data: [{ id: "t", type: "charge", amount: 12345, currency: "eur", created: Math.floor(Date.now() / 1000) }], has_more: false },
     });
     // Coupons forbidden on the expanded call only.

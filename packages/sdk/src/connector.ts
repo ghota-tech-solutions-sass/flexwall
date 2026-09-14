@@ -18,7 +18,14 @@ export interface MetricDef {
   params?: Field[];
   /** Starting options for a tile showing this metric. */
   defaults?: { label?: string; prefix?: string; suffix?: string };
+  /**
+   * The Explore leaderboard this metric competes on. Revenue boards only count
+   * values from verified connectors: typed numbers can't buy a rank.
+   */
+  leaderboard?: Leaderboard;
 }
+
+export type Leaderboard = "revenue" | "streak" | "audience" | "stars";
 
 export interface ConnectorAuth {
   /** Credentials typed once per account. `secret` fields are encrypted. */
