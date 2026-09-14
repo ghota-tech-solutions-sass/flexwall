@@ -8,14 +8,10 @@
  * failing a request.
  */
 
-export interface EmailMessage {
-  to: string;
-  subject: string;
-  html: string;
-  text: string;
-}
+import type { Mail, Mailer } from "@/application/ports";
 
-export type EmailSender = (message: EmailMessage) => Promise<"ok" | "rejected">;
+type EmailMessage = Mail;
+type EmailSender = (message: EmailMessage) => Promise<"ok" | "rejected">;
 
 const METADATA = "http://metadata.google.internal/computeMetadata/v1";
 const GMAIL_SCOPE = "https://www.googleapis.com/auth/gmail.send";
@@ -60,23 +56,8 @@ async function metadata(path: string): Promise<string> {
   return res.text();
 }
 
-let _sender: EmailSender | null | undefined;
-
-/** Lazy singleton. Null when EMAIL_IMPERSONATE is not set. */
-export function getEmailSender(): EmailSender | null {
-  if (_sender !== undefined) return _sender;
-  _sender = createGmailSender();
-  return _sender;
-}
-
-export function emailEnabled(): boolean {
-  return Boolean(process.env.EMAIL_IMPERSONATE?.trim());
-}
-
-function createGmailSender(): EmailSender | null {
-  const mailbox = process.env.EMAIL_IMPERSONATE?.trim();
-  if (!mailbox) return null;
-  const from = process.env.EMAIL_FROM?.trim() || mailbox;
+function createGmailSender(mailbox: string, fromAddress?: string): EmailSender {
+  const from = fromAddress || mailbox;
 
   let cached: { token: string; expiresAt: number } | null = null;
 
@@ -122,4 +103,22 @@ function createGmailSender(): EmailSender | null {
     if (!res.ok) console.error("gmail send failed:", res.status, await res.text().catch(() => ""));
     return res.ok ? "ok" : "rejected";
   };
+}
+
+/** Sends through Gmail as EMAIL_IMPERSONATE. */
+export class GmailMailer implements Mailer {
+  private readonly send_: EmailSender;
+  constructor(mailbox: string, from?: string) {
+    this.send_ = createGmailSender(mailbox, from);
+  }
+  async send(mail: Mail) {
+    if ((await this.send_(mail)) !== "ok") throw new Error(`gmail refused mail to ${mail.to}`);
+  }
+}
+
+/** Local development: mail goes to the server log, links included. */
+export class ConsoleMailer implements Mailer {
+  async send(mail: Mail) {
+    console.log(`\n[mail] to ${mail.to}: ${mail.subject}\n${mail.text}\n`);
+  }
 }
