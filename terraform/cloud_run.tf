@@ -111,8 +111,13 @@ resource "google_secret_manager_secret_version" "encryption_key" {
   }
 }
 
+locals {
+  # Whether a token was given is not a secret; the token is.
+  github_token_set = nonsensitive(var.github_token != "")
+}
+
 resource "google_secret_manager_secret" "github_token" {
-  count     = var.github_token == "" ? 0 : 1
+  count     = local.github_token_set ? 1 : 0
   secret_id = "flexwall-github-token"
   project   = var.project_id
 
@@ -124,7 +129,7 @@ resource "google_secret_manager_secret" "github_token" {
 }
 
 resource "google_secret_manager_secret_version" "github_token" {
-  count       = var.github_token == "" ? 0 : 1
+  count       = local.github_token_set ? 1 : 0
   secret      = google_secret_manager_secret.github_token[0].id
   secret_data = var.github_token
 }
@@ -140,7 +145,7 @@ locals {
       STRIPE_WEBHOOK_SECRET   = google_secret_manager_secret.stripe_webhook_secret.secret_id
       YOUTUBE_API_KEY         = google_secret_manager_secret.youtube_api_key.secret_id
     },
-    var.github_token == "" ? {} : { GITHUB_TOKEN = google_secret_manager_secret.github_token[0].secret_id }
+    local.github_token_set ? { GITHUB_TOKEN = google_secret_manager_secret.github_token[0].secret_id } : {}
   )
 
   # Cloud Run reads "latest" at revision start: a new version must roll a new
