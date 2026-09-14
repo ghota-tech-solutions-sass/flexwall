@@ -33,13 +33,21 @@ export const IMAGE_HEADERS = {
   "X-Robots-Tag": "noindex, nofollow",
 };
 
+/**
+ * Landing page samples are the opposite case: deterministic marketing images
+ * every visitor requests. Cache them for an hour, matching the page's own
+ * revalidation, so sample countdowns stay consistent with the page.
+ */
+const SAMPLE_HEADERS = { "Cache-Control": "public, max-age=3600", "X-Robots-Tag": "noindex" };
+
 export async function renderPng(config: WallConfig, opts: { watermark: boolean; width?: number; sample?: boolean }): Promise<Response> {
   try {
     const data = opts.sample ? await resolveWall(config, new Date(), sampleGithub) : await resolveWall(config);
     // ImageResponse renders lazily while streaming; buffer it so a layout
     // error becomes a 500 here instead of a truncated PNG on someone's phone.
     const png = await renderWallpaper(config, data, opts).arrayBuffer();
-    return new Response(png, { headers: { ...IMAGE_HEADERS, "Content-Type": "image/png" } });
+    const headers = opts.sample ? SAMPLE_HEADERS : IMAGE_HEADERS;
+    return new Response(png, { headers: { ...headers, "Content-Type": "image/png" } });
   } catch (error) {
     console.error("render failed:", error);
     return new Response("render_failed", { status: 500, headers: IMAGE_HEADERS });

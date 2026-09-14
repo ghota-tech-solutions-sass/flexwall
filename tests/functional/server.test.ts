@@ -146,7 +146,11 @@ describe("wallpaper lifecycle", () => {
     const res = await fetch(`${BASE}/api/preview?w=5000&c=${c}`);
     expect(res.status).toBe(200);
     expect(new DataView(await res.arrayBuffer()).getUint32(16)).toBe(603);
+    expect(res.headers.get("cache-control")).toContain("no-store");
     expect((await fetch(`${BASE}/api/preview?c=garbage`)).status).toBe(422);
+    // Landing samples are the one image anyone may cache.
+    const sample = await fetch(`${BASE}/api/preview?sample=1&c=${c}`);
+    expect(sample.headers.get("cache-control")).toBe("public, max-age=3600");
   });
 
   test("webhook refuses unsigned calls; checkout needs the edit key", async () => {

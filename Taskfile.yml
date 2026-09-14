@@ -24,6 +24,13 @@ tasks:
     desc: Typecheck, tests unitaires, build, tests fonctionnels
     cmds: [bun run check]
 
+  test:firestore:
+    desc: Tests du store contre l'émulateur Firestore (docker)
+    cmds:
+      - docker start fw-firestore-emulator 2>/dev/null || docker run -d --name fw-firestore-emulator -p 8080:8080 gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators gcloud beta emulators firestore start --host-port=0.0.0.0:8080
+      - sleep 3
+      - FIRESTORE_EMULATOR_HOST=localhost:8080 GOOGLE_PROJECT_ID=demo-flexwall bun test tests/unit/walls.test.ts
+
   samples:
     desc: Rend chaque thème en PNG dans .tmp/
     cmds:
