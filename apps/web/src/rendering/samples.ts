@@ -52,7 +52,7 @@ export function demoWall(today: string): Wall {
     { id: "customers", widget: "stat", inputs: { value: metric("stripe", "subscribers", {}, "demo") }, options: { label: "Customers", prefix: "", suffix: "" }, visibility: "public", layout: { x: 2, y: 1, w: 1, h: 1 } },
     { id: "year", widget: "time-left", inputs: {}, options: { period: "year", style: "bar" }, visibility: "public", layout: { x: 3, y: 1, w: 1, h: 1 } },
     { id: "graph", widget: "heatmap", inputs: { days: metric("github", "activity", { user: "demo" }) }, options: { label: "Contributions", showTotal: true }, visibility: "public", layout: { x: 0, y: 2, w: 4, h: 1 } },
-    { id: "note", widget: "note", inputs: {}, options: { title: "Building Flexwall", body: "Live numbers from the tools I use, on one page. No screenshots." }, visibility: "public", layout: { x: 0, y: 3, w: 2, h: 1 } },
+    { id: "note", widget: "note", inputs: {}, options: { title: "Building Flexwall", body: "Live numbers, no screenshots." }, visibility: "public", layout: { x: 0, y: 3, w: 2, h: 1 } },
     { id: "stars", widget: "stat", inputs: { value: metric("github", "stars", { repo: "demo/demo" }) }, options: { label: "GitHub stars", prefix: "", suffix: "" }, visibility: "public", layout: { x: 2, y: 3, w: 1, h: 1 } },
     { id: "site", widget: "link", inputs: {}, options: { url: "https://flexwall.lol", title: "flexwall.lol", subtitle: "Make yours" }, visibility: "public", layout: { x: 3, y: 3, w: 1, h: 1 } },
   ];
