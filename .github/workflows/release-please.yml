@@ -1,0 +1,32 @@
+name: release-please
+
+# Maintains a rolling release PR from Conventional Commits on main. When the
+# release PR merges, release-please cuts the tag and the GitHub Release, then
+# the step below dispatches ci.yml to deploy. (A tag created with GITHUB_TOKEN
+# does not trigger tag workflows on its own.)
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v5
+        id: release
+        with:
+          # Manifest mode: the version lives in .release-please-manifest.json.
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - name: Deploy on release
+        if: ${{ steps.release.outputs.release_created }}
+        run: gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

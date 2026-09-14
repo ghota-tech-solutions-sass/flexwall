@@ -10,3 +10,10 @@ node_modules/
 # written by `next dev`, see apps/web/README.md
 AGENTS.md
 CLAUDE.md
+
+# terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+tfplan

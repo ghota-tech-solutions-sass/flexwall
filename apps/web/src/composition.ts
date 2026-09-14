@@ -47,6 +47,7 @@ function build() {
       yearly: optionalEnv("STRIPE_PRICE_YEARLY") || null,
       lifetime: optionalEnv("STRIPE_PRICE_LIFETIME") || null,
     },
+    portalConfiguration: optionalEnv("STRIPE_PORTAL_CONFIGURATION") || null,
   });
   const runtime = new GuardedRuntime(["GITHUB_TOKEN", "YOUTUBE_API_KEY"]);
 

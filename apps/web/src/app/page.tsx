@@ -6,6 +6,7 @@ import { container } from "@/composition";
 import { todayIn } from "@/domain/time";
 import { demoWall, sampleStates } from "@/rendering/samples";
 import { sessionUserId } from "@/presentation/http";
+import { SOURCE_URL } from "@/site";
 
 export const dynamic = "force-dynamic";
 
@@ -57,7 +58,7 @@ export default async function Home() {
 
         <section className="section">
           <h2>Real numbers, from the source</h2>
-          <p>Tiles read from your accounts carry a verified badge. Keys are encrypted, read-only, and never shown again. Missing a source? Connectors are open source: add one in a pull request.</p>
+          <p>Tiles read from your accounts carry a verified badge. Keys are encrypted, read-only, and never shown again.{SOURCE_URL ? " Missing a source? Connectors are open source: add one in a pull request." : ""}</p>
           <ul className="connector-list">
             {c.catalog.connectors().map((conn) => (
               <li key={conn.id}>
