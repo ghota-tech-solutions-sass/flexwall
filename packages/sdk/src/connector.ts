@@ -124,6 +124,11 @@ export class HttpError extends Error {
     super(`HTTP ${status} from ${new URL(url).host}`);
     this.name = "HttpError";
   }
+
+  // Bundlers can load this package more than once; recognise errors by shape, not identity.
+  static [Symbol.hasInstance](value: unknown): boolean {
+    return value instanceof Error && value.name === "HttpError" && typeof (value as { status?: unknown }).status === "number";
+  }
 }
 
 /** Thrown by `ctx.fetch` when the host refuses a request: private address, redirect, too big, too slow. */
@@ -132,6 +137,10 @@ export class BlockedRequestError extends Error {
     super(message);
     this.name = "BlockedRequestError";
   }
+
+  static [Symbol.hasInstance](value: unknown): boolean {
+    return value instanceof Error && value.name === "BlockedRequestError";
+  }
 }
 
 /** A failure the owner can fix. The message is shown as is: one plain sentence. */
@@ -139,6 +148,10 @@ export class ConnectorError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "ConnectorError";
+  }
+
+  static [Symbol.hasInstance](value: unknown): boolean {
+    return value instanceof Error && value.name === "ConnectorError";
   }
 }
 

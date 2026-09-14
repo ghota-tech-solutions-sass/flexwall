@@ -1,45 +1,30 @@
-# ── Dependencies ──
-FROM oven/bun:1.4-alpine AS deps
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
-COPY package.json bun.lock* ./
+# Flexwall: the monorepo builds one image, the web app with its SDK and plugins.
+
+FROM oven/bun:1.4-alpine AS builder
+# Next builds under Node (bun --bun next build is unreliable on x86_64); Bun stays the runtime.
+RUN apk add --no-cache nodejs libc6-compat
+WORKDIR /repo
+COPY . .
 RUN bun install --frozen-lockfile
 
-# ── Builder ──
-# Build runs under node (bun --bun next build segfaults on x86_64 —
-# see lettrio's Dockerfile note). Bun stays as the runtime.
-FROM oven/bun:1.4-alpine AS builder
-RUN apk add --no-cache nodejs
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-
 ARG NEXT_PUBLIC_APP_URL=https://flexwall.lol
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+RUN bun --cwd apps/web run build
 
-RUN bun run build
-
-# ── Runner ──
 FROM oven/bun:1.4-alpine AS runner
 RUN apk add --no-cache libc6-compat
-WORKDIR /app
+WORKDIR /srv
+ENV NEXT_TELEMETRY_DISABLED=1 NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0
+RUN addgroup --system --gid 1001 app && adduser --system --uid 1001 app
 
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+# Standalone output traced from the repo root keeps the monorepo layout: apps/web/server.js.
+COPY --from=builder --chown=app:app /repo/apps/web/.next/standalone ./
+COPY --from=builder --chown=app:app /repo/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder --chown=app:app /repo/apps/web/public ./apps/web/public
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
+USER app
 EXPOSE 3000
-
+WORKDIR /srv/apps/web
 CMD ["bun", "server.js"]
