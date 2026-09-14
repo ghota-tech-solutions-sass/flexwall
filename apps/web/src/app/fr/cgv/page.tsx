@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LEGAL_PATHS, LegalDocument, legalMetadata, MediatorBlock } from "@/components/legal/LegalDocument";
+import { PLAN_PRICES_USD } from "@/domain/pricing";
 import { REFERRAL_DISCOUNT_PERCENT, REFERRAL_REWARD_CAP, REFERRAL_REWARD_DAYS } from "@/domain/referral";
 import { FREE_TILE_LIMIT } from "@/domain/user";
 import { PUBLISHER } from "@/domain/publisher";
@@ -64,7 +65,7 @@ export default function CgvPage() {
       <h2>6. Prix</h2>
       <p>
         Les prix sont indiqués en dollars américains, toutes taxes comprises : la TVA applicable dans le pays de l&apos;acheteur est incluse et détaillée sur
-        la facture. Pro : 6 $ par mois ou 48 $ par an. Lifetime : 99 $ en une fois. Une éventuelle conversion de devise par la banque de l&apos;acheteur reste
+        la facture. Pro : {PLAN_PRICES_USD.monthly} $ par mois ou {PLAN_PRICES_USD.yearly} $ par an. Lifetime : {PLAN_PRICES_USD.lifetime} $ en une fois. Une éventuelle conversion de devise par la banque de l&apos;acheteur reste
         à sa charge. Un changement de prix d&apos;abonnement est annoncé par e-mail au moins 30 jours avant de s&apos;appliquer, à l&apos;échéance suivante ;
         l&apos;abonné peut résilier avant.
       </p>

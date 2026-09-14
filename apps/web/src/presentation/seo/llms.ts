@@ -1,5 +1,7 @@
 import { FREE_TILE_LIMIT } from "@/domain/user";
-import { PLAN_PRICES_USD, SITE_DESCRIPTION } from "./structured-data";
+import { PLAN_PRICES_USD } from "@/domain/pricing";
+import { ROUTES } from "../routes";
+import { SITE_DESCRIPTION } from "./structured-data";
 import type { IntegrationPage } from "./integrations";
 
 /** /llms.txt: a plain summary of the product for AI assistants and answer engines (llmstxt.org). */
@@ -20,10 +22,10 @@ export function llmsTxt(origin: string, integrations: readonly IntegrationPage[]
     "",
     "## Main pages",
     "",
-    `- [Home](${at("/")}): what Flexwall is, with an example wall`,
-    `- [The Wall](${at("/explore")}): public walls ranked by verified numbers`,
-    `- [Pricing](${at("/pricing")})`,
-    `- [Integrations](${at("/integrations")}): every service a tile can read from`,
+    `- [Home](${at(ROUTES.home)}): what Flexwall is, with an example wall`,
+    `- [The Wall](${at(ROUTES.explore)}): public walls ranked by verified numbers`,
+    `- [Pricing](${at(ROUTES.pricing)})`,
+    `- [Integrations](${at(ROUTES.integrations)}): every service a tile can read from`,
     "",
     "## Integrations",
     "",
@@ -31,9 +33,9 @@ export function llmsTxt(origin: string, integrations: readonly IntegrationPage[]
     "",
     "## Legal",
     "",
-    `- [Terms of service](${at("/terms")})`,
-    `- [Privacy policy](${at("/privacy")})`,
-    `- [Legal notice](${at("/legal")})`,
+    `- [Terms of service](${at(ROUTES.terms)})`,
+    `- [Privacy policy](${at(ROUTES.privacy)})`,
+    `- [Legal notice](${at(ROUTES.legal)})`,
     "",
   ].join("\n");
 }

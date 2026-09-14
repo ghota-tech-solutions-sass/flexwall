@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { ArrowUpRightIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { HANDLE_MAX_LENGTH, Handle } from "@/domain/handle";
+import { ROUTES } from "@/presentation/routes";
+import { STORAGE_KEYS } from "@/presentation/storage-keys";
 
 /** "flexwall.lol/@____ Claim": remembers the handle and sends people to sign in. */
 export function ClaimForm() {
@@ -16,11 +18,11 @@ export function ClaimForm() {
         e.preventDefault();
         const clean = handle.replace(/-+$/, "");
         try {
-          if (clean) sessionStorage.setItem("fw:wanted-handle", clean);
+          if (clean) sessionStorage.setItem(STORAGE_KEYS.wantedHandle, clean);
         } catch {
           /* private mode: they'll type it again */
         }
-        router.push("/login");
+        router.push(ROUTES.login);
       }}
     >
       <span>flexwall.lol/@</span>

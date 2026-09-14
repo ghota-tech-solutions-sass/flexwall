@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { REPORT_REASON_MAX } from "@/domain/report";
+import { postJson } from "@/presentation/json";
+import { API } from "@/presentation/routes";
 
 export function ReportForm({ handle: initial }: { handle: string }) {
   const [handle, setHandle] = useState(initial);
@@ -12,9 +15,8 @@ export function ReportForm({ handle: initial }: { handle: string }) {
     <form
       onSubmit={async (e) => {
         e.preventDefault();
-        const res = await fetch("/api/report", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ handle, reason, contact }) });
-        const body = await res.json().catch(() => ({}));
-        setState(res.ok ? "sent" : (body.message ?? "Couldn't send the report."));
+        const res = await postJson(API.report, { handle, reason, contact });
+        setState(res.ok ? "sent" : (res.body.message ?? "Couldn't send the report."));
       }}
     >
       <label className="field">
@@ -23,7 +25,7 @@ export function ReportForm({ handle: initial }: { handle: string }) {
       </label>
       <label className="field">
         <span>What&apos;s wrong</span>
-        <textarea value={reason} onChange={(e) => setReason(e.target.value)} required maxLength={1000} />
+        <textarea value={reason} onChange={(e) => setReason(e.target.value)} required maxLength={REPORT_REASON_MAX} />
       </label>
       <label className="field">
         <span>Your email, if you want an answer</span>

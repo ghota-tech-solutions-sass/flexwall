@@ -4,15 +4,16 @@ import { TopBar } from "@/components/site/Chrome";
 import { HandleForm } from "@/components/site/HandleForm";
 import { container } from "@/composition";
 import { sessionUserId } from "@/presentation/http";
+import { ROUTES } from "@/presentation/routes";
 
 export const metadata: Metadata = { title: "Pick your handle", robots: { index: false } };
 
 export default async function OnboardingPage() {
   const userId = await sessionUserId();
-  if (!userId) redirect("/login");
+  if (!userId) redirect(ROUTES.login);
   const user = await container().users.byId(userId);
-  if (!user) redirect("/login");
-  if (user.handle) redirect("/edit");
+  if (!user) redirect(ROUTES.login);
+  if (user.handle) redirect(ROUTES.edit);
   return (
     <div className="page">
       <TopBar signedIn />

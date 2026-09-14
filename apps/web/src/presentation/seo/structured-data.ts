@@ -1,4 +1,6 @@
+import { PLAN_PRICES_USD, PRICE_CURRENCY } from "@/domain/pricing";
 import { PUBLISHER } from "@/domain/publisher";
+import { ROUTES } from "../routes";
 
 /**
  * schema.org descriptions of pages, for search engines. Pure: pages pass an
@@ -11,8 +13,6 @@ export const SITE_NAME = "Flexwall";
 export const SITE_DESCRIPTION =
   "A public page of live tiles fed by your real accounts: Stripe MRR, GitHub streaks, and anything with an API. Share it, pin it to your lock screen.";
 
-/** Public prices in US dollars, taxes included. Mirror terraform/variables.tf price_*_cents. */
-export const PLAN_PRICES_USD = { monthly: 6, yearly: 48, lifetime: 99 } as const;
 
 /**
  * JSON for a <script type="application/ld+json">. Escapes what could close the
@@ -30,15 +30,18 @@ export function serializeJsonLd(data: JsonLdObject | JsonLdObject[]): string {
 
 const url = (origin: string, path: string) => origin.replace(/\/+$/, "") + path;
 
+/** Fragment ids other schema.org nodes point at. */
+const NODE_IDS = { organization: `${ROUTES.home}#organization`, website: `${ROUTES.home}#website` } as const;
+
 export function organizationLd(origin: string): JsonLdObject {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "@id": url(origin, "/#organization"),
+    "@id": url(origin, NODE_IDS.organization),
     name: SITE_NAME,
     legalName: PUBLISHER.companyName,
-    url: url(origin, "/"),
-    logo: url(origin, "/apple-icon"),
+    url: url(origin, ROUTES.home),
+    logo: url(origin, ROUTES.appleIcon),
     email: PUBLISHER.contactEmail,
     ...(PUBLISHER.vatNumber ? { vatID: PUBLISHER.vatNumber } : {}),
   };
@@ -48,11 +51,11 @@ export function websiteLd(origin: string): JsonLdObject {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "@id": url(origin, "/#website"),
+    "@id": url(origin, NODE_IDS.website),
     name: SITE_NAME,
-    url: url(origin, "/"),
+    url: url(origin, ROUTES.home),
     description: SITE_DESCRIPTION,
-    publisher: { "@id": url(origin, "/#organization") },
+    publisher: { "@id": url(origin, NODE_IDS.organization) },
     inLanguage: "en",
   };
 }
@@ -62,11 +65,11 @@ export function softwareApplicationLd(origin: string): JsonLdObject {
     "@type": "Offer",
     name,
     price: price.toFixed(2),
-    priceCurrency: "USD",
-    url: url(origin, "/pricing"),
+    priceCurrency: PRICE_CURRENCY,
+    url: url(origin, ROUTES.pricing),
     ...(billingDuration
-      ? { priceSpecification: { "@type": "UnitPriceSpecification", price: price.toFixed(2), priceCurrency: "USD", billingDuration, valueAddedTaxIncluded: true } }
-      : { priceSpecification: { "@type": "PriceSpecification", price: price.toFixed(2), priceCurrency: "USD", valueAddedTaxIncluded: true } }),
+      ? { priceSpecification: { "@type": "UnitPriceSpecification", price: price.toFixed(2), priceCurrency: PRICE_CURRENCY, billingDuration, valueAddedTaxIncluded: true } }
+      : { priceSpecification: { "@type": "PriceSpecification", price: price.toFixed(2), priceCurrency: PRICE_CURRENCY, valueAddedTaxIncluded: true } }),
   });
   return {
     "@context": "https://schema.org",
@@ -74,9 +77,9 @@ export function softwareApplicationLd(origin: string): JsonLdObject {
     name: SITE_NAME,
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web, iOS",
-    url: url(origin, "/"),
+    url: url(origin, ROUTES.home),
     description: SITE_DESCRIPTION,
-    publisher: { "@id": url(origin, "/#organization") },
+    publisher: { "@id": url(origin, NODE_IDS.organization) },
     offers: [
       offer("Free", 0),
       offer("Pro, monthly", PLAN_PRICES_USD.monthly, "P1M"),
@@ -87,7 +90,7 @@ export function softwareApplicationLd(origin: string): JsonLdObject {
 }
 
 export function profilePageLd(input: { origin: string; handle: string; title: string; bio: string; createdAt: number; updatedAt: number }): JsonLdObject {
-  const page = url(input.origin, `/@${input.handle}`);
+  const page = url(input.origin, ROUTES.wall(input.handle));
   return {
     "@context": "https://schema.org",
     "@type": "ProfilePage",

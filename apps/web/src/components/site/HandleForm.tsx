@@ -3,6 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { HANDLE_MAX_LENGTH, Handle } from "@/domain/handle";
+import { postJson } from "@/presentation/json";
+import { API, ROUTES } from "@/presentation/routes";
+import { STORAGE_KEYS } from "@/presentation/storage-keys";
 
 export function HandleForm() {
   const router = useRouter();
@@ -12,7 +15,7 @@ export function HandleForm() {
 
   useEffect(() => {
     try {
-      setHandle(Handle.slugify(sessionStorage.getItem("fw:wanted-handle") ?? ""));
+      setHandle(Handle.slugify(sessionStorage.getItem(STORAGE_KEYS.wantedHandle) ?? ""));
     } catch {
       /* nothing remembered */
     }
@@ -24,11 +27,10 @@ export function HandleForm() {
         e.preventDefault();
         setBusy(true);
         setError(null);
-        const res = await fetch("/api/me/handle", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ handle }) });
-        const body = await res.json().catch(() => ({}));
+        const res = await postJson(API.handle, { handle });
         setBusy(false);
-        if (!res.ok) return setError(body.message ?? "Couldn't claim that handle.");
-        router.push("/edit");
+        if (!res.ok) return setError(res.body.message ?? "Couldn't claim that handle.");
+        router.push(ROUTES.edit);
       }}
     >
       <label className="field">

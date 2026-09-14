@@ -2,14 +2,17 @@
 
 import { useState } from "react";
 import { useCheckoutConsent } from "./CheckoutConsent";
+import type { BillingPlan } from "@/domain/pricing";
+import { postJson } from "@/presentation/json";
+import { API, ROUTES } from "@/presentation/routes";
 
-export function UpgradeButton({ plan, label, signedIn, primary }: { plan: "monthly" | "yearly" | "lifetime"; label: string; signedIn: boolean; primary?: boolean }) {
+export function UpgradeButton({ plan, label, signedIn, primary }: { plan: BillingPlan; label: string; signedIn: boolean; primary?: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const consent = useCheckoutConsent();
   if (!signedIn) {
     return (
-      <a href="/login" className={`btn${primary ? " btn-signal" : ""}`}>
+      <a href={ROUTES.login} className={`btn${primary ? " btn-signal" : ""}`}>
         {label}
       </a>
     );
@@ -24,15 +27,10 @@ export function UpgradeButton({ plan, label, signedIn, primary }: { plan: "month
           setError(null);
           if (!consent.accepted) return consent.flagMissing();
           setBusy(true);
-          const res = await fetch("/api/billing/checkout", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ plan, acceptedTerms: true }),
-          });
-          const body = await res.json().catch(() => ({}));
-          if (res.ok && body.url) return window.location.assign(body.url);
+          const res = await postJson<{ url: string }>(API.billingCheckout, { plan, acceptedTerms: true });
+          if (res.ok && res.body.url) return window.location.assign(res.body.url);
           setBusy(false);
-          setError(body.message ?? "Checkout didn't open.");
+          setError(res.body.message ?? "Checkout didn't open.");
         }}
       >
         {busy ? "Opening…" : label}

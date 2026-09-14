@@ -10,6 +10,7 @@ import {
   SealCheckIcon,
 } from "@phosphor-icons/react/ssr";
 import { asType, currencySymbol, formatNumber } from "@flexwall/sdk";
+import { stripeConnector } from "@flexwall/plugin-stripe";
 import { sparkPoints } from "@flexwall/sdk/ui";
 import { BrandMark, hasMark } from "@/components/brand/Logos";
 import { MotionScope } from "@/components/motion/MotionScope";
@@ -18,17 +19,18 @@ import { Footer, TopBar } from "@/components/site/Chrome";
 import { ClaimForm } from "@/components/site/ClaimForm";
 import { ProfileHeader } from "@/components/wall/ProfileHeader";
 import { WallGrids, wallStyle } from "@/components/wall/WallView";
-import { DEVICES } from "@/domain/layout";
+import { DEFAULT_DEVICE, DEVICES } from "@/domain/layout";
 import { todayIn } from "@/domain/time";
+import { PLAN_PRICES_USD } from "@/domain/pricing";
 import { FREE_TILE_LIMIT } from "@/domain/user";
 import { catalog } from "@/plugins/registry";
 import { sessionUserId } from "@/presentation/http";
+import { ROUTES } from "@/presentation/routes";
 import { integrationPath } from "@/presentation/seo/integrations";
 import { pageMetadata } from "@/presentation/seo/metadata";
 import { siteOrigin } from "@/presentation/seo/origin";
 import {
   organizationLd,
-  PLAN_PRICES_USD,
   SITE_DESCRIPTION,
   websiteLd,
 } from "@/presentation/seo/structured-data";
@@ -44,12 +46,12 @@ export const metadata: Metadata = pageMetadata({
   title: "Flexwall: your numbers, live, on one page",
   absoluteTitle: true,
   description: SITE_DESCRIPTION,
-  path: "/",
+  path: ROUTES.home,
 });
 
 export const dynamic = "force-dynamic";
 
-const PHONE = DEVICES["iphone-17-pro"];
+const PHONE = DEVICES[DEFAULT_DEVICE];
 
 /** Photographs are staged; the screens in them are real Flexwall renders of the sample wall. */
 const MOMENTS: {
@@ -270,7 +272,7 @@ export default async function Home() {
 
       <main id="main">
         <section className="hero page" aria-labelledby="title">
-          <Link href={integrationPath("stripe")} className="pill-link">
+          <Link href={integrationPath(stripeConnector.id)} className="pill-link">
             <SealCheckIcon size={18} weight="fill" />
             Revenue verified straight from Stripe
             <ArrowRightIcon size={14} />
@@ -401,7 +403,7 @@ export default async function Home() {
               <p>Paste a read-only key or a username. Tiles fill themselves.</p>
               <div className="step-ui" aria-hidden="true">
                 <span className="conn">
-                  <BrandMark id="stripe" size={18} />
+                  <BrandMark id={stripeConnector.id} size={18} />
                   Stripe
                   <span className="on">Verified</span>
                 </span>
@@ -552,7 +554,7 @@ export default async function Home() {
             </h2>
             <p>
               Apps, open source, newsletters, videos.{" "}
-              <Link href="/explore">See the real walls on The Wall</Link>.
+              <Link href={ROUTES.explore}>See the real walls on The Wall</Link>.
             </p>
           </div>
           <ul className="examples">
@@ -609,7 +611,7 @@ export default async function Home() {
               Questions, answered.
             </h2>
             <p>
-              Anything else? <Link href="/legal">Contact us</Link>.
+              Anything else? <Link href={ROUTES.legal}>Contact us</Link>.
             </p>
           </div>
           <div>
@@ -629,10 +631,10 @@ export default async function Home() {
             </h2>
             <p>
               Free to start. Pro from ${PLAN_PRICES_USD.monthly} a month, taxes
-              included. <Link href="/pricing">See pricing</Link>
+              included. <Link href={ROUTES.pricing}>See pricing</Link>
             </p>
             {signedIn ? (
-              <Link href="/edit" className="btn btn-signal">
+              <Link href={ROUTES.edit} className="btn btn-signal">
                 Edit my wall
               </Link>
             ) : (

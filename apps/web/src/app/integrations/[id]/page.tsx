@@ -7,10 +7,11 @@ import { WallGrids, wallStyle } from "@/components/wall/WallView";
 import { catalog } from "@/plugins/registry";
 import { todayIn } from "@/domain/time";
 import { sessionUserId } from "@/presentation/http";
+import { ROUTES } from "@/presentation/routes";
 import { integrationPage } from "@/presentation/seo/integrations";
 import { pageMetadata } from "@/presentation/seo/metadata";
 import { siteOrigin } from "@/presentation/seo/origin";
-import { breadcrumbLd } from "@/presentation/seo/structured-data";
+import { breadcrumbLd, SITE_NAME } from "@/presentation/seo/structured-data";
 import { connectorShowcase, sampleStates } from "@/rendering/samples";
 
 type Props = { params: Promise<{ id: string }> };
@@ -46,8 +47,8 @@ export default async function IntegrationPage({ params }: Props) {
     <>
       <JsonLd
         data={breadcrumbLd(siteOrigin(), [
-          { name: "Flexwall", path: "/" },
-          { name: "Integrations", path: "/integrations" },
+          { name: SITE_NAME, path: ROUTES.home },
+          { name: "Integrations", path: ROUTES.integrations },
           { name: page.name, path: page.path },
         ])}
       />
@@ -55,7 +56,7 @@ export default async function IntegrationPage({ params }: Props) {
         <TopBar signedIn={Boolean(await sessionUserId())} />
         <div className="page-head integration-head dotted">
           <p className="hint">
-            <Link href="/integrations">Integrations</Link>
+            <Link href={ROUTES.integrations}>Integrations</Link>
           </p>
           <h1 className="display">{page.headline}</h1>
           <p>{page.description}</p>
@@ -106,7 +107,7 @@ export default async function IntegrationPage({ params }: Props) {
           <h2>Put it on your wall</h2>
           <p>Claim your handle, add a tile, pick {page.name}. Your wall lives at flexwall.lol/@you.</p>
           <p>
-            <Link href="/login" className="btn btn-signal">
+            <Link href={ROUTES.login} className="btn btn-signal">
               Claim your wall
             </Link>
           </p>
@@ -116,7 +117,7 @@ export default async function IntegrationPage({ params }: Props) {
             {others.map((o, i) => (
               <span key={o.id}>
                 {i ? ", " : ""}
-                <Link href={`/integrations/${o.id}`}>{o.name}</Link>
+                <Link href={ROUTES.integration(o.id)}>{o.name}</Link>
               </span>
             ))}
           </p>

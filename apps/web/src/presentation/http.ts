@@ -2,6 +2,9 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { DomainError, type DomainErrorCode } from "@/domain/errors";
 import { container } from "@/composition";
+import { isProduction } from "@/infrastructure/env";
+import { HTTP_STATUS, JSON_CONTENT_TYPE } from "./json";
+import { ROUTES } from "./routes";
 
 /**
  * Glue between HTTP and use cases. Controllers stay a few lines: read the
@@ -11,20 +14,24 @@ import { container } from "@/composition";
 
 export const SESSION_COOKIE = "fw_session";
 const SESSION_MAX_AGE_S = 30 * 24 * 60 * 60;
+/** Largest JSON body a controller reads, in characters. A full wall draft is far below it. */
+const MAX_JSON_BODY_CHARS = 200_000;
+/** The error code of anything that isn't a domain error. */
+const INTERNAL_ERROR = "internal";
 
 const STATUS: Record<DomainErrorCode, number> = {
-  invalid_input: 422,
-  invalid_handle: 422,
-  handle_reserved: 409,
-  handle_taken: 409,
-  handle_already_set: 409,
-  invalid_wall: 422,
-  plan_limit: 402,
-  not_found: 404,
-  forbidden: 403,
-  unauthenticated: 401,
-  connection_failed: 422,
-  payments_unavailable: 503,
+  invalid_input: HTTP_STATUS.unprocessable,
+  invalid_handle: HTTP_STATUS.unprocessable,
+  handle_reserved: HTTP_STATUS.conflict,
+  handle_taken: HTTP_STATUS.conflict,
+  handle_already_set: HTTP_STATUS.conflict,
+  invalid_wall: HTTP_STATUS.unprocessable,
+  plan_limit: HTTP_STATUS.paymentRequired,
+  not_found: HTTP_STATUS.notFound,
+  forbidden: HTTP_STATUS.forbidden,
+  unauthenticated: HTTP_STATUS.unauthorized,
+  connection_failed: HTTP_STATUS.unprocessable,
+  payments_unavailable: HTTP_STATUS.unavailable,
 };
 
 export function errorResponse(error: unknown): NextResponse {
@@ -32,7 +39,7 @@ export function errorResponse(error: unknown): NextResponse {
     return NextResponse.json({ error: error.code, message: error.message }, { status: STATUS[error.code] });
   }
   console.error(error);
-  return NextResponse.json({ error: "internal", message: "Something broke on our side. Try again in a moment." }, { status: 500 });
+  return NextResponse.json({ error: INTERNAL_ERROR, message: "Something broke on our side. Try again in a moment." }, { status: HTTP_STATUS.internal });
 }
 
 /** The signed-in user's id, or null. */
@@ -50,9 +57,9 @@ export async function requireUserId(): Promise<string> {
 export function setSession(response: NextResponse, token: string) {
   response.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isProduction(),
     sameSite: "lax",
-    path: "/",
+    path: ROUTES.home,
     maxAge: SESSION_MAX_AGE_S,
   });
 }
@@ -68,9 +75,9 @@ export async function readJson<T>(req: Request): Promise<T> {
   if (origin && origin !== appUrl && origin !== new URL(req.url).origin) {
     throw new DomainError("forbidden", "Cross-site requests aren't allowed.");
   }
-  if (!req.headers.get("content-type")?.includes("application/json")) throw new DomainError("invalid_input", "Send JSON.");
+  if (!req.headers.get("content-type")?.includes(JSON_CONTENT_TYPE)) throw new DomainError("invalid_input", "Send JSON.");
   const raw = await req.text();
-  if (raw.length > 200_000) throw new DomainError("invalid_input", "That's too much data.");
+  if (raw.length > MAX_JSON_BODY_CHARS) throw new DomainError("invalid_input", "That's too much data.");
   try {
     return JSON.parse(raw) as T;
   } catch {

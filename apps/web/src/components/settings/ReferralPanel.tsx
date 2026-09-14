@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ReferralProgram } from "@/application/use-cases/referrals";
 import { REFERRAL_DISCOUNT_PERCENT, REFERRAL_REWARD_CAP, REFERRAL_REWARD_DAYS } from "@/domain/referral";
+import { COPIED_FEEDBACK_MS } from "@/presentation/feedback";
 
 export function ReferralPanel({ program }: { program: ReferralProgram }) {
   const [copied, setCopied] = useState(false);
@@ -23,7 +24,7 @@ export function ReferralPanel({ program }: { program: ReferralProgram }) {
             onClick={async () => {
               await navigator.clipboard.writeText(link).catch(() => {});
               setCopied(true);
-              setTimeout(() => setCopied(false), 2000);
+              setTimeout(() => setCopied(false), COPIED_FEEDBACK_MS);
             }}
           >
             {copied ? "Copied" : "Copy link"}

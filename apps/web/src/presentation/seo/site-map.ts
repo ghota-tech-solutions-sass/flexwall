@@ -1,10 +1,11 @@
 import type { MetadataRoute } from "next";
+import { ROUTES } from "../routes";
 import type { IntegrationPage } from "./integrations";
 
 /** When the legal pages last changed in substance. Keep in step with LAST_UPDATED in LegalDocument. */
 export const LEGAL_UPDATED = "2026-09-14";
 
-const LEGAL_PATHS = ["/legal", "/terms", "/privacy", "/fr/mentions-legales", "/fr/cgv", "/fr/confidentialite"];
+const LEGAL_PATHS = [ROUTES.legal, ROUTES.terms, ROUTES.privacy, ROUTES.legalFr, ROUTES.termsFr, ROUTES.privacyFr];
 
 /**
  * Every indexable page. Walls come from The Wall's listing: an owner who
@@ -20,11 +21,11 @@ export function sitemapEntries(input: {
   const freshest = latestWall ? new Date(latestWall) : undefined;
   return [
     { url: at(""), changeFrequency: "weekly", priority: 1 },
-    { url: at("/explore"), changeFrequency: "daily", priority: 0.8, ...(freshest ? { lastModified: freshest } : {}) },
-    { url: at("/pricing"), changeFrequency: "monthly", priority: 0.8 },
-    { url: at("/integrations"), changeFrequency: "weekly", priority: 0.7 },
+    { url: at(ROUTES.explore), changeFrequency: "daily", priority: 0.8, ...(freshest ? { lastModified: freshest } : {}) },
+    { url: at(ROUTES.pricing), changeFrequency: "monthly", priority: 0.8 },
+    { url: at(ROUTES.integrations), changeFrequency: "weekly", priority: 0.7 },
     ...input.integrations.map((i) => ({ url: at(i.path), changeFrequency: "monthly" as const, priority: 0.6 })),
     ...LEGAL_PATHS.map((path) => ({ url: at(path), lastModified: new Date(`${LEGAL_UPDATED}T00:00:00Z`), changeFrequency: "yearly" as const, priority: 0.2 })),
-    ...input.walls.map((w) => ({ url: at(`/@${w.handle}`), lastModified: new Date(w.updatedAt), changeFrequency: "daily" as const, priority: 0.5 })),
+    ...input.walls.map((w) => ({ url: at(ROUTES.wall(w.handle)), lastModified: new Date(w.updatedAt), changeFrequency: "daily" as const, priority: 0.5 })),
   ];
 }

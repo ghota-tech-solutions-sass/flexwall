@@ -4,15 +4,16 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { Footer, TopBar } from "@/components/site/Chrome";
 import { catalog } from "@/plugins/registry";
 import { sessionUserId } from "@/presentation/http";
+import { ROUTES } from "@/presentation/routes";
 import { integrationPage } from "@/presentation/seo/integrations";
 import { pageMetadata } from "@/presentation/seo/metadata";
 import { siteOrigin } from "@/presentation/seo/origin";
-import { breadcrumbLd, itemListLd } from "@/presentation/seo/structured-data";
+import { breadcrumbLd, itemListLd, SITE_NAME } from "@/presentation/seo/structured-data";
 
 export const metadata: Metadata = pageMetadata({
   title: "Integrations",
   description: "Every service a Flexwall tile can read from: Stripe, GitHub, Lemon Squeezy, Polar, Plausible, npm, YouTube and more, live on a public page and your lock screen.",
-  path: "/integrations",
+  path: ROUTES.integrations,
 });
 
 export default async function IntegrationsPage() {
@@ -25,8 +26,8 @@ export default async function IntegrationsPage() {
       <JsonLd
         data={[
           breadcrumbLd(siteOrigin(), [
-            { name: "Flexwall", path: "/" },
-            { name: "Integrations", path: "/integrations" },
+            { name: SITE_NAME, path: ROUTES.home },
+            { name: "Integrations", path: ROUTES.integrations },
           ]),
           itemListLd(siteOrigin(), "Flexwall integrations", pages.map((p) => ({ name: p.name, path: p.path }))),
         ]}

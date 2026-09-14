@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { postJson } from "@/presentation/json";
+import { API, SIGN_IN_PARAMS } from "@/presentation/routes";
 
 export function SignInForm() {
   const [email, setEmail] = useState("");
@@ -11,11 +13,10 @@ export function SignInForm() {
       onSubmit={async (e) => {
         e.preventDefault();
         setState({ kind: "sending" });
-        const res = await fetch("/api/auth/request", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email }) });
-        const body = await res.json().catch(() => ({}));
-        if (!res.ok) return setState({ kind: "error", message: body.message ?? "Couldn't send the link." });
+        const res = await postJson<{ devLink?: string }>(API.signInRequest, { email });
+        if (!res.ok) return setState({ kind: "error", message: res.body.message ?? "Couldn't send the link." });
         // The browser's time zone travels with the link, so the new account's "today" is right.
-        const devLink = body.devLink ? `${body.devLink}&tz=${encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone)}` : undefined;
+        const devLink = res.body.devLink ? `${res.body.devLink}&${new URLSearchParams({ [SIGN_IN_PARAMS.timeZone]: Intl.DateTimeFormat().resolvedOptions().timeZone })}` : undefined;
         setState({ kind: "sent", devLink });
       }}
     >

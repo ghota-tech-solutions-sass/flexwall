@@ -4,17 +4,19 @@ import { CheckoutConsentScope } from "@/components/site/CheckoutConsent";
 import { UpgradeButton } from "@/components/site/UpgradeButton";
 import { FREE_TILE_LIMIT } from "@/domain/user";
 import { container } from "@/composition";
+import { PLAN_PRICES_USD } from "@/domain/pricing";
 import { REFERRAL_DISCOUNT_PERCENT } from "@/domain/referral";
 import { sessionUserId } from "@/presentation/http";
 import { pageMetadata } from "@/presentation/seo/metadata";
 import { siteOrigin } from "@/presentation/seo/origin";
-import { PLAN_PRICES_USD, softwareApplicationLd } from "@/presentation/seo/structured-data";
+import { softwareApplicationLd } from "@/presentation/seo/structured-data";
+import { ROUTES } from "@/presentation/routes";
 import { JsonLd } from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = pageMetadata({
   title: "Pricing",
   description: `Every public wall is free. Pro is $${PLAN_PRICES_USD.monthly} a month or $${PLAN_PRICES_USD.yearly} a year for verified revenue, history and a clean lock screen. Lifetime is $${PLAN_PRICES_USD.lifetime} once.`,
-  path: "/pricing",
+  path: ROUTES.pricing,
 });
 
 export default async function PricingPage() {
@@ -52,9 +54,9 @@ export default async function PricingPage() {
             <div className="plan featured">
               <h3>Pro</h3>
               <div className="price">
-                $6 <small>/ month</small>
+                ${PLAN_PRICES_USD.monthly} <small>/ month</small>
               </div>
-              <p className="hint">or $48 a year</p>
+              <p className="hint">or ${PLAN_PRICES_USD.yearly} a year</p>
               <ul>
                 <li>Everything in Free, unlimited tiles</li>
                 <li>Verified Stripe revenue and your own API</li>
@@ -69,7 +71,7 @@ export default async function PricingPage() {
             <div className="plan">
               <h3>Lifetime</h3>
               <div className="price">
-                $99 <small>once</small>
+                ${PLAN_PRICES_USD.lifetime} <small>once</small>
               </div>
               <ul>
                 <li>Pro, forever</li>

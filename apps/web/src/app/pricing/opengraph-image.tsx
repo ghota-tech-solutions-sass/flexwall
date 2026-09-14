@@ -1,4 +1,4 @@
-import { PLAN_PRICES_USD } from "@/presentation/seo/structured-data";
+import { PLAN_PRICES_USD } from "@/domain/pricing";
 import { CARD_SIZE, demoPageCard } from "@/rendering/page-cards";
 
 export const alt = "Flexwall pricing";

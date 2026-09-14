@@ -8,17 +8,18 @@ import { ReferralPanel } from "@/components/settings/ReferralPanel";
 import { container } from "@/composition";
 import { DomainError } from "@/domain/errors";
 import { sessionUserId } from "@/presentation/http";
+import { API, ROUTES, SETTINGS_PARAMS } from "@/presentation/routes";
 
 export const metadata: Metadata = { title: "Settings", robots: { index: false } };
 
-export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ upgraded?: string }> }) {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<Partial<Record<(typeof SETTINGS_PARAMS)["upgraded"], string>>> }) {
   const userId = await sessionUserId();
-  if (!userId) redirect("/login");
+  if (!userId) redirect(ROUTES.login);
   const owner = await container().getOwnerWall.execute({ userId }).catch((e) => {
-    if (e instanceof DomainError && e.code === "not_found") redirect("/onboarding");
+    if (e instanceof DomainError && e.code === "not_found") redirect(ROUTES.onboarding);
     throw e;
   });
-  const { upgraded } = await searchParams;
+  const upgraded = (await searchParams)[SETTINGS_PARAMS.upgraded];
   const program = await container().getReferralProgram.execute({ userId });
 
   return (
@@ -26,7 +27,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       <TopBar signedIn />
       <main style={{ maxWidth: 1000 }}>
         <div className="settings-head">
-          <Link href="/edit" className="link">
+          <Link href={ROUTES.edit} className="link">
             Back to the editor
           </Link>
           <h1 className="display">Settings</h1>
@@ -44,9 +45,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <section className="panel">
           <h2>Account</h2>
           <p>
-            Signed in as {owner.user.email}. Your wall: <Link href={`/@${owner.wall.handle}`}>flexwall.lol/@{owner.wall.handle}</Link>
+            Signed in as {owner.user.email}. Your wall: <Link href={ROUTES.wall(owner.wall.handle)}>flexwall.lol/@{owner.wall.handle}</Link>
           </p>
-          <form action="/api/auth/logout" method="post">
+          <form action={API.signOut} method="post">
             <button type="submit" className="btn">
               Sign out
             </button>

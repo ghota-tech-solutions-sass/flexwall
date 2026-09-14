@@ -4,14 +4,15 @@ import { TopBar } from "@/components/site/Chrome";
 import { SignInForm } from "@/components/site/SignInForm";
 import { container } from "@/composition";
 import { sessionUserId } from "@/presentation/http";
+import { LOGIN_PARAMS, ROUTES } from "@/presentation/routes";
 
 export const metadata: Metadata = { title: "Sign in", robots: { index: false } };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ expired?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<Partial<Record<(typeof LOGIN_PARAMS)["expired"], string>>> }) {
   // Only a session for an account that still exists skips sign-in; otherwise /edit would send it straight back here.
   const userId = await sessionUserId();
-  if (userId && (await container().users.byId(userId))) redirect("/edit");
-  const { expired } = await searchParams;
+  if (userId && (await container().users.byId(userId))) redirect(ROUTES.edit);
+  const expired = (await searchParams)[LOGIN_PARAMS.expired];
   return (
     <div className="page">
       <TopBar signedIn={false} />

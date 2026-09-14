@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import type { Entitlements, Subscription } from "@/domain/user";
+import { PLAN_PRICES_USD } from "@/domain/pricing";
+import { postJson } from "@/presentation/json";
+import { API } from "@/presentation/routes";
 import { CheckoutConsentScope } from "@/components/site/CheckoutConsent";
 import { UpgradeButton } from "@/components/site/UpgradeButton";
 
@@ -39,9 +42,9 @@ export function BillingPanel({
         {paidPlan === "free" ? (
           <CheckoutConsentScope signedIn>
             <div className="row">
-              <UpgradeButton plan="monthly" label="Go Pro, $6/month" signedIn primary />
-              <UpgradeButton plan="yearly" label="$48/year" signedIn />
-              <UpgradeButton plan="lifetime" label="Lifetime, $99" signedIn />
+              <UpgradeButton plan="monthly" label={`Go Pro, $${PLAN_PRICES_USD.monthly}/month`} signedIn primary />
+              <UpgradeButton plan="yearly" label={`$${PLAN_PRICES_USD.yearly}/year`} signedIn />
+              <UpgradeButton plan="lifetime" label={`Lifetime, $${PLAN_PRICES_USD.lifetime}`} signedIn />
             </div>
           </CheckoutConsentScope>
         ) : null}
@@ -50,10 +53,9 @@ export function BillingPanel({
             type="button"
             className="btn"
             onClick={async () => {
-              const res = await fetch("/api/billing/portal", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
-              const body = await res.json().catch(() => ({}));
-              if (res.ok && body.url) window.location.assign(body.url);
-              else setError(body.message ?? "Couldn't open billing.");
+              const res = await postJson<{ url: string }>(API.billingPortal);
+              if (res.ok && res.body.url) window.location.assign(res.body.url);
+              else setError(res.body.message ?? "Couldn't open billing.");
             }}
           >
             Invoices and cancellation

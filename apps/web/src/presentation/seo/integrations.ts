@@ -1,5 +1,6 @@
 import type { ConnectorDef, ValueType, WidgetDef } from "@flexwall/sdk";
 import { inSentence, clip } from "./descriptions";
+import { ROUTES } from "../routes";
 
 /** What an integration page says about a connector, built from the connector itself so pages can't drift from the code. */
 export interface IntegrationPage {
@@ -26,7 +27,7 @@ const KINDS: Record<ValueType, string> = {
 };
 
 export function integrationPath(connectorId: string): string {
-  return `/integrations/${connectorId}`;
+  return ROUTES.integration(connectorId);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

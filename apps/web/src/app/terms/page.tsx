@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LEGAL_PATHS, LegalDocument, legalMetadata, MediatorBlock } from "@/components/legal/LegalDocument";
+import { PLAN_PRICES_USD } from "@/domain/pricing";
 import { REFERRAL_DISCOUNT_PERCENT, REFERRAL_REWARD_CAP, REFERRAL_REWARD_DAYS } from "@/domain/referral";
 import { FREE_TILE_LIMIT } from "@/domain/user";
 import { PUBLISHER } from "@/domain/publisher";
@@ -60,8 +61,8 @@ export default function TermsPage() {
 
       <h2>6. Prices</h2>
       <p>
-        Prices are in US dollars, all taxes included: VAT due in the buyer&apos;s country is included and itemized on the invoice. Pro: $6 a month or $48 a
-        year. Lifetime: $99 once. Currency conversion by the buyer&apos;s bank is theirs to bear. A subscription price change is announced by email at least 30
+        Prices are in US dollars, all taxes included: VAT due in the buyer&apos;s country is included and itemized on the invoice. Pro: ${PLAN_PRICES_USD.monthly} a month or ${PLAN_PRICES_USD.yearly} a
+        year. Lifetime: ${PLAN_PRICES_USD.lifetime} once. Currency conversion by the buyer&apos;s bank is theirs to bear. A subscription price change is announced by email at least 30
         days before it applies, at the next renewal; subscribers can cancel before then.
       </p>
 

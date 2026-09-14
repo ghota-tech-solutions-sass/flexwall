@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ROUTES } from "@/presentation/routes";
 import { createContext, type ReactNode, useContext, useId, useState } from "react";
 
 const ConsentContext = createContext<{ accepted: boolean; missing: boolean; flagMissing: () => void }>({
@@ -35,7 +36,7 @@ export function CheckoutConsentScope({ signedIn, children }: { signedIn: boolean
             aria-invalid={missing && !accepted}
           />
           <span>
-            I accept the <Link href="/terms">terms of service</Link> and the <Link href="/privacy">privacy policy</Link>, and I ask for Pro to start as soon
+            I accept the <Link href={ROUTES.terms}>terms of service</Link> and the <Link href={ROUTES.privacy}>privacy policy</Link>, and I ask for Pro to start as soon
             as I pay, before the 14-day withdrawal period ends. I keep a full refund on request within those 14 days.
           </span>
         </label>

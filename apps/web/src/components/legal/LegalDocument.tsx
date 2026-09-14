@@ -11,15 +11,16 @@ import {
   type PublisherMention,
 } from "@/domain/publisher";
 import { sessionUserId } from "@/presentation/http";
+import { ROUTES } from "@/presentation/routes";
 
 export type Lang = "en" | "fr";
 export type LegalDoc = "notice" | "terms" | "privacy";
 
 /** Where each document lives in each language. */
 export const LEGAL_PATHS: Record<LegalDoc, Record<Lang, string>> = {
-  notice: { en: "/legal", fr: "/fr/mentions-legales" },
-  terms: { en: "/terms", fr: "/fr/cgv" },
-  privacy: { en: "/privacy", fr: "/fr/confidentialite" },
+  notice: { en: ROUTES.legal, fr: ROUTES.legalFr },
+  terms: { en: ROUTES.terms, fr: ROUTES.termsFr },
+  privacy: { en: ROUTES.privacy, fr: ROUTES.privacyFr },
 };
 
 const TITLES: Record<LegalDoc, Record<Lang, string>> = {

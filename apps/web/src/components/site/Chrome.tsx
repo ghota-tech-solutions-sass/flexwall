@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LEGAL_PATHS } from "@/components/legal/LegalDocument";
 import { PUBLISHER } from "@/domain/publisher";
+import { ROUTES } from "@/presentation/routes";
 import { SOURCE_URL } from "@/site";
 import { Logo } from "@/components/brand/Logo";
 
@@ -10,18 +11,18 @@ export function TopBar({ signedIn }: { signedIn: boolean }) {
   return (
     <header className="topbar">
       <div className="topbar-inner">
-        <Link href="/" className="brand" aria-label="Flexwall home">
+        <Link href={ROUTES.home} className="brand" aria-label="Flexwall home">
           <Logo />
           Flexwall
         </Link>
         <nav className="nav" aria-label="Main">
-          <Link href="/explore" className="hide-sm">
+          <Link href={ROUTES.explore} className="hide-sm">
             The Wall
           </Link>
-          <Link href="/integrations" className="hide-sm">
+          <Link href={ROUTES.integrations} className="hide-sm">
             Integrations
           </Link>
-          <Link href="/pricing" className="hide-sm">
+          <Link href={ROUTES.pricing} className="hide-sm">
             Pricing
           </Link>
           {SOURCE_URL ? (
@@ -32,15 +33,15 @@ export function TopBar({ signedIn }: { signedIn: boolean }) {
         </nav>
         <div className="nav-actions">
           {signedIn ? (
-            <Link href="/edit" className="btn btn-signal btn-small">
+            <Link href={ROUTES.edit} className="btn btn-signal btn-small">
               Edit my wall
             </Link>
           ) : (
             <>
-              <Link href="/login" className="nav-link">
+              <Link href={ROUTES.login} className="nav-link">
                 Sign in
               </Link>
-              <Link href="/login" className="btn btn-signal btn-small">
+              <Link href={ROUTES.login} className="btn btn-signal btn-small">
                 Claim your wall
               </Link>
             </>
@@ -55,7 +56,7 @@ export function Footer() {
   return (
     <footer className="footer">
       <div className="footer-brand">
-        <Link href="/" className="brand">
+        <Link href={ROUTES.home} className="brand">
           <Logo />
           Flexwall
         </Link>
@@ -63,9 +64,9 @@ export function Footer() {
       </div>
       <nav aria-label="Product">
         <h2>Product</h2>
-        <Link href="/explore">The Wall</Link>
-        <Link href="/integrations">Integrations</Link>
-        <Link href="/pricing">Pricing</Link>
+        <Link href={ROUTES.explore}>The Wall</Link>
+        <Link href={ROUTES.integrations}>Integrations</Link>
+        <Link href={ROUTES.pricing}>Pricing</Link>
         {SOURCE_URL ? <a href={`${SOURCE_URL}/tree/main/docs`}>Docs</a> : null}
       </nav>
       <nav aria-label="Legal">
