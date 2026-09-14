@@ -33,8 +33,8 @@ export default async function IntegrationsPage() {
       />
       <TopBar signedIn={Boolean(await sessionUserId())} />
       <main>
-        <div className="prose" style={{ marginBlock: "24px 28px" }}>
-          <h1>Integrations</h1>
+        <div className="page-head">
+          <h1 className="display">Integrations</h1>
           <p>Tiles read their numbers from the services that produce them and redraw on their own. Values from your own accounts carry a verified badge.</p>
         </div>
         {[
@@ -43,17 +43,21 @@ export default async function IntegrationsPage() {
         ].map((group) =>
           group.items.length ? (
             <section key={group.title} className="section">
-              <h2>{group.title}</h2>
-              <p className="hint">{group.hint}</p>
+              <div className="section-head">
+                <h2 className="display">{group.title}</h2>
+                <p>{group.hint}</p>
+              </div>
               <ul className="connector-list">
                 {group.items.map((p) => (
                   <li key={p.id}>
                     <h3>
                       <Link href={p.path}>{p.name}</Link>
-                      {p.verified ? <span className="badge quiet">verified</span> : null}
-                      {p.pro ? <span className="badge">Pro</span> : null}
                     </h3>
                     <p>{p.measures.map((m) => m.name).join(", ")}</p>
+                    <span className="tags">
+                      {p.verified ? <span className="badge quiet">Verified</span> : null}
+                      {p.pro ? <span className="badge">Pro</span> : null}
+                    </span>
                   </li>
                 ))}
               </ul>

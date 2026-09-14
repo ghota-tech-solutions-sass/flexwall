@@ -33,7 +33,12 @@ export function TileBody({ tile, state, box, theme, surface, u, today, catalog }
     color: theme.ink,
     fontFamily: theme.body.family,
   };
-  const card: CSSProperties = { background: theme.tile, border: `1px solid ${theme.tileBorder}`, padding: u(CARD_PADDING_UNITS) };
+  const card: CSSProperties = {
+    background: theme.tile,
+    border: `1px solid ${theme.tileBorder}`,
+    padding: u(CARD_PADDING_UNITS),
+    ...(theme.tileShadow ? { boxShadow: theme.tileShadow } : {}),
+  };
 
   if (!widget) return <div style={{ ...frame, ...card }}>{message("This widget was removed.", theme, u)}</div>;
   if (!state || state.status === "placeholder") {

@@ -18,11 +18,11 @@ export function TopBar({ signedIn }: { signedIn: boolean }) {
           </a>
         ) : null}
         {signedIn ? (
-          <Link href="/edit" className="btn btn-signal btn-small">
+          <Link href="/edit" className="btn btn-ink btn-small">
             Edit my wall
           </Link>
         ) : (
-          <Link href="/login" className="btn btn-signal btn-small">
+          <Link href="/login" className="btn btn-ink btn-small">
             Sign in
           </Link>
         )}

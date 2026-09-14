@@ -90,12 +90,12 @@ export function firstFreeSpot(placed: readonly Box[], w: number, h: number, colu
 
 /** iPhone lock screens in pixels, newest first. */
 export const DEVICES = {
-  "iphone-17-pro": { label: "iPhone 17 Pro · 17 · 16 Pro", w: 1206, h: 2622 },
-  "iphone-17-pro-max": { label: "iPhone 17 Pro Max · 16 Pro Max", w: 1320, h: 2868 },
+  "iphone-17-pro": { label: "iPhone 17 Pro, 17, 16 Pro", w: 1206, h: 2622 },
+  "iphone-17-pro-max": { label: "iPhone 17 Pro Max, 16 Pro Max", w: 1320, h: 2868 },
   "iphone-air": { label: "iPhone Air", w: 1260, h: 2736 },
-  "iphone-16": { label: "iPhone 16 · 15 · 15 Pro · 14 Pro", w: 1179, h: 2556 },
-  "iphone-16-plus": { label: "iPhone 16 Plus · 15 Plus · 15 Pro Max · 14 Pro Max", w: 1290, h: 2796 },
-  "iphone-14": { label: "iPhone 14 · 13 · 12", w: 1170, h: 2532 },
+  "iphone-16": { label: "iPhone 16, 15, 15 Pro, 14 Pro", w: 1179, h: 2556 },
+  "iphone-16-plus": { label: "iPhone 16 Plus, 15 Plus, 15 Pro Max, 14 Pro Max", w: 1290, h: 2796 },
+  "iphone-14": { label: "iPhone 14, 13, 12", w: 1170, h: 2532 },
   android: { label: "Android (1080 × 2400)", w: 1080, h: 2400 },
 } as const;
 

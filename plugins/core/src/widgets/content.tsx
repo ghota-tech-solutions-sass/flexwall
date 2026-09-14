@@ -21,7 +21,7 @@ export const note = defineWidget<{ title: string; body: string }>({
     return (
       <Col style={{ width: "100%", height: "100%" }}>
         {options.title ? (
-          <Text style={{ fontSize: u(size + 3), lineHeight: 1.25, color: theme.ink, fontFamily: theme.display.family, fontWeight: theme.display.weight, marginBottom: u(6) }}>
+          <Text style={{ fontSize: u(fitFont(options.title, area.width, size + 3, displayAdvance(theme) * 0.9)), lineHeight: 1.25, color: theme.ink, fontFamily: theme.display.family, fontWeight: theme.display.weight, marginBottom: u(6) }}>
             {options.title}
           </Text>
         ) : null}

@@ -66,7 +66,7 @@ export function WallCanvas({ draft, states, theme, today, selected, onSelect, on
                   catalog={catalog}
                 />
                 {tile.visibility === "private" ? (
-                  <span className="badge quiet" style={{ position: "absolute", top: 8, right: 8 }}>
+                  <span className="badge" style={{ position: "absolute", top: 8, right: 8 }}>
                     Private
                   </span>
                 ) : null}

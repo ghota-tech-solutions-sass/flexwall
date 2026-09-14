@@ -53,27 +53,31 @@ export default async function IntegrationPage({ params }: Props) {
       />
       <div className="page">
         <TopBar signedIn={Boolean(await sessionUserId())} />
-        <div className="prose" style={{ marginBlock: "24px 28px" }}>
+        <div className="page-head integration-head">
           <p className="hint">
             <Link href="/integrations">Integrations</Link>
           </p>
-          <h1>{page.headline}</h1>
+          <h1 className="display">{page.headline}</h1>
           <p>{page.description}</p>
-          <p>
-            {page.verified ? <span className="badge quiet">verified</span> : null}
+          <p className="tags">
+            {page.verified ? <span className="badge quiet">Verified</span> : null}
             {page.pro ? <span className="badge">Pro</span> : null}
           </p>
         </div>
+
+        <figure className="board" aria-label={`Example ${page.name} tiles`} style={{ margin: 0 }}>
+          <figcaption className="board-head">
+            <strong>{page.name} tiles</strong>
+            <span>Sample numbers</span>
+          </figcaption>
+          <div className="board-body" style={wallStyle(theme)}>
+            <WallGrids tiles={tiles} states={sampleStates(tiles, catalog)} theme={theme} today={today} catalog={catalog} />
+          </div>
+        </figure>
       </div>
 
-      <section aria-label={`Example ${page.name} tiles`} style={{ ...wallStyle(theme), paddingBlock: "40px" }}>
-        <div className="wall-inner" style={{ paddingBlock: 0 }}>
-          <WallGrids tiles={tiles} states={sampleStates(tiles, catalog)} theme={theme} today={today} catalog={catalog} />
-        </div>
-      </section>
-
       <div className="page">
-        <main className="prose">
+        <main className="prose integration-body">
           <h2>What it measures</h2>
           <ul>
             {page.measures.map((m) => (

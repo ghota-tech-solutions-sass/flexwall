@@ -22,6 +22,10 @@ const FONTS = [
   { name: "Mono", data: font("jetbrains-mono-500.woff"), weight: 500 as const, style: "normal" as const },
   { name: "Mono", data: font("jetbrains-mono-800.woff"), weight: 800 as const, style: "normal" as const },
   { name: "Serif", data: font("instrument-serif-400.woff"), weight: 400 as const, style: "normal" as const },
+  { name: "Geist", data: font("geist-400.ttf"), weight: 400 as const, style: "normal" as const },
+  { name: "Geist", data: font("geist-500.ttf"), weight: 500 as const, style: "normal" as const },
+  { name: "Geist", data: font("geist-600.ttf"), weight: 600 as const, style: "normal" as const },
+  { name: "Geist", data: font("geist-700.ttf"), weight: 700 as const, style: "normal" as const },
   { name: "Archivo", data: font("archivo-400.ttf"), weight: 400 as const, style: "normal" as const },
   { name: "Archivo", data: font("archivo-600.ttf"), weight: 600 as const, style: "normal" as const },
   { name: "Archivo Wide", data: font("archivo-wide-600.ttf"), weight: 600 as const, style: "normal" as const },
@@ -96,7 +100,7 @@ export function lockscreenImage(input: { device: DeviceId; placed: Placed[]; sta
   const top = Math.max(height * 0.4, height * 0.87 - gridHeight);
 
   return png(
-    <div style={{ display: "flex", width: "100%", height: "100%", position: "relative", background: input.theme.page }}>
+    <div style={{ display: "flex", width: "100%", height: "100%", position: "relative", background: input.theme.page, ...(input.theme.wallpaper ? { backgroundImage: input.theme.wallpaper } : {}) }}>
       <Grid placed={input.placed} states={input.states} theme={input.theme} catalog={input.catalog} today={input.today} scale={scale} left={margin} top={top} surface="lockscreen" />
       {input.watermark ? (
         <div style={{ position: "absolute", bottom: height * 0.035, left: 0, right: 0, display: "flex", justifyContent: "center", fontSize: 11 * (width / 402), letterSpacing: 1.5 * (width / 402), color: input.theme.muted }}>
@@ -127,7 +131,7 @@ function card(text: CardText, input: { placed: Placed[]; states: Record<string, 
   const titleSize = text.title.length > 28 ? 44 : 54;
 
   return png(
-    <div style={{ display: "flex", width: "100%", height: "100%", position: "relative", background: theme.page, color: theme.ink, fontFamily: theme.body.family }}>
+    <div style={{ display: "flex", width: "100%", height: "100%", position: "relative", background: theme.page, ...(theme.wallpaper ? { backgroundImage: theme.wallpaper } : {}), color: theme.ink, fontFamily: theme.body.family }}>
       <div style={{ position: "absolute", left: 64, top: 64, width: 360, bottom: 64, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", fontSize: 28, color: theme.muted }}>{text.kicker}</div>

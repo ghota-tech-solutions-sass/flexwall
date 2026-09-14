@@ -5,7 +5,7 @@
  */
 
 /** Fonts the host provides on every surface. */
-export type FontFamily = "Grotesk" | "Inter" | "Serif" | "Mono" | "Archivo" | "Archivo Wide";
+export type FontFamily = "Grotesk" | "Inter" | "Serif" | "Mono" | "Archivo" | "Archivo Wide" | "Geist";
 
 export interface Theme {
   id: string;
@@ -15,9 +15,17 @@ export interface Theme {
   mode: "dark" | "light";
   /** Behind the whole wall. */
   page: string;
+  /**
+   * Optional background drawn over `page`, like a phone wallpaper. Any CSS
+   * background made of linear-gradient and radial-gradient layers: pages and
+   * images both draw it.
+   */
+  wallpaper?: string;
   /** Tile background and border. */
   tile: string;
   tileBorder: string;
+  /** Optional box-shadow for tiles. Keep it soft: it is drawn on images too. */
+  tileShadow?: string;
   ink: string;
   muted: string;
   accent: string;
@@ -45,6 +53,7 @@ export const FONT_ADVANCE: Record<FontFamily, number> = {
   Mono: 0.62,
   Archivo: 0.56,
   "Archivo Wide": 0.76,
+  Geist: 0.62,
 };
 
 /** The em advance to fit display text with: the theme's own, or its font's. */

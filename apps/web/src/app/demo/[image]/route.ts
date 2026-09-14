@@ -10,13 +10,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ image: 
   const c = container();
   const today = todayIn("UTC", Date.now());
   const wall = demoWall(today);
-  const theme = c.catalog.theme(wall.theme)!;
+  // "-dark" variants draw the same wall on Midnight, for pages seen in dark mode.
+  const dark = image.endsWith("-dark.png");
+  const theme = c.catalog.theme(dark ? "midnight" : wall.theme)!;
   const states = sampleStates(wall.tiles, c.catalog);
   let res: Response;
-  if (image === "lockscreen.png") {
+  if (image === "lockscreen.png" || image === "lockscreen-dark.png") {
     const placed = wall.lockscreen.placements.map((p) => ({ tile: wall.tiles.find((t) => t.id === p.tileId)!, box: p.box }));
     res = await lockscreenImage({ device: "iphone-17-pro", placed, states, theme, catalog: c.catalog, today, watermark: false, width: 603 });
-  } else if (image === "card.png") {
+  } else if (image === "card.png" || image === "card-dark.png") {
     const placed = packInto(wall.tiles, 4, 2).map(({ item, box }) => ({ tile: item, box }));
     res = await shareCardImage({ handle: wall.handle, title: wall.title, bio: wall.bio, placed, states, theme, catalog: c.catalog, today });
   } else {

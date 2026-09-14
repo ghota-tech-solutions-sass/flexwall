@@ -18,12 +18,15 @@ export const countdown = defineWidget<{ date: string; label: string }>({
     const unit = d === 0 ? "" : Math.abs(d) === 1 ? "day" : "days";
     const words = d < 0 ? `${unit} since` : `${unit} ${options.label || "to go"}`.trim();
     const size = fitFont(value, area.width, area.height * 0.58, displayAdvance(theme));
+    const caption = d < 0 && options.label ? `${words} ${options.label}` : words;
+    // The caption shrinks before it gets cut: "days until launch" has to fit a one-cell tile.
+    const captionSize = fitFont(caption, area.width, area.width < 90 ? 10 : 12, 0.52);
     return (
       <Col style={{ width: "100%", height: "100%", justifyContent: "space-between" }}>
         <Fill style={{ alignItems: "center" }}>
           <Text style={{ fontSize: u(size), lineHeight: 1, color: theme.ink, fontFamily: theme.display.family, fontWeight: theme.display.weight }}>{value}</Text>
         </Fill>
-        <Text style={{ fontSize: u(area.width < 90 ? 10 : 12), color: theme.muted }}>{d < 0 && options.label ? `${words} ${options.label}` : words}</Text>
+        <Text style={{ fontSize: u(captionSize), color: theme.muted }}>{caption}</Text>
       </Col>
     );
   },

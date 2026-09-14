@@ -13,6 +13,8 @@ import { wallDescription } from "@/presentation/seo/descriptions";
 import { pageMetadata } from "@/presentation/seo/metadata";
 import { siteOrigin } from "@/presentation/seo/origin";
 import { breadcrumbLd, profilePageLd } from "@/presentation/seo/structured-data";
+import { ProfileHeader } from "@/components/wall/ProfileHeader";
+import { ShareButton } from "@/components/wall/ShareButton";
 
 type Props = { params: Promise<{ handle: string }> };
 
@@ -52,6 +54,8 @@ export default async function PublicWallPage({ params }: Props) {
   if (decodeURIComponent(handle) !== wall.handle) permanentRedirect(`/@${wall.handle}`);
   const theme = effectiveTheme(wall, c.catalog, entitlements);
 
+  const verifiedCount = Object.values(states).filter((st) => st.status === "ready" && Object.values(st.inputs).some((i) => i.source?.verified)).length;
+
   return (
     <div className="wall-page" style={wallStyle(theme)}>
       {preview ? null : (
@@ -71,14 +75,26 @@ export default async function PublicWallPage({ params }: Props) {
         </div>
       ) : null}
       <main className="wall-inner">
-        <header className="wall-header">
-          <div className="handle" style={{ color: theme.muted }}>@{wall.handle}</div>
-          <h1 style={{ fontFamily: theme.display.family, fontWeight: theme.display.weight }}>{wall.title}</h1>
-          {wall.bio ? <p style={{ color: theme.muted }}>{wall.bio}</p> : null}
-        </header>
+        <ProfileHeader
+          title={wall.title}
+          handle={wall.handle}
+          bio={wall.bio}
+          theme={theme}
+          stats={verifiedCount ? [{ value: String(verifiedCount), label: verifiedCount === 1 ? "verified number" : "verified numbers" }] : undefined}
+          actions={
+            <>
+              <ShareButton url={`${siteOrigin()}/@${wall.handle}`} title={`${wall.title} on Flexwall`} />
+              {entitlements.branding ? (
+                <Link href={`/r/${wall.handle}`} className="btn btn-small btn-signal">
+                  Make your own wall
+                </Link>
+              ) : null}
+            </>
+          }
+        />
         <WallGrids tiles={wall.tiles} states={states} theme={theme} today={today} catalog={c.catalog} />
         <footer className="wall-footer" style={{ color: theme.muted }}>
-          {entitlements.branding ? <Link href={`/r/${wall.handle}`}>Made with Flexwall. Make yours →</Link> : <span />}
+          {entitlements.branding ? <Link href={`/r/${wall.handle}`}>Made with Flexwall</Link> : <span />}
           <Link href={`/report?handle=${wall.handle}`}>Report this wall</Link>
         </footer>
       </main>

@@ -56,5 +56,5 @@ export function WallGrids(props: WallViewProps) {
 
 /** Colors and fonts for the page around the grid. */
 export function wallStyle(theme: Theme): CSSProperties {
-  return { background: theme.page, color: theme.ink, fontFamily: theme.body.family };
+  return { backgroundColor: theme.page, ...(theme.wallpaper ? { backgroundImage: theme.wallpaper } : {}), color: theme.ink, fontFamily: theme.body.family };
 }

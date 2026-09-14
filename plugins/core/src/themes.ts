@@ -1,6 +1,52 @@
 import { defineTheme } from "@flexwall/sdk";
 
-/** Three free themes that suit most walls, four Pro ones with a point of view. */
+/** Four free themes that suit most walls, four Pro ones with a point of view. */
+
+/** The default: widgets on a soft daylight wallpaper, the way a phone shows them. */
+export const daylight = defineTheme({
+  id: "daylight",
+  name: "Daylight",
+  tier: "free",
+  mode: "light",
+  page: "#f2f2f7",
+  wallpaper: "radial-gradient(90% 70% at 0% 0%, #d9f2e2 0%, rgba(242,242,247,0) 60%), radial-gradient(80% 60% at 100% 0%, #e3eaf6 0%, rgba(242,242,247,0) 55%)",
+  tile: "#ffffff",
+  tileBorder: "rgba(15,17,21,0.04)",
+  tileShadow: "0 1px 2px rgba(20,40,28,0.04), 0 10px 30px -14px rgba(20,40,28,0.18)",
+  ink: "#0c0d10",
+  muted: "#6e6f78",
+  accent: "#2fb866",
+  positive: "#1e9e52",
+  negative: "#e5484d",
+  track: "rgba(12,13,16,0.06)",
+  heat: ["#ececf1", "#c9ecd5", "#8bd7a7", "#43bd72", "#1e9e52"],
+  radius: 14,
+  display: { family: "Geist", weight: 700 },
+  body: { family: "Geist", weight: 400 },
+});
+
+/** Daylight's night side: widgets on a deep emerald-black wallpaper. */
+export const midnight = defineTheme({
+  id: "midnight",
+  name: "Midnight",
+  tier: "free",
+  mode: "dark",
+  page: "#060708",
+  wallpaper: "radial-gradient(90% 70% at 0% 0%, #0f3a25 0%, rgba(6,7,8,0) 60%), radial-gradient(80% 60% at 100% 0%, #11213a 0%, rgba(6,7,8,0) 55%)",
+  tile: "#16171b",
+  tileBorder: "rgba(255,255,255,0.06)",
+  tileShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+  ink: "#f5f5f7",
+  muted: "#8e8e96",
+  accent: "#30d158",
+  positive: "#30d158",
+  negative: "#ff6961",
+  track: "rgba(255,255,255,0.09)",
+  heat: ["#1f2025", "#123d25", "#1b6b3c", "#26a557", "#30d158"],
+  radius: 14,
+  display: { family: "Geist", weight: 700 },
+  body: { family: "Geist", weight: 400 },
+});
 
 /** The default: a results board. White tiles on porcelain, wide black numbers, green only where a number went up. */
 export const board = defineTheme({
@@ -143,4 +189,4 @@ export const editorial = defineTheme({
   body: { family: "Inter", weight: 400 },
 });
 
-export const themes = [board, night, paper, terminal, sunset, oldMoney, editorial];
+export const themes = [daylight, midnight, board, night, paper, terminal, sunset, oldMoney, editorial];

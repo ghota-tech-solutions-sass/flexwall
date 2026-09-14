@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { ArrowUpRightIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { HANDLE_MAX_LENGTH, Handle } from "@/domain/handle";
 
@@ -34,7 +35,10 @@ export function ClaimForm() {
         maxLength={HANDLE_MAX_LENGTH}
       />
       <button type="submit" className="btn btn-signal">
-        Claim
+        Claim your wall
+        <span className="btn-icon" aria-hidden="true">
+          <ArrowUpRightIcon size={16} weight="bold" />
+        </span>
       </button>
     </form>
   );

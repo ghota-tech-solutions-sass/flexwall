@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowUpRightIcon, SealCheckIcon } from "@phosphor-icons/react/ssr";
+import { BrandMark, hasMark } from "@/components/brand/Logos";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { TopBar, Footer } from "@/components/site/Chrome";
 import { ClaimForm } from "@/components/site/ClaimForm";
+import { ProfileHeader } from "@/components/wall/ProfileHeader";
 import { WallGrids, wallStyle } from "@/components/wall/WallView";
 import { container } from "@/composition";
 import { todayIn } from "@/domain/time";
@@ -18,18 +21,17 @@ export const metadata: Metadata = pageMetadata({ title: "Flexwall: your numbers,
 
 export const dynamic = "force-dynamic";
 
-const FEATURED_SOURCES = ["stripe", "github", "npm", "youtube"];
-
 export default async function Home() {
   const c = container();
-  const today = todayIn("UTC", Date.now());
+  const now = Date.now();
+  const today = todayIn("UTC", now);
   const wall = demoWall(today);
-  const theme = c.catalog.theme(wall.theme)!;
+  const light = c.catalog.theme(wall.theme)!;
+  const dark = c.catalog.theme("midnight") ?? light;
   const states = sampleStates(wall.tiles, c.catalog);
   const signedIn = Boolean(await sessionUserId());
   const connectors = c.catalog.connectors();
-  const featured = FEATURED_SOURCES.flatMap((id) => connectors.filter((conn) => conn.id === id).map((conn) => conn.name));
-  const others = connectors.length - featured.length;
+  const date = new Date(now).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
 
   return (
     <>
@@ -37,90 +39,150 @@ export default async function Home() {
       <div className="page">
         <TopBar signedIn={signedIn} />
 
-        <section className="hero">
-          <div className="hero-copy">
-            <h1 className="display">Your numbers, live, on one page.</h1>
-            <p>Connect Stripe, GitHub or any API, arrange the tiles, and publish flexwall.lol/@you. The numbers keep themselves up to date.</p>
-            <ClaimForm />
-            <p className="hero-sources">
-              Reads from <strong>{featured.join(", ")}</strong>
-              {others > 0 ? ` and ${others} more sources.` : "."}
-            </p>
-          </div>
-
-          <figure className="board" aria-label="An example wall" style={{ margin: 0 }}>
-            <figcaption className="board-head">
-              <strong>flexwall.lol/@{wall.handle}</strong>
-              <span className="live">Live, updated today</span>
-            </figcaption>
-            <div className="board-body" style={wallStyle(theme)}>
-              <WallGrids tiles={wall.tiles} states={states} theme={theme} today={today} catalog={c.catalog} />
+        <main id="main">
+          <section className="hero">
+            <div className="hero-copy">
+              <h1 className="display">Flex your real numbers.</h1>
+              <p>Stripe revenue, GitHub streaks and any API, live on flexwall.lol/@you and on your lock screen.</p>
+              <ClaimForm />
             </div>
-          </figure>
-        </section>
 
-        <section className="section">
-          <div className="section-head">
-            <h2 className="display">Build it once. It shows up everywhere.</h2>
-            <p>The same tiles make your page, the card X shows when you post the link, and a lock screen your iPhone redraws every morning.</p>
-          </div>
-          <div className="surfaces">
-            <figure>
-              <img src="/demo/card.png" alt="The share card of the example wall" width={1200} height={630} loading="lazy" />
-              <figcaption>
-                <strong>Share card</strong> Today&apos;s numbers, every time the link is posted.
-              </figcaption>
-            </figure>
-            <figure>
-              <img src="/demo/lockscreen.png" alt="The example wall as an iPhone lock screen" width={603} height={1311} loading="lazy" />
-              <figcaption>
-                <strong>Lock screen</strong> Redrawn each morning by one Shortcuts automation.
-              </figcaption>
-            </figure>
-          </div>
-        </section>
+            <div className="phone-stage">
+              <div className="device" role="img" aria-label="An iPhone lock screen showing live Flexwall widgets">
+                <div className="device-screen">
+                  <span className="device-island" />
+                  <picture>
+                    <source srcSet="/demo/lockscreen-dark.png?v=2" media="(prefers-color-scheme: dark)" />
+                    <img src="/demo/lockscreen.png?v=2" alt="" width={603} height={1311} fetchPriority="high" />
+                  </picture>
+                  <div className="device-clock only-light">
+                    <div>{date}</div>
+                    <div>9:41</div>
+                  </div>
+                  <div className="device-clock only-dark" style={{ ["--clock" as string]: "#f5f5f7" }}>
+                    <div>{date}</div>
+                    <div>9:41</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
 
-        <section className="section">
-          <div className="section-head">
-            <h2 className="display">Real numbers, from the source.</h2>
-            <p>
-              A tile read from an account carries a verified mark. Keys are encrypted, read-only where the service allows it, and never shown again.
-              {SOURCE_URL ? " Missing a source? Connectors are open source: add one in a pull request." : ""}
+          <nav className="logos reveal" aria-label="Sources">
+            {connectors
+              .filter((conn) => hasMark(conn.id))
+              .map((conn) => (
+                <Link key={conn.id} href={integrationPath(conn.id)} aria-label={conn.name} title={conn.name}>
+                  <BrandMark id={conn.id} size={30} />
+                </Link>
+              ))}
+          </nav>
+
+          <section className="section reveal" aria-labelledby="everywhere">
+            <h2 id="everywhere" className="display">
+              One wall. Every place people look.
+            </h2>
+            <p className="section-lede">Build it once. The same tiles make your page, your share card and your lock screen.</p>
+
+            <div className="bento">
+              <article className="cell cell-page">
+                <div className="cell-core">
+                  <h3>A page that keeps itself current</h3>
+                  <p>Tiles redraw from the source, so the numbers on flexwall.lol/@you are never an old screenshot.</p>
+                  <div className="mini-wall board only-light" style={wallStyle(light)}>
+                    <ProfileHeader as="h4" title={wall.title} handle={wall.handle} bio={wall.bio} theme={light} stats={[{ value: "3", label: "verified numbers" }]} />
+                    <WallGrids tiles={wall.tiles} states={states} theme={light} today={today} catalog={c.catalog} />
+                  </div>
+                  <div className="mini-wall board only-dark" style={wallStyle(dark)}>
+                    <ProfileHeader as="h4" title={wall.title} handle={wall.handle} bio={wall.bio} theme={dark} stats={[{ value: "3", label: "verified numbers" }]} />
+                    <WallGrids tiles={wall.tiles} states={states} theme={dark} today={today} catalog={c.catalog} />
+                  </div>
+                </div>
+              </article>
+
+              <article className="cell cell-chat">
+                <div className="cell-core">
+                  <h3>A card that unfolds in any chat</h3>
+                  <p>Post the link and it opens on today&apos;s numbers.</p>
+                  <div className="chat" aria-label="A message thread sharing a wall">
+                    <span className="bubble them">so how is the launch going?</span>
+                    <span className="bubble me">flexwall.lol/@{wall.handle}</span>
+                    <span className="unfurl">
+                      <picture>
+                        <source srcSet="/demo/card-dark.png?v=2" media="(prefers-color-scheme: dark)" />
+                        <img src="/demo/card.png?v=2" alt="The share card of the example wall" width={1200} height={630} loading="lazy" />
+                      </picture>
+                      <span style={{ display: "block", padding: "8px 12px 10px" }}>
+                        <strong>{wall.title} on Flexwall</strong>
+                        flexwall.lol
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </article>
+
+              <article className="cell cell-verified">
+                <div className="cell-core">
+                  <h3>Verified at the source</h3>
+                  <p>Revenue read with your own restricted Stripe key carries a mark nobody can type in.</p>
+                  <div className="verified-tile">
+                    <span className="value">$4,820</span>
+                    <span className="source">
+                      <SealCheckIcon size={18} weight="fill" />
+                      Read from Stripe
+                    </span>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section className="section reveal" aria-labelledby="sources">
+            <h2 id="sources" className="display">
+              Plug in what you already use.
+            </h2>
+            <p className="section-lede">
+              Keys are encrypted and read-only where the service allows it.
+              {SOURCE_URL ? " Missing one? Connectors are open source." : ""}
             </p>
-          </div>
-          <ul className="connector-list">
-            {connectors.map((conn) => (
-              <li key={conn.id}>
-                <h3>
-                  <Link href={integrationPath(conn.id)}>{conn.name}</Link>
-                </h3>
-                <p>{conn.description}</p>
-                <span className="tags">
-                  {conn.verified ? <span className="badge quiet">Verified</span> : null}
-                  {conn.tier === "pro" ? <span className="badge">Pro</span> : null}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p className="more">
-            <Link href="/integrations">Every integration, and what it measures</Link>
-          </p>
-        </section>
+            <ul className="connector-list">
+              {connectors.map((conn) => (
+                <li key={conn.id}>
+                  <h3>
+                    <BrandMark id={conn.id} size={22} />
+                    <Link href={integrationPath(conn.id)}>{conn.name}</Link>
+                  </h3>
+                  <p>{conn.description}</p>
+                  <span className="tags">
+                    {conn.verified ? <span className="badge quiet">Verified</span> : null}
+                    {conn.tier === "pro" ? <span className="badge">Pro</span> : null}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="more">
+              <Link href="/integrations">Every integration, and what it measures</Link>
+            </p>
+          </section>
 
-        <section className="section">
-          <div className="section-head">
-            <h2 className="display">Free to start. Pro when the numbers are worth showing.</h2>
-            <p>Every public wall is free. Pro adds verified revenue, history charts, every theme and a lock screen without the mark.</p>
-          </div>
-          <div className="row">
-            <Link href={signedIn ? "/edit" : "/login"} className="btn btn-signal">
-              {signedIn ? "Edit my wall" : "Claim your wall"}
-            </Link>
-            <Link href="/pricing" className="btn">
-              See pricing
-            </Link>
-          </div>
-        </section>
+          <section className="closing reveal" aria-labelledby="closing">
+            <h2 id="closing" className="display">
+              Your numbers deserve a wall.
+            </h2>
+            <p className="section-lede">Free to start. Pro from $6 a month for verified revenue and history.</p>
+            <div className="row">
+              <Link href={signedIn ? "/edit" : "/login"} className="btn btn-signal">
+                {signedIn ? "Edit my wall" : "Claim your wall"}
+                <span className="btn-icon" aria-hidden="true">
+                  <ArrowUpRightIcon size={16} weight="bold" />
+                </span>
+              </Link>
+              <Link href="/pricing" className="link">
+                See pricing
+              </Link>
+            </div>
+          </section>
+        </main>
 
         <Footer />
       </div>

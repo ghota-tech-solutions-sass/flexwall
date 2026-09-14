@@ -63,7 +63,7 @@ export function demoWall(today: string): Wall {
     handle: "demo" as Handle,
     title: "Ada Builds",
     bio: "Indie hacker. Shipping a SaaS in public, one commit at a time.",
-    theme: "board",
+    theme: "daylight",
     tiles,
     lockscreen: {
       device: "iphone-17-pro",

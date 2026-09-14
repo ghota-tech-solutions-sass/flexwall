@@ -130,7 +130,7 @@ export function LockscreenPanel({ draft, states, theme, today, lockscreenUrl, wa
             </button>
           </div>
           <ol className="hint" style={{ paddingLeft: "1.2em", margin: 0 }}>
-            <li>Shortcuts → Automation → + → Time of Day, 7:00, Daily, Run Immediately.</li>
+            <li>Shortcuts, then Automation, then +, then Time of Day, 7:00, Daily, Run Immediately.</li>
             <li>Add “Get Contents of URL” with the link above.</li>
             <li>Add “Set Wallpaper Photo”, Lock Screen, preview off.</li>
           </ol>

@@ -1,10 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo } from "next/font/google";
+import { Geist } from "next/font/google";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/presentation/seo/structured-data";
 import "./globals.css";
 
-// One family, two voices: normal width for reading, the width axis at 125% for numbers and headlines.
-const ui = Archivo({ subsets: ["latin"], variable: "--font-ui", axes: ["wdth"] });
+const ui = Geist({ subsets: ["latin"], variable: "--font-ui" });
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -18,12 +17,22 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false, email: false, address: false },
 };
 
-export const viewport: Viewport = { themeColor: "#f1f2f4" };
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f2f2f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#060708" },
+  ],
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={ui.variable}>
-      <body>{children}</body>
+      <body>
+        <a href="#main" className="skip">
+          Skip to content
+        </a>
+        {children}
+      </body>
     </html>
   );
 }
