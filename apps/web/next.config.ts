@@ -19,6 +19,13 @@ const nextConfig: NextConfig = {
   turbopack: { root },
   // Image renderers read the fonts from disk at runtime.
   outputFileTracingIncludes: { "/**": ["./public/fonts/**/*"] },
+  images: {
+    formats: ["image/avif", "image/webp"],
+    // Only the landing page's demo renders go through the optimizer; walls stay PNG for wallpapers.
+    localPatterns: [{ pathname: "/demo/**", search: "" }],
+    qualities: [75],
+    minimumCacheTTL: 86400,
+  },
   async redirects() {
     // One address per page for search engines: www goes to the apex, path and query kept.
     return [{ source: "/:path*", has: [{ type: "host", value: "www.flexwall.lol" }], destination: "https://flexwall.lol/:path*", permanent: true }];

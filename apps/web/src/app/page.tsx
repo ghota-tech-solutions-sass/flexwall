@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getImageProps } from "next/image";
 import Link from "next/link";
 import { ArrowUpRightIcon, SealCheckIcon } from "@phosphor-icons/react/ssr";
 import { asType, currencySymbol, formatNumber, formatPercent, seriesChange } from "@flexwall/sdk";
@@ -13,6 +14,7 @@ import { Tilt } from "@/components/motion/Tilt";
 import { ProfileHeader } from "@/components/wall/ProfileHeader";
 import { WallGrids, wallStyle } from "@/components/wall/WallView";
 import { container } from "@/composition";
+import { DEVICES } from "@/domain/layout";
 import { todayIn } from "@/domain/time";
 import { PAID_TILE_LIMIT } from "@/domain/user";
 import { demoWall, sampleStates } from "@/rendering/samples";
@@ -27,16 +29,32 @@ export const metadata: Metadata = pageMetadata({ title: "Flexwall: your numbers,
 
 export const dynamic = "force-dynamic";
 
+const PHONE = DEVICES["iphone-17-pro"];
+
+/**
+ * A demo image in both color schemes, resized and re-encoded (AVIF, WebP) by
+ * the image optimizer. The dark variant is picked by the browser, not by CSS,
+ * so only one of the two is ever downloaded.
+ */
+function SchemeImage({ name, alt, width, height, sizes, priority = false }: { name: string; alt: string; width: number; height: number; sizes: string; priority?: boolean }) {
+  const common = { alt, width, height, sizes, ...(priority ? { loading: "eager" as const, fetchPriority: "high" as const } : { loading: "lazy" as const }) };
+  const { props: dark } = getImageProps({ ...common, src: `/demo/${name}-dark.png` });
+  const { props: light } = getImageProps({ ...common, src: `/demo/${name}.png` });
+  return (
+    <picture>
+      <source srcSet={dark.srcSet} sizes={sizes} media="(prefers-color-scheme: dark)" />
+      <img {...light} alt={alt} />
+    </picture>
+  );
+}
+
 /** The phone screen, with the clock the lock screen image leaves room for. */
 function LockScreen({ date, priority = false }: { date: string; priority?: boolean }) {
   return (
     <div className="device" role="img" aria-label="An iPhone lock screen showing live Flexwall widgets">
       <div className="device-screen">
         <span className="device-island" />
-        <picture>
-          <source srcSet="/demo/lockscreen-dark.png?v=2" media="(prefers-color-scheme: dark)" />
-          <img src="/demo/lockscreen.png?v=2" alt="" width={603} height={1311} {...(priority ? { fetchPriority: "high" as const } : { loading: "lazy" as const })} />
-        </picture>
+        <SchemeImage name="lockscreen" alt="" width={PHONE.w} height={PHONE.h} sizes="(max-width: 460px) 74vw, 340px" priority={priority} />
         <div className="device-clock only-light">
           <div>{date}</div>
           <div>9:41</div>
@@ -160,10 +178,7 @@ export default async function Home() {
                 <span className="bubble them">so how is the launch going?</span>
                 <span className="bubble me">flexwall.lol/@{wall.handle}</span>
                 <span className="unfurl">
-                  <picture>
-                    <source srcSet="/demo/card-dark.png?v=2" media="(prefers-color-scheme: dark)" />
-                    <img src="/demo/card.png?v=2" alt="The share card of the example wall" width={1200} height={630} loading="lazy" />
-                  </picture>
+                  <SchemeImage name="card" alt="The share card of the example wall" width={1200} height={630} sizes="(max-width: 600px) 80vw, 420px" />
                   <span style={{ display: "block", padding: "8px 12px 10px" }}>
                     <strong>{wall.title} on Flexwall</strong>
                     flexwall.lol

@@ -287,8 +287,11 @@ main ~ .footer { margin-top: 110px; }
   box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.12), var(--shadow-float);
   animation: rise 1.1s var(--spring) both;
 }
-.device-screen { position: relative; width: 100%; height: 100%; border-radius: 47px; overflow: hidden; container-type: inline-size; background: #000; }
+/* The Daylight wallpaper stands in while the image loads, so the phone never shows a black screen. */
+.device-screen { position: relative; width: 100%; height: 100%; border-radius: 47px; overflow: hidden; container-type: inline-size; background: radial-gradient(90% 70% at 0% 0%, #d9f2e2, transparent 60%), radial-gradient(80% 60% at 100% 0%, #e3eaf6, transparent 55%), #f2f2f7; }
 .device-screen img { width: 100%; height: 100%; object-fit: cover; }
+/* Midnight follows the system scheme, like the <picture> source it stands in for. */
+@media (prefers-color-scheme: dark) { .device-screen { background: radial-gradient(90% 70% at 0% 0%, #0f3a25, transparent 60%), radial-gradient(80% 60% at 100% 0%, #11213a, transparent 55%), #060708; } }
 .device-island { position: absolute; top: 2.6%; left: 50%; width: 31%; height: 3.4%; transform: translateX(-50%); border-radius: 999px; background: #000; z-index: 2; }
 .device-clock { position: absolute; top: 9.5%; width: 100%; text-align: center; color: var(--clock, #0c0d10); pointer-events: none; }
 .device-clock div:first-child { font-size: 4.6cqw; font-weight: 600; letter-spacing: 0; }
