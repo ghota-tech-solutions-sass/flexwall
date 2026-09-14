@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { Handle } from "@/domain/handle";
+import { todayIn } from "@/domain/time";
 import { firstFreeSpot, mobileLayout, packInto } from "@/domain/layout";
 import { entitlementsOf, PAST_DUE_GRACE_MS } from "@/domain/user";
 import { effectiveTheme } from "@/domain/wall";
@@ -137,5 +138,25 @@ describe("Mobile layout", () => {
       ["tall", { x: 0, y: 1, w: 1, h: 1 }],
       ["wide", { x: 1, y: 1, w: 3, h: 1 }],
     ]);
+  });
+});
+
+describe("Today in a time zone", () => {
+  test("given an instant just after midnight in Paris, when today is read there and in UTC, then each gets its own ISO date", () => {
+    // Given
+    const instant = Date.UTC(2026, 8, 14, 22, 30, 0);
+
+    // When
+    const paris = todayIn("Europe/Paris", instant);
+    const utc = todayIn("UTC", instant);
+
+    // Then
+    expect(paris).toBe("2026-09-15");
+    expect(utc).toBe("2026-09-14");
+  });
+
+  test("given an unknown time zone, when today is read, then it falls back to the UTC date", () => {
+    // Given / When / Then
+    expect(todayIn("Mars/Olympus", Date.UTC(2026, 0, 2, 3))).toBe("2026-01-02");
   });
 });
