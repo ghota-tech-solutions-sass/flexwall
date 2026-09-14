@@ -14,7 +14,7 @@ export const stat = defineWidget<Options>({
   category: "numbers",
   inputs: [{ key: "value", label: "Number", accepts: ["number", "series"] }],
   options: [
-    field.text("label", "Label", { placeholder: "MRR", maxLength: 40 }),
+    field.text("label", "Label", { placeholder: "MRR", maxLength: 40, optional: true }),
     field.text("prefix", "Before the number", { placeholder: "$", maxLength: 4, optional: true, help: "Leave empty to use the currency of the data." }),
     field.text("suffix", "After the number", { placeholder: "users", maxLength: 8, optional: true }),
     field.number("goal", "Goal", { optional: true, min: 0, help: "Draws a progress bar toward this number." }),

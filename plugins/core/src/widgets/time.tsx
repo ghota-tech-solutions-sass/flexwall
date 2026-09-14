@@ -9,7 +9,7 @@ export const countdown = defineWidget<{ date: string; label: string }>({
   description: "Days until a date, or since it.",
   category: "time",
   inputs: [],
-  options: [field.date("date", "Date"), field.text("label", "Words after the number", { placeholder: "until launch", maxLength: 40 })],
+  options: [field.date("date", "Date", { defaultInDays: 30 }), field.text("label", "Words after the number", { placeholder: "until launch", maxLength: 40, default: "until launch" })],
   size: { default: [1, 1], min: [1, 1], max: [4, 2] },
 
   render({ options, area, theme, u, today }) {

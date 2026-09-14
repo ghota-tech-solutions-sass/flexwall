@@ -52,7 +52,7 @@ describe("SaveWall", () => {
     const attempt = saveWall.execute({ userId: "u1", draft });
 
     // Then
-    await expect(attempt).rejects.toThrow('Tile "b": it overlaps tile "a".');
+    await expect(attempt).rejects.toThrow("The Note tile at row 1, column 2: it overlaps the Note tile at row 1, column 1.");
   });
 
   test("given a tile larger than its widget allows, when saved, then it's refused", async () => {

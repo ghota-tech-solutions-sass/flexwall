@@ -45,7 +45,7 @@ export function testCatalog(upstream = new ScriptedUpstream()) {
     verified: true,
     ttl: 1800,
     auth: { help: "Paste a key.", fields: [field.secret("key", "Key", { pattern: "^key_", patternMessage: "must start with key_" })] },
-    metrics: [{ id: "mrr", name: "MRR", type: "number", unit: "currency", leaderboard: "revenue" }],
+    metrics: [{ id: "mrr", name: "MRR", type: "number", unit: "currency", leaderboard: "revenue", defaults: { label: "Monthly revenue" } }],
     cacheKey: () => "account",
     async connect(input) {
       if (input.key === "key_revoked") throw new ConnectorError("That key was revoked.");

@@ -84,11 +84,18 @@ export function bindingType(binding: Binding, catalog: Catalog): ValueType | nul
   return binding.history ? "series" : metric.type;
 }
 
-function fail(tile: Tile | null, message: string): never {
-  throw new DomainError("invalid_wall", tile ? `Tile "${tile.id}": ${message}` : message);
+/** Names a tile the way the owner sees it: by widget and position, never by internal id. */
+function describe(tile: Tile, catalog: Catalog): string {
+  const name = catalog.widget(tile.widget)?.name ?? "A";
+  const where = tile.layout ? ` at row ${Number(tile.layout.y) + 1}, column ${Number(tile.layout.x) + 1}` : "";
+  return `The ${name} tile${where}`;
 }
 
-function sanitizeBinding(tile: Tile, key: string, accepts: readonly ValueType[], binding: Binding, rules: WallRules): Binding {
+function fail(where: string | null, message: string): never {
+  throw new DomainError("invalid_wall", where ? `${where}: ${message}` : message);
+}
+
+function sanitizeBinding(tile: string, key: string, accepts: readonly ValueType[], binding: Binding, rules: WallRules): Binding {
   if (binding.kind === "static") {
     if (!isValue(binding.value)) fail(tile, `"${key}" has a value the widget can't read.`);
     if (!accepts.includes(binding.value.type)) fail(tile, `"${key}" takes ${accepts.join(" or ")}, not ${binding.value.type}.`);
@@ -119,28 +126,29 @@ function sanitizeBinding(tile: Tile, key: string, accepts: readonly ValueType[],
 
 function sanitizeTile(raw: Tile, rules: WallRules): Tile {
   if (!raw || typeof raw.id !== "string" || !/^[A-Za-z0-9_-]{1,40}$/.test(raw.id)) fail(null, "A tile has no valid id.");
+  const where = describe(raw, rules.catalog);
   const widget = rules.catalog.widget(raw.widget);
-  if (!widget) fail(raw, `widget "${raw.widget}" isn't installed.`);
+  if (!widget) fail(where, `widget "${raw.widget}" isn't installed.`);
 
   const layout = { x: Number(raw.layout?.x), y: Number(raw.layout?.y), w: Number(raw.layout?.w), h: Number(raw.layout?.h) };
-  if (!fitsColumns(layout, WALL_COLUMNS)) fail(raw, "it's outside the grid.");
+  if (!fitsColumns(layout, WALL_COLUMNS)) fail(where, "it's outside the grid.");
   const [minW, minH] = widget.size.min;
   const [maxW, maxH] = widget.size.max;
   if (layout.w < minW || layout.h < minH || layout.w > maxW || layout.h > maxH) {
-    fail(raw, `${widget.name} fits between ${minW}×${minH} and ${maxW}×${maxH}.`);
+    fail(where, `${widget.name} fits between ${minW}×${minH} and ${maxW}×${maxH}.`);
   }
 
   const options = validateFields(widget.options, { ...defaultsFor(widget.options), ...(raw.options ?? {}) });
-  if (options.error) fail(raw, options.error);
+  if (options.error) fail(where, options.error);
 
   const inputs: Record<string, Binding> = {};
   for (const input of widget.inputs) {
     const binding = raw.inputs?.[input.key];
     if (!binding) {
       if (input.optional) continue;
-      fail(raw, `${widget.name} needs "${input.label}".`);
+      fail(where, `${widget.name} needs "${input.label}".`);
     }
-    inputs[input.key] = sanitizeBinding(raw, input.key, input.accepts, binding, rules);
+    inputs[input.key] = sanitizeBinding(where, input.key, input.accepts, binding, rules);
   }
 
   return { id: raw.id, widget: widget.id, inputs, options: options.values, visibility: raw.visibility === "public" ? "public" : "private", layout };
@@ -170,11 +178,11 @@ export function applyDraft(wall: Wall, draft: WallDraft, rules: WallRules, now: 
   const tiles = rawTiles.map((t) => sanitizeTile(t, rules));
   const ids = new Set<string>();
   for (const t of tiles) {
-    if (ids.has(t.id)) fail(t, "two tiles share this id.");
+    if (ids.has(t.id)) fail(describe(t, rules.catalog), "two tiles share this id.");
     ids.add(t.id);
   }
   const clash = firstOverlap(tiles.map((t) => t.layout));
-  if (clash) fail(tiles[clash[1]], `it overlaps tile "${tiles[clash[0]].id}".`);
+  if (clash) fail(describe(tiles[clash[1]], rules.catalog), `it overlaps ${describe(tiles[clash[0]], rules.catalog).replace(/^The/, "the")}.`);
 
   const device = (DEVICE_IDS as string[]).includes(draft.lockscreen?.device) ? (draft.lockscreen.device as DeviceId) : wall.lockscreen.device;
   const placements: LockscreenPlacement[] = [];
@@ -182,9 +190,9 @@ export function applyDraft(wall: Wall, draft: WallDraft, rules: WallRules, now: 
     const tile = tiles.find((t) => t.id === p.tileId);
     if (!tile) continue; // the tile was removed from the wall
     const box = { x: Number(p.box?.x), y: Number(p.box?.y), w: Number(p.box?.w), h: Number(p.box?.h) };
-    if (!fitsColumns(box, LOCK_COLUMNS) || box.y + box.h > LOCK_ROWS) fail(tile, "its lock screen spot is outside the screen.");
+    if (!fitsColumns(box, LOCK_COLUMNS) || box.y + box.h > LOCK_ROWS) fail(describe(tile, rules.catalog), "its lock screen spot is outside the screen.");
     const widget = rules.catalog.widget(tile.widget)!;
-    if (widget.excludeSurfaces?.includes("lockscreen")) fail(tile, `${widget.name} can't go on the lock screen.`);
+    if (widget.excludeSurfaces?.includes("lockscreen")) fail(describe(tile, rules.catalog), `${widget.name} can't go on the lock screen.`);
     placements.push({ tileId: tile.id, box });
   }
   const lockClash = firstOverlap(placements.map((p) => p.box));

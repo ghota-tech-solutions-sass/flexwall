@@ -9,7 +9,7 @@ export const sparkline = defineWidget<{ label: string; prefix: string }>({
   category: "charts",
   inputs: [{ key: "series", label: "History", accepts: ["series"] }],
   options: [
-    field.text("label", "Label", { placeholder: "MRR, 30 days", maxLength: 40 }),
+    field.text("label", "Label", { placeholder: "MRR, 30 days", maxLength: 40, optional: true }),
     field.text("prefix", "Before the number", { maxLength: 4, optional: true }),
   ],
   size: { default: [2, 1], min: [2, 1], max: [4, 2] },
@@ -69,7 +69,8 @@ export const heatmap = defineWidget<{ label: string; showTotal: boolean }>({
     const gapRatio = 0.22;
     const cell = (area.height - headerHeight) / (rows + (rows - 1) * gapRatio);
     const gap = cell * gapRatio;
-    const weeks = Math.max(1, Math.floor((area.width + gap) / (cell + gap)));
+    // 2% slack: renderers round each of dozens of cells, and the errors add up at the right edge.
+    const weeks = Math.max(1, Math.floor((area.width * 0.98 + gap) / (cell + gap)));
 
     // Pad the first column so each column starts on Sunday.
     const columns: (typeof days[number] | null)[][] = [];
