@@ -68,8 +68,45 @@ describe("ListExplore", () => {
       await walls.save(aWall().withId(`w-${id}`).ownedBy(owner).listed().with(aTile().withId("mrr").stat({ label: "MRR" }).metric("billing", "mrr", { connection: `c-${id}` })).build());
       await cache.set(`billing|c-${id}|account`, { at: NOW, values: { mrr: money(amount, "usd") } });
     };
-    return { walls, users, cache, upstream, listExplore, listedWithRevenue };
+    const listedWithWealth = async (id: string, amount: number, tileOptions: Record<string, string> = {}) => {
+      const owner = aUser().withId(id).withHandle(id).pro().build();
+      await users.save(owner);
+      await connections.save(aConnection().withId(`c-${id}`).ownedBy(owner).forConnector("brokerage").sealed('sealed:{"key":"k"}').build());
+      await walls.save(aWall().withId(`w-${id}`).ownedBy(owner).listed().with(aTile().withId("equity").stat({ label: "Portfolio", ...tileOptions }).metric("brokerage", "equity", { connection: `c-${id}` })).build());
+      await cache.set(`brokerage|c-${id}|account`, { at: NOW, values: { equity: money(amount, "usd") } });
+    };
+    return { walls, users, cache, upstream, listExplore, listedWithRevenue, listedWithWealth };
   }
+
+  test("given verified portfolios and a pasted whale address, when sorted by wealth, then only verified accounts rank and amounts show as ranges", async () => {
+    // Given
+    const { walls, users, cache, listExplore, listedWithWealth } = await setup();
+    await listedWithWealth("modest", 48_000);
+    await listedWithWealth("rich", 2_400_000);
+    const pretender = aUser().withId("pretender").withHandle("pretender").build();
+    await users.save(pretender);
+    await walls.save(aWall().withId("w-pretender").ownedBy(pretender).listed().with(aTile().withId("whale").stat({ label: "Balance" }).metric("wallet", "balance", { params: { address: "0xwhale" } })).build());
+    await cache.set("wallet|-|balance?address=0xwhale", { at: NOW, values: { balance: money(90_000_000, "usd") } });
+
+    // When
+    const entries = await listExplore.execute({ sort: "wealth" });
+
+    // Then
+    expect(entries.map((e) => e.handle)).toEqual(["rich", "modest"]);
+    expect(entries[0].highlights).toEqual([{ label: "Portfolio", value: "$1M+", connector: "Brokerage" }]);
+  });
+
+  test("given an owner who asked a wealth tile for the exact number, when Explore picks highlights, then it prints the number", async () => {
+    // Given
+    const { listExplore, listedWithWealth } = await setup();
+    await listedWithWealth("open", 2_400_000, { display: "exact" });
+
+    // When
+    const [entry] = await listExplore.execute({ sort: "wealth" });
+
+    // Then
+    expect(entry.highlights[0].value).toBe("$2.4M");
+  });
 
   test("given listed walls with verified revenue in cache, when sorted by revenue, then the highest comes first, without calling anyone's account", async () => {
     // Given

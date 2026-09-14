@@ -1,7 +1,7 @@
-import { asType, currencySymbol, defineWidget, displayAdvance, field, formatNumber, formatPercent, seriesChange } from "@flexwall/sdk";
+import { asType, currencySymbol, defineWidget, displayAdvance, field, formatBand, formatNumber, formatPercent, NUMBER_DISPLAY_OPTIONS, seriesChange, showsRange } from "@flexwall/sdk";
 import { Bar, Col, Fill, Row, Text, fitFont } from "@flexwall/sdk/ui";
 
-type Options = { label: string; prefix: string; suffix: string; goal?: number };
+type Options = { label: string; prefix: string; suffix: string; goal?: number; display: string };
 
 /**
  * One number, as big as the tile allows. Takes a number, or a series (shows the
@@ -18,6 +18,7 @@ export const stat = defineWidget<Options>({
     field.text("prefix", "Before the number", { placeholder: "$", maxLength: 4, optional: true, help: "Leave empty to use the currency of the data." }),
     field.text("suffix", "After the number", { placeholder: "users", maxLength: 8, optional: true }),
     field.number("goal", "Goal", { optional: true, min: 0, help: "Draws a progress bar toward this number." }),
+    field.select("display", "Show", NUMBER_DISPLAY_OPTIONS, { default: "auto", help: "Balances and portfolios print as a range unless you ask for the exact number." }),
   ],
   size: { default: [2, 1], min: [1, 1], max: [4, 2] },
 
@@ -30,7 +31,9 @@ export const stat = defineWidget<Options>({
     const currency = num?.currency ?? ser?.currency;
     const prefix = options.prefix || (unit === "currency" ? currencySymbol(currency) : "");
     const suffix = options.suffix ? ` ${options.suffix}`.replace(/^ (%)/, "$1") : unit === "percent" ? "%" : "";
-    const shown = prefix + formatNumber(current) + suffix;
+    const range = showsRange(options.display, inputs.value!.source?.sensitive);
+    // A range keeps the owner's own prefix and suffix out: "$1M+" is the whole statement.
+    const shown = range ? formatBand({ value: current, unit, currency }) : prefix + formatNumber(current) + suffix;
     const change = ser ? seriesChange(ser) : null;
     const goal = options.goal && options.goal > 0 ? options.goal : null;
 
@@ -61,7 +64,8 @@ export const stat = defineWidget<Options>({
           <Col style={{ width: "100%" }}>
             <Bar value={current / goal} height={u(small ? 5 : 7)} color={theme.accent} track={theme.track} />
             <Row style={{ justifyContent: "space-between", marginTop: u(5) }}>
-              <Text style={{ fontSize: u(labelSize - 1), color: theme.muted }}>{formatPercent(current / goal)}</Text>
+              {/* Goal and percentage together would give the number back. */}
+              <Text style={{ fontSize: u(labelSize - 1), color: theme.muted }}>{range ? " " : formatPercent(current / goal)}</Text>
               <Text style={{ fontSize: u(labelSize - 1), color: theme.muted }}>{prefix + formatNumber(goal) + suffix}</Text>
             </Row>
           </Col>

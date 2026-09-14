@@ -22,7 +22,8 @@ export interface InputValue {
   value: Value;
   /** The upstream was unreachable; this is the last known value. */
   stale: boolean;
-  source?: { connector: string; name: string; verified: boolean };
+  /** `sensitive` comes from the metric: widgets show it as a range unless the tile asks for the exact number. */
+  source?: { connector: string; name: string; verified: boolean; sensitive?: boolean };
 }
 
 export interface WidgetInputDef {

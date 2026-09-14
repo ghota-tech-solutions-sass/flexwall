@@ -1,8 +1,8 @@
-import { asType, currencySymbol, defineWidget, displayAdvance, field, formatNumber, formatPercent, seriesChange } from "@flexwall/sdk";
+import { asType, currencySymbol, defineWidget, displayAdvance, field, formatBand, formatNumber, formatPercent, NUMBER_DISPLAY_OPTIONS, seriesChange, showsRange } from "@flexwall/sdk";
 import { Col, Fill, Row, Text, fitFont, sparkPoints } from "@flexwall/sdk/ui";
 
 /** A number's recent history as a line, with the latest value and the change. */
-export const sparkline = defineWidget<{ label: string; prefix: string }>({
+export const sparkline = defineWidget<{ label: string; prefix: string; display: string }>({
   id: "sparkline",
   name: "Trend",
   description: "A line chart of a number over time, with its latest value and change.",
@@ -11,6 +11,7 @@ export const sparkline = defineWidget<{ label: string; prefix: string }>({
   options: [
     field.text("label", "Label", { placeholder: "MRR, 30 days", maxLength: 40, optional: true }),
     field.text("prefix", "Before the number", { maxLength: 4, optional: true }),
+    field.select("display", "Show", NUMBER_DISPLAY_OPTIONS, { default: "auto", help: "Balances and portfolios print as a range unless you ask for the exact number." }),
   ],
   size: { default: [2, 1], min: [2, 1], max: [4, 2] },
 
@@ -20,7 +21,8 @@ export const sparkline = defineWidget<{ label: string; prefix: string }>({
     const last = values.at(-1) ?? 0;
     const change = seriesChange(s);
     const prefix = options.prefix || (s.unit === "currency" ? currencySymbol(s.currency) : "");
-    const shown = prefix + formatNumber(last);
+    // The line has no axis, so its shape stays: only the printed number becomes a range.
+    const shown = showsRange(options.display, inputs.series!.source?.sensitive) ? formatBand({ value: last, unit: s.unit, currency: s.currency }) : prefix + formatNumber(last);
     const valueSize = fitFont(shown, area.width * 0.55, Math.min(area.height * 0.38, 64), displayAdvance(theme));
     const chartHeight = area.height - valueSize - 18;
     const points = sparkPoints(values);

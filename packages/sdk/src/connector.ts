@@ -24,9 +24,18 @@ export interface MetricDef {
    * values from verified connectors: typed numbers can't buy a rank.
    */
   leaderboard?: Leaderboard;
+  /**
+   * An amount about someone's own money: a balance, a portfolio, a net worth.
+   * Public surfaces show it as a range ("$1M+") unless the owner asks a tile
+   * for the exact number. Revenue isn't sensitive; wealth is.
+   */
+  sensitive?: boolean;
 }
 
-export type Leaderboard = "revenue" | "streak" | "audience" | "stars";
+export type Leaderboard = "revenue" | "wealth" | "streak" | "audience" | "stars";
+
+/** Boards that rank only values read from the owner's own account: a typed number or a pasted address can't buy a rank. */
+export const VERIFIED_LEADERBOARDS: readonly Leaderboard[] = ["revenue", "wealth"];
 
 export interface ConnectorAuth {
   /** Credentials typed once per account. `secret` fields are encrypted. */

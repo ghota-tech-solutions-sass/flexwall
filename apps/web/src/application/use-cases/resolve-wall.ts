@@ -245,7 +245,8 @@ export class ResolveWall {
       const value = result.entry.values[binding.metric] ?? null;
       if (!value) return { status: "placeholder", reason: "unavailable", message: "No data yet." };
 
-      const source = { connector: connector.id, name: connector.name, verified: connector.verified };
+      const sensitive = Boolean(this.deps.catalog.metric(connector.id, binding.metric)?.sensitive);
+      const source = { connector: connector.id, name: connector.name, verified: connector.verified, sensitive };
       if (value.type === "number" && opts.record && !result.stale) await this.recordOnce(seriesKey(binding), opts.today, value.value);
 
       if (binding.history && value.type === "number") {

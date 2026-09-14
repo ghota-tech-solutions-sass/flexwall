@@ -4,13 +4,14 @@ import { boardValue, exploreSort, leaderboardOf, updatedAgo } from "@/presentati
 const NOW = Date.UTC(2026, 8, 14, 12, 0, 0);
 
 describe("The Wall's leaderboards", () => {
-  test("given values on each board, when printed, then revenue is in compact dollars and streaks in days", () => {
+  test("given values on each board, when printed, then revenue is in compact dollars, wealth in ranges and streaks in days", () => {
     // Given / When / Then
     expect(boardValue("revenue", 4820)).toBe("$4,820");
     expect(boardValue("revenue", 12400)).toBe("$12.4k");
     expect(boardValue("streak", 1)).toBe("1 day");
     expect(boardValue("streak", 412)).toBe("412 days");
     expect(boardValue("stars", 8912)).toBe("8,912");
+    expect(boardValue("wealth", 2_400_000)).toBe("$1M+");
   });
 
   test("given a sort from the address bar, when it isn't a known board, then the wall falls back to recent", () => {

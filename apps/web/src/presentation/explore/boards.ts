@@ -1,4 +1,4 @@
-import { currencySymbol, formatNumber, type Leaderboard } from "@flexwall/sdk";
+import { currencySymbol, formatBand, formatNumber, VERIFIED_LEADERBOARDS, type Leaderboard } from "@flexwall/sdk";
 import type { ExploreSort } from "@/application/use-cases/explore";
 import { APP_LOCALE, DISPLAY_TIME_ZONE, HOURS_PER_DAY, MINUTE_MS, MINUTES_PER_HOUR } from "@/domain/time";
 
@@ -6,9 +6,9 @@ import { APP_LOCALE, DISPLAY_TIME_ZONE, HOURS_PER_DAY, MINUTE_MS, MINUTES_PER_HO
 export const RECENT_SORT = "recent" satisfies ExploreSort;
 
 /** Boards that rank only numbers read from the owner's own account, and say so. */
-export const VERIFIED_BOARDS: readonly Leaderboard[] = ["revenue"];
+export const VERIFIED_BOARDS = VERIFIED_LEADERBOARDS;
 
-/** Revenue ranks are summed as reported and printed in dollars. */
+/** Revenue and wealth ranks are compared as reported and printed in dollars. */
 const REVENUE_CURRENCY = "usd";
 
 /** Past this many days, "updated" shows the date instead of a count. */
@@ -18,6 +18,7 @@ const RELATIVE_DAYS_MAX = 30;
 export const EXPLORE_SORTS: { id: ExploreSort; label: string; unit: string }[] = [
   { id: RECENT_SORT, label: "Recently updated", unit: "" },
   { id: "revenue", label: "Verified revenue", unit: "verified revenue" },
+  { id: "wealth", label: "Verified wealth", unit: "verified wealth" },
   { id: "audience", label: "Audience", unit: "followers" },
   { id: "streak", label: "Commit streak", unit: "commit streak" },
   { id: "stars", label: "Stars", unit: "GitHub stars" },
@@ -32,8 +33,10 @@ export function leaderboardOf(sort: ExploreSort): Leaderboard | null {
   return sort === RECENT_SORT ? null : sort;
 }
 
-/** A leaderboard value as a person reads it: "$12.4k", "412 days", "8,912". */
+/** A leaderboard value as a person reads it: "$12.4k", "$1M+", "412 days", "8,912". */
 export function boardValue(board: Leaderboard, value: number): string {
+  // The order says who has more; the value only says how many figures.
+  if (board === "wealth") return formatBand({ value, unit: "currency", currency: REVENUE_CURRENCY });
   if (board === "revenue") return currencySymbol(REVENUE_CURRENCY) + formatNumber(value);
   if (board === "streak") return `${formatNumber(value)} ${value === 1 ? "day" : "days"}`;
   return formatNumber(value);

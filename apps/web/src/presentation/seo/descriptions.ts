@@ -1,4 +1,4 @@
-import { formatValue, type NumberValue } from "@flexwall/sdk";
+import { formatBand, formatValue, type NumberValue } from "@flexwall/sdk";
 
 const MAX_DESCRIPTION = 200;
 
@@ -22,11 +22,11 @@ export function clip(text: string, max = MAX_DESCRIPTION): string {
  * A wall's search snippet: its first public numbers, then its bio.
  * "Ada Builds on Flexwall: $4,820 MRR, 47 day streak. Indie hacker…"
  */
-export function wallDescription(input: { handle: string; title: string; bio: string; numbers: readonly { label: string; value: NumberValue }[] }): string {
+export function wallDescription(input: { handle: string; title: string; bio: string; numbers: readonly { label: string; value: NumberValue; range?: boolean }[] }): string {
   const name = input.title || `@${input.handle}`;
   const numbers = input.numbers
     .slice(0, 3)
-    .map((n) => [formatValue(n.value), inSentence(n.label)].filter(Boolean).join(" "))
+    .map((n) => [n.range ? formatBand(n.value) : formatValue(n.value), inSentence(n.label)].filter(Boolean).join(" "))
     .join(", ");
   const lead = numbers ? `${name} on Flexwall: ${numbers}.` : "";
   const bio = input.bio.trim();

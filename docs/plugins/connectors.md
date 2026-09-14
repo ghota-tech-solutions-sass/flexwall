@@ -88,12 +88,13 @@ the two lines that reference the widget in `src/index.ts`.
 ### Metrics
 
 ```ts
-{ id, name, description?, type: "number" | "series" | "calendar" | "text", unit?, params?, defaults?, leaderboard? }
+{ id, name, description?, type: "number" | "series" | "calendar" | "text", unit?, params?, defaults?, leaderboard?, sensitive? }
 ```
 
 - `params` are per-tile settings (a repository, a package). They're public and stored in the wall.
 - `defaults.label` becomes the tile's label when someone picks the metric.
-- `leaderboard` enters the metric in an Explore ranking: `"revenue"`, `"streak"`, `"audience"`, `"stars"`. Revenue rankings only count verified connectors, and compare amounts without converting currencies; say in your README if your number is defined differently from others (Polar's MRR counts past-due subscriptions, Stripe's doesn't).
+- `leaderboard` enters the metric in an Explore ranking: `"revenue"`, `"wealth"`, `"streak"`, `"audience"`, `"stars"`. Revenue and wealth rankings (`VERIFIED_LEADERBOARDS`) only count verified connectors, and compare amounts without converting currencies; say in your README if your number is defined differently from others (Polar's MRR counts past-due subscriptions, Stripe's doesn't).
+- `sensitive: true` marks an amount of someone's own money: a bank or brokerage balance, a portfolio, a wallet. Walls, share cards, lock screens, search snippets and The Wall print it as a range (`$1M+`) unless the owner sets the tile to show the exact number. Set it on every such metric, verified or not; revenue isn't sensitive. A wealth board value is always printed as a range.
 - Number metrics get **history for free**: the host records one reading a day and can feed a trend widget.
 
 ### Values

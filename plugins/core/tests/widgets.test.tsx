@@ -67,6 +67,46 @@ describe("core plugin", () => {
     expect(markup).not.toContain("$");
   });
 
+  test("given a sensitive balance with a goal, when a stat renders, then it shows a range and no percentage that would give the amount back", () => {
+    // Given
+    const props = widgetProps(widget("stat"), { inputs: { value: money(2_431_900, "usd") }, options: { label: "Portfolio", goal: 5_000_000 } });
+    props.inputs.value = { ...props.inputs.value!, source: { connector: "alpaca", name: "Alpaca", verified: true, sensitive: true } };
+
+    // When
+    const markup = JSON.stringify(widget("stat").render(props));
+
+    // Then
+    expect(markup).toContain("$1M+");
+    expect(markup).not.toContain("2.4M");
+    expect(markup).not.toContain("48.6%");
+  });
+
+  test("given a sensitive balance the owner wants exact, when a stat renders, then the number is printed", () => {
+    // Given
+    const props = widgetProps(widget("stat"), { inputs: { value: money(2_431_900, "usd") }, options: { label: "Portfolio", display: "exact" } });
+    props.inputs.value = { ...props.inputs.value!, source: { connector: "alpaca", name: "Alpaca", verified: true, sensitive: true } };
+
+    // When
+    const markup = JSON.stringify(widget("stat").render(props));
+
+    // Then
+    expect(markup).toContain("$2.4M");
+  });
+
+  test("given a sensitive balance history, when the trend renders, then the latest value is a range", () => {
+    // Given
+    const history = series([{ t: "2026-09-13", v: 2_300_000 }, { t: "2026-09-14", v: 2_431_900 }], { unit: "currency", currency: "usd" });
+    const props = widgetProps(widget("sparkline"), { inputs: { series: history } });
+    props.inputs.series = { ...props.inputs.series!, source: { connector: "alpaca", name: "Alpaca", verified: true, sensitive: true } };
+
+    // When
+    const markup = JSON.stringify(widget("sparkline").render(props));
+
+    // Then
+    expect(markup).toContain("$1M+");
+    expect(markup).not.toContain("2.4M");
+  });
+
   test("given a date, when the countdown renders on different days, then it counts in the owner's today", () => {
     // Given
     const render = (today: string) => JSON.stringify(widget("countdown").render(widgetProps(widget("countdown"), { options: { date: "2026-10-01", label: "until launch" }, today })));

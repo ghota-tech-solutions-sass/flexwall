@@ -86,6 +86,17 @@ describe("Wall descriptions", () => {
     expect(description).toBe("Ada Builds on Flexwall: $4,820 MRR, 47 day streak. Indie hacker.");
   });
 
+  test("given a sensitive balance among the numbers, when described, then the snippet gives its range, not the amount", () => {
+    // Given
+    const numbers = [{ label: "Portfolio", value: number(2_431_900, { unit: "currency", currency: "usd" }), range: true }];
+
+    // When
+    const description = wallDescription({ handle: "ada", title: "Ada", bio: "", numbers });
+
+    // Then
+    expect(description).toBe("Ada on Flexwall: $1M+ portfolio.");
+  });
+
   test("given a wall with neither numbers nor bio, when described, then it still says whose numbers these are", () => {
     // Given / When
     const description = wallDescription({ handle: "ada", title: "", bio: "", numbers: [] });
