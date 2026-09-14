@@ -1,0 +1,108 @@
+{
+  "chess_daily": {
+    "last": {
+      "rating": 2239,
+      "date": 1770563021,
+      "rd": 103
+    },
+    "best": {
+      "rating": 2464,
+      "date": 1397136740,
+      "game": "https://www.chess.com/game/daily/84604826"
+    },
+    "record": {
+      "win": 73,
+      "loss": 11,
+      "draw": 4,
+      "time_per_move": 32755,
+      "timeout_percent": 0
+    }
+  },
+  "chess960_daily": {
+    "last": {
+      "rating": 1231,
+      "date": 1444458214,
+      "rd": 230
+    },
+    "best": {
+      "rating": 1489,
+      "date": 1397073007,
+      "game": "https://www.chess.com/game/daily/87191830"
+    },
+    "record": {
+      "win": 1,
+      "loss": 2,
+      "draw": 0,
+      "time_per_move": 32755,
+      "timeout_percent": 0
+    }
+  },
+  "chess_rapid": {
+    "last": {
+      "rating": 2838,
+      "date": 1786796329,
+      "rd": 44
+    },
+    "best": {
+      "rating": 2927,
+      "date": 1645902514,
+      "game": "https://www.chess.com/game/live/141332265952"
+    },
+    "record": {
+      "win": 205,
+      "loss": 69,
+      "draw": 220
+    }
+  },
+  "chess_bullet": {
+    "last": {
+      "rating": 3403,
+      "date": 1789235988,
+      "rd": 30
+    },
+    "best": {
+      "rating": 3570,
+      "date": 1605136047,
+      "game": "https://www.chess.com/game/live/5710095242"
+    },
+    "record": {
+      "win": 16873,
+      "loss": 2460,
+      "draw": 1145
+    }
+  },
+  "chess_blitz": {
+    "last": {
+      "rating": 3360,
+      "date": 1789415155,
+      "rd": 34
+    },
+    "best": {
+      "rating": 3469,
+      "date": 1785599066,
+      "game": "https://www.chess.com/game/live/162034628699"
+    },
+    "record": {
+      "win": 35666,
+      "loss": 5521,
+      "draw": 4351
+    }
+  },
+  "fide": 2814,
+  "tactics": {
+    "highest": {
+      "rating": 2730,
+      "date": 1389043258
+    },
+    "lowest": {
+      "rating": 2730,
+      "date": 1389043258
+    }
+  },
+  "puzzle_rush": {
+    "best": {
+      "total_attempts": 126,
+      "score": 123
+    }
+  }
+}

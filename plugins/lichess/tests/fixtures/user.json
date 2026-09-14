@@ -1,0 +1,151 @@
+{
+  "id": "thibault",
+  "username": "thibault",
+  "perfs": {
+    "ultraBullet": {
+      "games": 3,
+      "rating": 1688,
+      "rd": 362,
+      "prog": 0,
+      "prov": true
+    },
+    "bullet": {
+      "games": 7483,
+      "rating": 1774,
+      "rd": 98,
+      "prog": -22
+    },
+    "blitz": {
+      "games": 11769,
+      "rating": 1727,
+      "rd": 45,
+      "prog": -15
+    },
+    "rapid": {
+      "games": 914,
+      "rating": 1789,
+      "rd": 69,
+      "prog": -100
+    },
+    "classical": {
+      "games": 25,
+      "rating": 1858,
+      "rd": 247,
+      "prog": 48,
+      "prov": true
+    },
+    "correspondence": {
+      "games": 377,
+      "rating": 1942,
+      "rd": 174,
+      "prog": -12,
+      "prov": true
+    },
+    "chess960": {
+      "games": 348,
+      "rating": 1551,
+      "rd": 270,
+      "prog": 61,
+      "prov": true
+    },
+    "kingOfTheHill": {
+      "games": 94,
+      "rating": 1744,
+      "rd": 289,
+      "prog": 14,
+      "prov": true
+    },
+    "threeCheck": {
+      "games": 66,
+      "rating": 1728,
+      "rd": 263,
+      "prog": 132,
+      "prov": true
+    },
+    "antichess": {
+      "games": 73,
+      "rating": 1465,
+      "rd": 254,
+      "prog": -56,
+      "prov": true
+    },
+    "atomic": {
+      "games": 99,
+      "rating": 1633,
+      "rd": 302,
+      "prog": 18,
+      "prov": true
+    },
+    "horde": {
+      "games": 46,
+      "rating": 1592,
+      "rd": 283,
+      "prog": -20,
+      "prov": true
+    },
+    "racingKings": {
+      "games": 13,
+      "rating": 1552,
+      "rd": 333,
+      "prog": -75,
+      "prov": true
+    },
+    "crazyhouse": {
+      "games": 50,
+      "rating": 1567,
+      "rd": 300,
+      "prog": -34,
+      "prov": true
+    },
+    "puzzle": {
+      "games": 5962,
+      "rating": 1930,
+      "rd": 71,
+      "prog": 0
+    },
+    "storm": {
+      "runs": 44,
+      "score": 33
+    },
+    "racer": {
+      "runs": 84,
+      "score": 51
+    },
+    "streak": {
+      "runs": 49,
+      "score": 33
+    }
+  },
+  "flair": "nature.seedling",
+  "patron": true,
+  "patronColor": 10,
+  "verified": true,
+  "createdAt": 1290415680000,
+  "profile": {
+    "bio": "I turn coffee into bugs.",
+    "realName": "Thibault Duplessis",
+    "links": "github.com/ornicar\r\nmas.to/@thibault"
+  },
+  "seenAt": 1789421106529,
+  "playTime": {
+    "total": 6602756,
+    "tv": 18024
+  },
+  "url": "https://lichess.org/@/thibault",
+  "count": {
+    "all": 23766,
+    "rated": 21371,
+    "draw": 1046,
+    "loss": 11369,
+    "win": 11346,
+    "bookmark": 80,
+    "playing": 0,
+    "import": 73,
+    "me": 0
+  },
+  "streamer": {
+    "twitch": {
+      "channel": "https://www.twitch.tv/ornicar2"
+    }
+  }
+}
