@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactElement } from "react";
-import { areaOf, CARD_PADDING_UNITS, type Surface, type Theme, type UnitFn } from "@flexwall/sdk";
+import { areaOf, CARD_PADDING_UNITS, DEFAULT_CHROME, type Surface, type Theme, type UnitFn } from "@flexwall/sdk";
 import type { TileState } from "@/application/use-cases/resolve-wall";
 import type { Catalog } from "@/domain/catalog";
 import type { Tile } from "@/domain/wall";
@@ -8,6 +8,9 @@ import type { Tile } from "@/domain/wall";
  * One tile, for every surface: chrome from the theme, then the widget or the
  * reason it can't draw. Satori-safe, so images and pages share it.
  */
+
+/** Size of the line a tile shows instead of its widget ("Connect Stripe", "Loading…"), in units. */
+const PLACEHOLDER_FONT_UNITS = 11;
 
 export interface TileRenderProps {
   tile: Tile;
@@ -22,7 +25,7 @@ export interface TileRenderProps {
 
 export function TileBody({ tile, state, box, theme, surface, u, today, catalog }: TileRenderProps): ReactElement {
   const widget = catalog.widget(tile.widget);
-  const chrome = widget?.chrome ?? "card";
+  const chrome = widget?.chrome ?? DEFAULT_CHROME;
   const frame: CSSProperties = {
     display: "flex",
     width: "100%",
@@ -52,7 +55,7 @@ export function TileBody({ tile, state, box, theme, surface, u, today, catalog }
 
 function message(text: string, theme: Theme, u: UnitFn): ReactElement {
   return (
-    <div style={{ display: "flex", width: "100%", height: "100%", alignItems: "center", justifyContent: "center", textAlign: "center", fontSize: u(11), color: theme.muted }}>
+    <div style={{ display: "flex", width: "100%", height: "100%", alignItems: "center", justifyContent: "center", textAlign: "center", fontSize: u(PLACEHOLDER_FONT_UNITS), color: theme.muted }}>
       {text}
     </div>
   );

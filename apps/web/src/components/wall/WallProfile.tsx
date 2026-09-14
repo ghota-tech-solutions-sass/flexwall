@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { CalendarBlankIcon, ClockIcon, SealCheckIcon } from "@phosphor-icons/react/ssr";
 import type { Theme } from "@flexwall/sdk";
+import { formatHandle } from "@/domain/handle";
 import { monogram, wallIdentity } from "@/presentation/wall/profile";
 
 /**
@@ -36,7 +37,7 @@ export function WallProfile({
       <div className="wp-id">
         <h1 style={{ fontFamily: theme.display.family, fontWeight: theme.display.weight }}>{name}</h1>
         <ul className="wp-facts">
-          {showHandle ? <li className="wp-handle">@{handle}</li> : null}
+          {showHandle ? <li className="wp-handle">{formatHandle(handle)}</li> : null}
           {verified ? (
             <li className="wp-verified">
               <SealCheckIcon size={16} weight="fill" aria-hidden="true" />

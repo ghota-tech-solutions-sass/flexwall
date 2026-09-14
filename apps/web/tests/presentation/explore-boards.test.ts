@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { boardValue, exploreSort, updatedAgo } from "@/presentation/explore/boards";
+import { boardValue, exploreSort, leaderboardOf, updatedAgo } from "@/presentation/explore/boards";
 
 const NOW = Date.UTC(2026, 8, 14, 12, 0, 0);
 
@@ -27,5 +27,11 @@ describe("The Wall's leaderboards", () => {
     expect(updatedAgo(NOW - 3 * 3_600_000, NOW)).toBe("3 h ago");
     expect(updatedAgo(NOW - 5 * 86_400_000, NOW)).toBe("5 d ago");
     expect(updatedAgo(Date.UTC(2026, 6, 3), NOW)).toBe("Jul 3");
+  });
+
+  test("given a sort, when its leaderboard is asked for, then the recent list has none", () => {
+    // Given / When / Then
+    expect(leaderboardOf("recent")).toBeNull();
+    expect(leaderboardOf("stars")).toBe("stars");
   });
 });

@@ -9,6 +9,18 @@ export type Handle = string & { readonly __brand: "Handle" };
 
 export const HANDLE_MAX_LENGTH = 30;
 
+/** How a handle is written for people: `@ada`. The sign is never part of the handle itself. */
+export const HANDLE_PREFIX = "@";
+
+export function formatHandle(handle: string): string {
+  return HANDLE_PREFIX + handle;
+}
+
+/** "@ada" and "ada" both give "ada". */
+export function stripHandlePrefix(text: string): string {
+  return text.startsWith(HANDLE_PREFIX) ? text.slice(HANDLE_PREFIX.length) : text;
+}
+
 const PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /** Words that would read as official, collide with routes, or invite impersonation. */
@@ -40,7 +52,7 @@ export const Handle = {
     if (value.length < 2 || !PATTERN.test(value)) {
       throw new DomainError("invalid_handle", `Handles are 2 to ${HANDLE_MAX_LENGTH} characters: letters, digits and hyphens.`);
     }
-    if (RESERVED.has(value)) throw new DomainError("handle_reserved", `@${value} is reserved.`);
+    if (RESERVED.has(value)) throw new DomainError("handle_reserved", `${formatHandle(value)} is reserved.`);
     return value as Handle;
   },
 

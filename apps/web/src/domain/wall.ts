@@ -5,6 +5,7 @@ import { DomainError } from "./errors";
 import type { Handle } from "./handle";
 import { DEFAULT_DEVICE, DEVICE_IDS, firstOverlap, fitsColumns, LOCK_COLUMNS, LOCK_ROWS, WALL_COLUMNS, type Box, type DeviceId } from "./layout";
 import type { Entitlements } from "./user";
+import { isoDay, startOfDay } from "./time";
 
 /** How far back a number's daily snapshots go when shown as a series. */
 export const HISTORY_WINDOWS = ["30d", "90d"] as const;
@@ -242,9 +243,9 @@ export function effectiveTheme(wall: Pick<Wall, "theme">, catalog: Catalog, enti
 /** A wall to start from: enough to look alive, nothing that needs an account. */
 export function newWall(input: { id: string; owner: { id: string; handle: Handle }; lockNonce: string; now: number; today: string }): Wall {
   const inMonths = (n: number) => {
-    const d = new Date(input.today + "T00:00:00Z");
+    const d = startOfDay(input.today);
     d.setUTCMonth(d.getUTCMonth() + n);
-    return d.toISOString().slice(0, 10);
+    return isoDay(d);
   };
   const tiles: Tile[] = [
     { id: "hello", widget: "note", inputs: {}, options: { title: "Hi, I'm building things", body: "Edit this wall: drag tiles, resize them, connect your accounts." }, visibility: "public", layout: { x: 0, y: 0, w: 2, h: 1 } },

@@ -4,16 +4,18 @@ import { Footer, TopBar } from "@/components/site/Chrome";
 import { EmptyWall, RankTable, WallCard } from "@/components/explore/WallCards";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { container } from "@/composition";
-import { EXPLORE_SORTS, exploreSort } from "@/presentation/explore/boards";
+import { formatHandle } from "@/domain/handle";
+import { EXPLORE_SORTS, exploreSort, leaderboardOf } from "@/presentation/explore/boards";
+import { ROUTES } from "@/presentation/routes";
 import { sessionUserId } from "@/presentation/http";
 import { pageMetadata } from "@/presentation/seo/metadata";
 import { siteOrigin } from "@/presentation/seo/origin";
-import { breadcrumbLd, itemListLd } from "@/presentation/seo/structured-data";
+import { breadcrumbLd, itemListLd, SITE_NAME } from "@/presentation/seo/structured-data";
 
 export const metadata: Metadata = pageMetadata({
   title: "The Wall",
   description: "Builders who show their real numbers. Ranked by verified revenue, audience, streaks and stars.",
-  path: "/explore",
+  path: ROUTES.explore,
 });
 
 export const dynamic = "force-dynamic";
@@ -27,21 +29,21 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
   const signedIn = Boolean(userId);
   const now = Date.now();
   const sort = EXPLORE_SORTS.find((s) => s.id === current)!;
-  const themeOf = (id: string) => c.catalog.theme(id) ?? c.catalog.theme("daylight")!;
-  const board = current === "recent" ? null : current;
+  const themeOf = (id: string) => c.catalog.theme(id) ?? c.catalog.defaultTheme();
+  const board = leaderboardOf(current);
 
   return (
     <div className="page">
       <JsonLd
         data={[
           breadcrumbLd(siteOrigin(), [
-            { name: "Flexwall", path: "/" },
-            { name: "The Wall", path: "/explore" },
+            { name: SITE_NAME, path: ROUTES.home },
+            { name: "The Wall", path: ROUTES.explore },
           ]),
           itemListLd(
             siteOrigin(),
             sort.label,
-            entries.map((e) => ({ name: e.title || `@${e.handle}`, path: `/@${e.handle}` }))
+            entries.map((e) => ({ name: e.title || formatHandle(e.handle), path: ROUTES.wall(e.handle) }))
           ),
         ]}
       />
@@ -52,26 +54,26 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
             <h1 className="display">The Wall</h1>
             <p>People who build in public, with the numbers to show for it. Revenue ranks only count what an owner&apos;s own Stripe, Lemon Squeezy or Polar account says.</p>
           </div>
-          <Link href={signedIn ? "/edit" : "/login"} className="btn">
+          <Link href={signedIn ? ROUTES.edit : ROUTES.login} className="btn">
             {signedIn ? "List my wall" : "Add your wall"}
           </Link>
         </header>
 
         <nav className="tabs" aria-label="Sort">
           {EXPLORE_SORTS.map((s) => (
-            <Link key={s.id} href={`/explore?sort=${s.id}`} aria-current={s.id === current ? "page" : undefined}>
+            <Link key={s.id} href={ROUTES.exploreSorted(s.id)} aria-current={s.id === current ? "page" : undefined}>
               {s.label}
             </Link>
           ))}
         </nav>
 
         {entries.length === 0 ? (
-          current === "recent" ? (
+          !board ? (
             <EmptyWall signedIn={signedIn} />
           ) : (
             <div className="empty">
               <p>
-                Nobody ranks on {sort.unit} yet. <Link href="/explore">See every wall</Link>.
+                Nobody ranks on {sort.unit} yet. <Link href={ROUTES.explore}>See every wall</Link>.
               </p>
             </div>
           )

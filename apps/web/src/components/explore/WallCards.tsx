@@ -3,21 +3,25 @@ import type { CSSProperties } from "react";
 import { SealCheckIcon } from "@phosphor-icons/react/ssr";
 import { themeBackground, type Leaderboard, type Theme } from "@flexwall/sdk";
 import type { ExploreEntry } from "@/application/use-cases/explore";
-import { boardValue, updatedAgo } from "@/presentation/explore/boards";
+import { formatHandle } from "@/domain/handle";
+import { boardValue, updatedAgo, VERIFIED_BOARDS } from "@/presentation/explore/boards";
+import { ROUTES } from "@/presentation/routes";
+import { CARD_VARIABLES, themeVariables } from "@/presentation/theme-vars";
+import { monogram } from "@/presentation/wall/profile";
 
-function initialOf(entry: ExploreEntry): string {
-  return (entry.title.trim() || entry.handle).charAt(0).toUpperCase();
-}
+/** How much of a bio fits beside a name in the rank table. */
+const RANK_BIO_MAX_CHARS = 70;
+
+/** Placeholder cards drawn while nobody is listed. */
+const GHOST_COUNT = 3;
 
 function themeStyle(theme: Theme): CSSProperties {
-  return {
-    ...themeBackground(theme),
-    color: theme.ink,
-    ["--card-tile" as string]: theme.tile,
-    ["--card-tile-border" as string]: theme.tileBorder,
-    ["--card-muted" as string]: theme.muted,
-    ["--card-positive" as string]: theme.positive,
-  };
+  return { ...themeBackground(theme), color: theme.ink, ...themeVariables(theme, CARD_VARIABLES) };
+}
+
+/** The name a listed wall goes by: its title, or its handle. */
+function nameOf(entry: ExploreEntry): string {
+  return entry.title || formatHandle(entry.handle);
 }
 
 /**
@@ -27,15 +31,15 @@ function themeStyle(theme: Theme): CSSProperties {
 export function WallCard({ entry, theme, now, rank, board }: { entry: ExploreEntry; theme: Theme; now: number; rank?: number; board?: Leaderboard }) {
   const ranked = board && entry.ranks[board] !== undefined ? boardValue(board, entry.ranks[board]!) : null;
   return (
-    <Link href={`/@${entry.handle}`} className="wall-card">
+    <Link href={ROUTES.wall(entry.handle)} className="wall-card">
       <div className="wall-card-preview" style={themeStyle(theme)}>
         <div className="wall-card-who">
           <span className="wall-card-avatar" style={{ fontFamily: theme.display.family }}>
-            {initialOf(entry)}
+            {monogram(entry.title, entry.handle)}
           </span>
           <span>
-            <strong style={{ fontFamily: theme.display.family }}>{entry.title || `@${entry.handle}`}</strong>
-            <span>@{entry.handle}</span>
+            <strong style={{ fontFamily: theme.display.family }}>{nameOf(entry)}</strong>
+            <span>{formatHandle(entry.handle)}</span>
           </span>
           {rank ? <span className="wall-card-rank">#{rank}</span> : null}
         </div>
@@ -58,7 +62,7 @@ export function WallCard({ entry, theme, now, rank, board }: { entry: ExploreEnt
         {ranked ? (
           <span className="wall-card-value">
             <b>{ranked}</b>
-            {board === "revenue" ? (
+            {board && VERIFIED_BOARDS.includes(board) ? (
               <span className="seal">
                 <SealCheckIcon size={14} weight="fill" />
                 Verified
@@ -80,14 +84,14 @@ export function RankTable({ entries, board, start, now }: { entries: ExploreEntr
     <ol className="rank-table" start={start}>
       {entries.map((e, i) => (
         <li key={e.handle}>
-          <Link href={`/@${e.handle}`}>
+          <Link href={ROUTES.wall(e.handle)}>
             <span className="rank-n">{start + i}</span>
-            <span className="rank-avatar">{initialOf(e)}</span>
+            <span className="rank-avatar">{monogram(e.title, e.handle)}</span>
             <span className="rank-who">
-              <strong>{e.title || `@${e.handle}`}</strong>
+              <strong>{nameOf(e)}</strong>
               <span>
-                @{e.handle}
-                {e.bio ? <em>{e.bio.slice(0, 70)}</em> : null}
+                {formatHandle(e.handle)}
+                {e.bio ? <em>{e.bio.slice(0, RANK_BIO_MAX_CHARS)}</em> : null}
               </span>
             </span>
             <span className="rank-updated">{updatedAgo(e.updatedAt, now)}</span>
@@ -104,7 +108,7 @@ export function EmptyWall({ signedIn }: { signedIn: boolean }) {
   return (
     <div className="wall-empty">
       <div className="wall-empty-ghosts" aria-hidden="true">
-        {[0, 1, 2].map((i) => (
+        {Array.from({ length: GHOST_COUNT }, (_, i) => (
           <span key={i} className="ghost">
             <span className="ghost-who" />
             <span className="ghost-tiles">
@@ -121,7 +125,7 @@ export function EmptyWall({ signedIn }: { signedIn: boolean }) {
           <li>Tick &ldquo;List me on The Wall&rdquo; in the editor.</li>
           <li>Connect Stripe, Lemon Squeezy or Polar to rank on verified revenue.</li>
         </ol>
-        <Link href={signedIn ? "/edit" : "/login"} className="btn btn-signal">
+        <Link href={signedIn ? ROUTES.edit : ROUTES.login} className="btn btn-signal">
           {signedIn ? "Open the editor" : "Claim your wall"}
         </Link>
       </div>

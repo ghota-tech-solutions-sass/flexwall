@@ -11,12 +11,15 @@ import { WallProfile } from "@/components/wall/WallProfile";
 import { ShareButton } from "@/components/wall/ShareButton";
 import { container } from "@/composition";
 import { DomainError } from "@/domain/errors";
+import { formatHandle } from "@/domain/handle";
 import { effectiveTheme } from "@/domain/wall";
 import { sessionUserId } from "@/presentation/http";
 import { wallDescription } from "@/presentation/seo/descriptions";
 import { pageMetadata } from "@/presentation/seo/metadata";
 import { siteOrigin } from "@/presentation/seo/origin";
-import { breadcrumbLd, profilePageLd } from "@/presentation/seo/structured-data";
+import { breadcrumbLd, profilePageLd, SITE_NAME } from "@/presentation/seo/structured-data";
+import { ROUTES } from "@/presentation/routes";
+import { LOGO_VARIABLES, themeVariables } from "@/presentation/theme-vars";
 import { updatedAgo } from "@/presentation/explore/boards";
 import { joinedLabel, verifiedCount, wallIdentity } from "@/presentation/wall/profile";
 import "./wall-page.css";
@@ -44,9 +47,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const identity = wallIdentity(wall.title, wall.handle);
   return {
     ...pageMetadata({
-      title: identity.showHandle ? `${identity.name} (@${wall.handle})` : identity.name,
+      title: identity.showHandle ? `${identity.name} (${formatHandle(wall.handle)})` : identity.name,
       description: wallDescription({ handle: wall.handle, title: wall.title, bio: wall.bio, numbers }),
-      path: `/@${wall.handle}`,
+      path: ROUTES.wall(wall.handle),
       type: "profile",
     }),
     robots: preview ? { index: false, follow: false } : undefined,
@@ -58,10 +61,10 @@ export default async function PublicWallPage({ params }: Props) {
   const c = container();
   const { wall, entitlements, preview, states, today, viewerId } = await load(handle);
   // /@Ada_Builds finds @ada-builds: send it to the one address that gets shared and indexed.
-  if (decodeURIComponent(handle) !== wall.handle) permanentRedirect(`/@${wall.handle}`);
+  if (decodeURIComponent(handle) !== wall.handle) permanentRedirect(ROUTES.wall(wall.handle));
   const theme = effectiveTheme(wall, c.catalog, entitlements);
   const owner = viewerId === wall.ownerId;
-  const url = `${siteOrigin()}/@${wall.handle}`;
+  const url = siteOrigin() + ROUTES.wall(wall.handle);
 
   return (
     <div className="wall-page" data-mode={theme.mode} style={{ ...wallStyle(theme), ...wallVars(theme) }}>
@@ -70,8 +73,8 @@ export default async function PublicWallPage({ params }: Props) {
           data={[
             profilePageLd({ origin: siteOrigin(), handle: wall.handle, title: wall.title, bio: wall.bio, createdAt: wall.createdAt, updatedAt: wall.updatedAt }),
             breadcrumbLd(siteOrigin(), [
-              { name: "Flexwall", path: "/" },
-              { name: `@${wall.handle}`, path: `/@${wall.handle}` },
+              { name: SITE_NAME, path: ROUTES.home },
+              { name: formatHandle(wall.handle), path: ROUTES.wall(wall.handle) },
             ]),
           ]}
         />
@@ -82,7 +85,7 @@ export default async function PublicWallPage({ params }: Props) {
           <p>
             <strong>Preview.</strong> Only you can see this wall until it&apos;s published.
           </p>
-          <Link href="/edit" className="wp-btn wp-btn-small">
+          <Link href={ROUTES.edit} className="wp-btn wp-btn-small">
             <span>
               Publish<span className="wp-wide"> in the editor</span>
             </span>
@@ -100,9 +103,9 @@ export default async function PublicWallPage({ params }: Props) {
           joined={joinedLabel(wall.createdAt)}
           actions={
             <>
-              <ShareButton url={url} title={`${wallIdentity(wall.title, wall.handle).name} on Flexwall`} className="wp-btn" />
+              <ShareButton url={url} title={`${wallIdentity(wall.title, wall.handle).name} on ${SITE_NAME}`} className="wp-btn" />
               {entitlements.branding && !owner ? (
-                <Link href={`/r/${wall.handle}`} className="wp-btn wp-btn-ink">
+                <Link href={ROUTES.referral(wall.handle)} className="wp-btn wp-btn-ink">
                   Make your own wall
                 </Link>
               ) : null}
@@ -112,21 +115,21 @@ export default async function PublicWallPage({ params }: Props) {
         <WallGrids tiles={wall.tiles} states={states} theme={theme} today={today} catalog={c.catalog} />
         <footer className="wp-footer">
           {entitlements.branding ? (
-            <Link href={`/r/${wall.handle}`} className="wp-made" style={{ ["--bg" as string]: theme.tile, ["--muted" as string]: theme.muted }}>
+            <Link href={ROUTES.referral(wall.handle)} className="wp-made" style={themeVariables(theme, LOGO_VARIABLES)}>
               <Logo size={18} />
-              Made with Flexwall
+              Made with {SITE_NAME}
             </Link>
           ) : (
             <span />
           )}
-          <Link href={`/report?handle=${wall.handle}`} className="wp-report">
+          <Link href={ROUTES.report(wall.handle)} className="wp-report">
             <FlagIcon size={14} aria-hidden="true" />
             Report this wall
           </Link>
         </footer>
       </main>
       {owner ? (
-        <Link href="/edit" className="wp-owner">
+        <Link href={ROUTES.edit} className="wp-owner">
           <PencilSimpleIcon size={16} weight="bold" aria-hidden="true" />
           Edit wall
         </Link>

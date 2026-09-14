@@ -1,4 +1,12 @@
 import type { TileState } from "@/application/use-cases/resolve-wall";
+import { formatHandle, stripHandlePrefix } from "@/domain/handle";
+import { APP_LOCALE, DISPLAY_TIME_ZONE } from "@/domain/time";
+
+/** X's prefilled post form. */
+export const X_POST_INTENT_URL = "https://x.com/intent/post";
+
+/** The avatar letter when a wall has neither a title nor a handle to take one from. */
+const MONOGRAM_FALLBACK = "?";
 
 /**
  * The name a wall goes by. New walls take their handle as a title, and a page
@@ -7,18 +15,18 @@ import type { TileState } from "@/application/use-cases/resolve-wall";
  */
 export function wallIdentity(title: string, handle: string): { name: string; showHandle: boolean } {
   const name = title.trim();
-  if (!name || name.replace(/^@/, "") === handle) return { name: `@${handle}`, showHandle: false };
+  if (!name || stripHandlePrefix(name) === handle) return { name: formatHandle(handle), showHandle: false };
   return { name, showHandle: true };
 }
 
 /** The letter in the avatar: the first one of the name, never the "@". */
 export function monogram(title: string, handle: string): string {
-  return (title.trim() || handle).replace(/^@/, "").charAt(0).toUpperCase() || "?";
+  return stripHandlePrefix(title.trim() || handle).charAt(0).toUpperCase() || MONOGRAM_FALLBACK;
 }
 
 /** "Joined September 2026". */
 export function joinedLabel(createdAt: number): string {
-  return `Joined ${new Date(createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })}`;
+  return `Joined ${new Date(createdAt).toLocaleDateString(APP_LOCALE, { month: "long", year: "numeric", timeZone: DISPLAY_TIME_ZONE })}`;
 }
 
 /** Tiles whose numbers were read from the owner's own account. */
@@ -28,5 +36,5 @@ export function verifiedCount(states: Record<string, TileState>): number {
 
 /** A prefilled post on X. */
 export function postOnX(url: string, text: string): string {
-  return `https://x.com/intent/post?${new URLSearchParams({ text, url })}`;
+  return `${X_POST_INTENT_URL}?${new URLSearchParams({ text, url })}`;
 }

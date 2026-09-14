@@ -6,6 +6,7 @@ import type { Catalog } from "@/domain/catalog";
 import { mobileLayout, type Box } from "@/domain/layout";
 import type { Tile } from "@/domain/wall";
 import { MotionScope } from "@/components/motion/MotionScope";
+import { themeVariables, WALL_VARIABLES, type CssVariable } from "@/presentation/theme-vars";
 import { TileBody } from "@/rendering/tile";
 
 /**
@@ -14,7 +15,12 @@ import { TileBody } from "@/rendering/tile";
  * per breakpoint) because widgets lay themselves out from their size in cells.
  */
 
-const webUnits = (n: number) => `calc(var(--u) * ${Math.round(n * 1000) / 1000})`;
+/** Set by the grid's CSS to one unit in pixels, from the tile's container width. */
+const UNIT_VARIABLE: CssVariable = "--u";
+/** Unit multipliers are printed to a thousandth: enough for a pixel, short enough for the HTML. */
+const UNIT_PRECISION = 1000;
+
+const webUnits = (n: number) => `calc(var(${UNIT_VARIABLE}) * ${Math.round(n * UNIT_PRECISION) / UNIT_PRECISION})`;
 
 interface WallViewProps {
   tiles: Tile[];
@@ -64,14 +70,5 @@ export function wallStyle(theme: Theme): CSSProperties {
 
 /** The theme as CSS variables, for the chrome a page draws around the tiles. */
 export function wallVars(theme: Theme): CSSProperties {
-  return {
-    ["--wall-ink" as string]: theme.ink,
-    ["--wall-muted" as string]: theme.muted,
-    ["--wall-tile" as string]: theme.tile,
-    ["--wall-border" as string]: theme.tileBorder,
-    ["--wall-positive" as string]: theme.positive,
-    // A theme's page is a flat color by contract: readable on ink, and a solid ground for menus over translucent tiles.
-    ["--wall-on-ink" as string]: theme.page,
-    ["--wall-solid" as string]: theme.page,
-  };
+  return themeVariables(theme, WALL_VARIABLES);
 }

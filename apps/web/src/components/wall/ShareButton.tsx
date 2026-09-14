@@ -2,7 +2,11 @@
 
 import { CheckIcon, DotsThreeIcon, ExportIcon, LinkSimpleIcon, XLogoIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
+import { COPIED_FEEDBACK_MS } from "@/presentation/feedback";
 import { postOnX } from "@/presentation/wall/profile";
+
+/** The key that closes the menu, as `KeyboardEvent.key` names it. */
+const CLOSE_KEY = "Escape";
 
 /**
  * Share, as a small menu: copy the link, post it on X, or hand it to the
@@ -19,7 +23,7 @@ export function ShareButton({ url, title, className = "btn btn-small" }: { url: 
   useEffect(() => {
     if (!open) return;
     const close = (event: Event) => {
-      if (event instanceof KeyboardEvent ? event.key === "Escape" : !root.current?.contains(event.target as Node)) setOpen(false);
+      if (event instanceof KeyboardEvent ? event.key === CLOSE_KEY : !root.current?.contains(event.target as Node)) setOpen(false);
     };
     document.addEventListener("pointerdown", close);
     document.addEventListener("keydown", close);
@@ -35,7 +39,7 @@ export function ShareButton({ url, title, className = "btn btn-small" }: { url: 
     setTimeout(() => {
       setCopied(false);
       setOpen(false);
-    }, 1200);
+    }, COPIED_FEEDBACK_MS);
   };
 
   return (

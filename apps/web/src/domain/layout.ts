@@ -1,3 +1,5 @@
+import { gridUnits } from "@flexwall/sdk";
+
 /**
  * Grid geometry shared by every surface. Positions and sizes are in cells;
  * renderers turn cells into pixels or CSS.
@@ -12,6 +14,8 @@ export interface Box {
 
 export const WALL_COLUMNS = 4;
 export const MOBILE_COLUMNS = 2;
+/** A wide tile squeezed into the phone grid keeps this share of its area, so it doesn't turn into a tower. */
+const SQUEEZED_AREA_KEPT = 1 / 2;
 /** The lock screen band between the clock and the flashlight/camera buttons fits 4×4 cells on every iPhone. */
 export const LOCK_COLUMNS = 4;
 export const LOCK_ROWS = 4;
@@ -48,7 +52,7 @@ export function mobileLayout<T extends { layout: Box }>(items: readonly T[]): { 
   const out: { item: T; box: Box }[] = [];
   for (const item of ordered) {
     const w = Math.min(item.layout.w, MOBILE_COLUMNS);
-    const h = item.layout.w > MOBILE_COLUMNS ? Math.max(1, Math.ceil((item.layout.h * item.layout.w) / MOBILE_COLUMNS / 2)) : item.layout.h;
+    const h = item.layout.w > MOBILE_COLUMNS ? Math.max(1, Math.ceil((item.layout.h * item.layout.w * SQUEEZED_AREA_KEPT) / MOBILE_COLUMNS)) : item.layout.h;
     const box = firstFreeSpot(placed, w, h, MOBILE_COLUMNS);
     placed.push(box);
     out.push({ item, box });
@@ -103,3 +107,51 @@ export type DeviceId = keyof typeof DEVICES;
 export const DEVICE_IDS = Object.keys(DEVICES) as DeviceId[];
 /** The phone new walls are set up for. */
 export const DEFAULT_DEVICE: DeviceId = "iphone-17-pro";
+
+/** Screen size in pixels, as `DEVICES` lists it. */
+export type ScreenSize = { w: number; h: number };
+
+/**
+ * Where tiles sit on a lock screen, as shares of the screen: a side margin,
+ * and a band below the clock and above the flashlight and camera buttons.
+ * The grid hangs from the band's bottom and never climbs above its top.
+ */
+export const LOCKSCREEN_BAND = { marginRatio: 0.075, topRatio: 0.4, bottomRatio: 0.87 } as const;
+
+/** The mark free lock screens carry, sized in points on a phone of `referenceWidth` points and scaled from there. */
+export const WATERMARK = { text: "FLEXWALL.LOL", bottomRatio: 0.035, fontSize: 11, letterSpacing: 1.5, referenceWidth: 402 } as const;
+
+export interface LockscreenGeometry {
+  width: number;
+  height: number;
+  /** Left and right margin around the grid. */
+  margin: number;
+  gridWidth: number;
+  gridHeight: number;
+  /** Pixels per grid unit. */
+  scale: number;
+  /** Distance from the top of the screen to the grid. */
+  top: number;
+  watermark: { bottom: number; fontSize: number; letterSpacing: number };
+}
+
+/** Lock screen layout for a screen `width` pixels wide with the proportions of `device`. The editor preview and the image both draw from it. */
+export function lockscreenGeometry(width: number, device: ScreenSize): LockscreenGeometry {
+  const height = (width * device.h) / device.w;
+  const margin = width * LOCKSCREEN_BAND.marginRatio;
+  const gridWidth = width - margin * 2;
+  const scale = gridWidth / gridUnits(LOCK_COLUMNS);
+  const gridHeight = gridUnits(LOCK_ROWS) * scale;
+  const top = Math.max(height * LOCKSCREEN_BAND.topRatio, height * LOCKSCREEN_BAND.bottomRatio - gridHeight);
+  const points = width / WATERMARK.referenceWidth;
+  return {
+    width,
+    height,
+    margin,
+    gridWidth,
+    gridHeight,
+    scale,
+    top,
+    watermark: { bottom: height * WATERMARK.bottomRatio, fontSize: WATERMARK.fontSize * points, letterSpacing: WATERMARK.letterSpacing * points },
+  };
+}
