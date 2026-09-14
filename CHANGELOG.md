@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.3.0...v0.4.0) (2026-09-14)
+
+
+### Features
+
+* **design:** a results board, from the default wall theme to the landing page ([621a042](https://github.com/ghota-tech-solutions-sass/flexwall/commit/621a042f528fcdf23ef41a178ca3da1fe5f31325))
+* **design:** liquid glass touches ([aa18c11](https://github.com/ghota-tech-solutions-sass/flexwall/commit/aa18c11d346c1e4ff0a66d22d2307efe1041b6f2))
+* **design:** pricing, The Wall, settings and sign-in on the board system ([0f36fda](https://github.com/ghota-tech-solutions-sass/flexwall/commit/0f36fdaeef849c897ca62b1e593d8ec588219abe))
+* **design:** widgets on a wallpaper, in light and dark ([18acae6](https://github.com/ghota-tech-solutions-sass/flexwall/commit/18acae65e7dfe15c4a052a53eeee00a91c4a6fa5))
+* **referrals:** give 20% off, get a month of Pro ([bebd498](https://github.com/ghota-tech-solutions-sass/flexwall/commit/bebd4984e8949fffe7d874ebc235ca49d57ad16a))
+* **seo:** social cards, structured data, integration pages and IndexNow ([d4a8fe8](https://github.com/ghota-tech-solutions-sass/flexwall/commit/d4a8fe85aeb48917c4ff2007ba0beac007e36c03))
+* **terraform:** referral coupon and refund events for the webhook ([aeab4e0](https://github.com/ghota-tech-solutions-sass/flexwall/commit/aeab4e0b2d1aff7d0f5ebf3ed522fae651d5995a))
+
 ## [0.3.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.2.0...v0.3.0) (2026-09-14)
 
 
