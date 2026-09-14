@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.5.0...v0.6.0) (2026-09-14)
+
+
+### Features
+
+* **motion:** live numbers come alive once they are in view ([2eb61ee](https://github.com/ghota-tech-solutions-sass/flexwall/commit/2eb61ee7eace6e6b1a946290fb131ce4e785a176))
+
 ## [0.5.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.4.1...v0.5.0) (2026-09-14)
 
 
