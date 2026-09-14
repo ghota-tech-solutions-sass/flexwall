@@ -17,10 +17,15 @@ request.
 
 - **Walls** at `/@handle`: a 4-column grid on desktop, a derived 2-column one on phones.
 - **Editor**: widget library, drag and resize, an inspector generated from each widget's declared options.
-- **Connectors**: GitHub (streaks, contribution graph, stars, followers), Stripe (verified MRR, revenue, customers), any JSON endpoint.
+- **Connectors**:
+  - Code and audience: GitHub, npm, PyPI, Bluesky, Hacker News, YouTube, WakaTime, Monkeytype, Chess.com, Lichess.
+  - Revenue, verified: Stripe, Lemon Squeezy, Polar, Paddle, RevenueCat, Gumroad, Plausible.
+  - Wealth, verified: Alpaca, Trading 212, Interactive Brokers, Kraken, Binance, Coinbase. Public crypto wallets (Bitcoin, Ethereum, Base, Solana), unverified.
+  - Any JSON endpoint.
+- **Ranges for money**: balances and portfolios print as `$1M+` everywhere they leave the wall owner's editor, unless the owner asks a tile for the exact number.
 - **Widgets**: number with goal, trend line, heatmap, countdown, time left, note, link.
 - **Outputs**: server-rendered page, Open Graph card, iPhone lock screen through a Shortcut.
-- **The Wall**: `/explore`, listed walls ranked by verified numbers.
+- **The Wall**: `/explore`, listed walls ranked by verified numbers: revenue, wealth, streaks, audience, stars.
 - **Plans**: free, Pro (monthly or yearly) and lifetime, through Stripe.
 
 ## Quick start

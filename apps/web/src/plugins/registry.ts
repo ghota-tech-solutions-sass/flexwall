@@ -12,6 +12,20 @@ import polar from "@flexwall/plugin-polar";
 import plausible from "@flexwall/plugin-plausible";
 import youtube from "@flexwall/plugin-youtube";
 import { DEFAULT_THEME_ID } from "@/domain/wall";
+import alpaca from "@flexwall/plugin-alpaca";
+import trading212 from "@flexwall/plugin-trading212";
+import interactiveBrokers from "@flexwall/plugin-interactive-brokers";
+import kraken from "@flexwall/plugin-kraken";
+import binance from "@flexwall/plugin-binance";
+import coinbase from "@flexwall/plugin-coinbase";
+import cryptoWallet from "@flexwall/plugin-crypto-wallet";
+import revenuecat from "@flexwall/plugin-revenuecat";
+import paddle from "@flexwall/plugin-paddle";
+import gumroad from "@flexwall/plugin-gumroad";
+import wakatime from "@flexwall/plugin-wakatime";
+import chessCom from "@flexwall/plugin-chess-com";
+import lichess from "@flexwall/plugin-lichess";
+import monkeytype from "@flexwall/plugin-monkeytype";
 import { createCatalog } from "./catalog";
 
 /**
@@ -21,6 +35,6 @@ import { createCatalog } from "./catalog";
  *
  * Adding a plugin: `bun run new-plugin <id>`, then list it here.
  */
-export const PLUGINS: readonly PluginDef[] = [core, github, stripe, http, npm, pypi, bluesky, hackernews, lemonSqueezy, polar, plausible, youtube];
+export const PLUGINS: readonly PluginDef[] = [core, github, stripe, http, npm, pypi, bluesky, hackernews, lemonSqueezy, polar, plausible, youtube, alpaca, trading212, interactiveBrokers, kraken, binance, coinbase, cryptoWallet, revenuecat, paddle, gumroad, wakatime, chessCom, lichess, monkeytype];
 
 export const catalog = createCatalog(PLUGINS, DEFAULT_THEME_ID);

@@ -47,7 +47,11 @@ describe("Every connector metric, as a tile", () => {
 
         // When
         const binding = bindingFor(source!.ref, catalog, connections.map((c) => ({ id: c.id, connector: c.connector, label: c.label, public: {}, createdAt: 0 })))!;
-        if (binding.kind === "metric") for (const f of metric.params ?? []) binding.params[f.key] = "placeholder" in f && f.placeholder ? f.placeholder : "example";
+        if (binding.kind === "metric") {
+          for (const f of metric.params ?? []) {
+            binding.params[f.key] = f.kind === "select" ? (f.default ?? f.options[0]!.value) : "placeholder" in f && f.placeholder ? f.placeholder : "example";
+          }
+        }
         const [w, h] = widget!.size.default;
         const draft = aWall().with(aTile().withId("t").widget(widget!.id, {}).input(input.key, binding).at(0, 0, w, h)).draft();
         const saved = () => applyDraft(aWall().build(), draft, { catalog, entitlements: entitlementsOf(aUser().pro().build(), NOW), connections }, NOW);

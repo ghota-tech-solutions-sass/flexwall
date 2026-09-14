@@ -16,17 +16,31 @@
       "name": "@flexwall/web",
       "version": "0.1.0",
       "dependencies": {
+        "@flexwall/plugin-alpaca": "workspace:*",
+        "@flexwall/plugin-binance": "workspace:*",
         "@flexwall/plugin-bluesky": "workspace:*",
+        "@flexwall/plugin-chess-com": "workspace:*",
+        "@flexwall/plugin-coinbase": "workspace:*",
         "@flexwall/plugin-core": "workspace:*",
+        "@flexwall/plugin-crypto-wallet": "workspace:*",
         "@flexwall/plugin-github": "workspace:*",
+        "@flexwall/plugin-gumroad": "workspace:*",
         "@flexwall/plugin-hackernews": "workspace:*",
         "@flexwall/plugin-http": "workspace:*",
+        "@flexwall/plugin-interactive-brokers": "workspace:*",
+        "@flexwall/plugin-kraken": "workspace:*",
         "@flexwall/plugin-lemon-squeezy": "workspace:*",
+        "@flexwall/plugin-lichess": "workspace:*",
+        "@flexwall/plugin-monkeytype": "workspace:*",
         "@flexwall/plugin-npm": "workspace:*",
+        "@flexwall/plugin-paddle": "workspace:*",
         "@flexwall/plugin-plausible": "workspace:*",
         "@flexwall/plugin-polar": "workspace:*",
         "@flexwall/plugin-pypi": "workspace:*",
+        "@flexwall/plugin-revenuecat": "workspace:*",
         "@flexwall/plugin-stripe": "workspace:*",
+        "@flexwall/plugin-trading212": "workspace:*",
+        "@flexwall/plugin-wakatime": "workspace:*",
         "@flexwall/plugin-youtube": "workspace:*",
         "@flexwall/sdk": "workspace:*",
         "@google-cloud/firestore": "^9.0.0",
@@ -52,12 +66,64 @@
         "react": "^19.0.0",
       },
     },
+    "plugins/alpaca": {
+      "name": "@flexwall/plugin-alpaca",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
+    },
+    "plugins/binance": {
+      "name": "@flexwall/plugin-binance",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
+    },
     "plugins/bluesky": {
       "name": "@flexwall/plugin-bluesky",
       "version": "0.1.0",
       "dependencies": {
         "@flexwall/sdk": "workspace:*",
       },
+    },
+    "plugins/chess-com": {
+      "name": "@flexwall/plugin-chess-com",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
+    },
+    "plugins/coinbase": {
+      "name": "@flexwall/plugin-coinbase",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
     },
     "plugins/core": {
       "name": "@flexwall/plugin-core",
@@ -69,12 +135,38 @@
         "react": "^19.0.0",
       },
     },
+    "plugins/crypto-wallet": {
+      "name": "@flexwall/plugin-crypto-wallet",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
+    },
     "plugins/github": {
       "name": "@flexwall/plugin-github",
       "version": "0.1.0",
       "dependencies": {
         "@flexwall/sdk": "workspace:*",
       },
+    },
+    "plugins/gumroad": {
+      "name": "@flexwall/plugin-gumroad",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
     },
     "plugins/hackernews": {
       "name": "@flexwall/plugin-hackernews",
@@ -90,6 +182,32 @@
         "@flexwall/sdk": "workspace:*",
       },
     },
+    "plugins/interactive-brokers": {
+      "name": "@flexwall/plugin-interactive-brokers",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
+    },
+    "plugins/kraken": {
+      "name": "@flexwall/plugin-kraken",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
+    },
     "plugins/lemon-squeezy": {
       "name": "@flexwall/plugin-lemon-squeezy",
       "version": "0.1.0",
@@ -97,12 +215,51 @@
         "@flexwall/sdk": "workspace:*",
       },
     },
+    "plugins/lichess": {
+      "name": "@flexwall/plugin-lichess",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
+    },
+    "plugins/monkeytype": {
+      "name": "@flexwall/plugin-monkeytype",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
+    },
     "plugins/npm": {
       "name": "@flexwall/plugin-npm",
       "version": "0.1.0",
       "dependencies": {
         "@flexwall/sdk": "workspace:*",
       },
+    },
+    "plugins/paddle": {
+      "name": "@flexwall/plugin-paddle",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
     },
     "plugins/plausible": {
       "name": "@flexwall/plugin-plausible",
@@ -125,12 +282,51 @@
         "@flexwall/sdk": "workspace:*",
       },
     },
+    "plugins/revenuecat": {
+      "name": "@flexwall/plugin-revenuecat",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
+    },
     "plugins/stripe": {
       "name": "@flexwall/plugin-stripe",
       "version": "0.1.0",
       "dependencies": {
         "@flexwall/sdk": "workspace:*",
       },
+    },
+    "plugins/trading212": {
+      "name": "@flexwall/plugin-trading212",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
+    },
+    "plugins/wakatime": {
+      "name": "@flexwall/plugin-wakatime",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
     },
     "plugins/youtube": {
       "name": "@flexwall/plugin-youtube",
@@ -146,19 +342,41 @@
   "packages": {
     "@emnapi/runtime": ["@emnapi/runtime@1.11.3", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-Xz4Tpyki7XyrpbUK1jR1AhdAdaXyhhY4lZ3neLodmhpuWfy2PAQN5B46sAiU4liOXGLkHypn/qU+jvfWSCYYLA=="],
 
+    "@flexwall/plugin-alpaca": ["@flexwall/plugin-alpaca@workspace:plugins/alpaca"],
+
+    "@flexwall/plugin-binance": ["@flexwall/plugin-binance@workspace:plugins/binance"],
+
     "@flexwall/plugin-bluesky": ["@flexwall/plugin-bluesky@workspace:plugins/bluesky"],
+
+    "@flexwall/plugin-chess-com": ["@flexwall/plugin-chess-com@workspace:plugins/chess-com"],
+
+    "@flexwall/plugin-coinbase": ["@flexwall/plugin-coinbase@workspace:plugins/coinbase"],
 
     "@flexwall/plugin-core": ["@flexwall/plugin-core@workspace:plugins/core"],
 
+    "@flexwall/plugin-crypto-wallet": ["@flexwall/plugin-crypto-wallet@workspace:plugins/crypto-wallet"],
+
     "@flexwall/plugin-github": ["@flexwall/plugin-github@workspace:plugins/github"],
+
+    "@flexwall/plugin-gumroad": ["@flexwall/plugin-gumroad@workspace:plugins/gumroad"],
 
     "@flexwall/plugin-hackernews": ["@flexwall/plugin-hackernews@workspace:plugins/hackernews"],
 
     "@flexwall/plugin-http": ["@flexwall/plugin-http@workspace:plugins/http"],
 
+    "@flexwall/plugin-interactive-brokers": ["@flexwall/plugin-interactive-brokers@workspace:plugins/interactive-brokers"],
+
+    "@flexwall/plugin-kraken": ["@flexwall/plugin-kraken@workspace:plugins/kraken"],
+
     "@flexwall/plugin-lemon-squeezy": ["@flexwall/plugin-lemon-squeezy@workspace:plugins/lemon-squeezy"],
 
+    "@flexwall/plugin-lichess": ["@flexwall/plugin-lichess@workspace:plugins/lichess"],
+
+    "@flexwall/plugin-monkeytype": ["@flexwall/plugin-monkeytype@workspace:plugins/monkeytype"],
+
     "@flexwall/plugin-npm": ["@flexwall/plugin-npm@workspace:plugins/npm"],
+
+    "@flexwall/plugin-paddle": ["@flexwall/plugin-paddle@workspace:plugins/paddle"],
 
     "@flexwall/plugin-plausible": ["@flexwall/plugin-plausible@workspace:plugins/plausible"],
 
@@ -166,7 +384,13 @@
 
     "@flexwall/plugin-pypi": ["@flexwall/plugin-pypi@workspace:plugins/pypi"],
 
+    "@flexwall/plugin-revenuecat": ["@flexwall/plugin-revenuecat@workspace:plugins/revenuecat"],
+
     "@flexwall/plugin-stripe": ["@flexwall/plugin-stripe@workspace:plugins/stripe"],
+
+    "@flexwall/plugin-trading212": ["@flexwall/plugin-trading212@workspace:plugins/trading212"],
+
+    "@flexwall/plugin-wakatime": ["@flexwall/plugin-wakatime@workspace:plugins/wakatime"],
 
     "@flexwall/plugin-youtube": ["@flexwall/plugin-youtube@workspace:plugins/youtube"],
 
