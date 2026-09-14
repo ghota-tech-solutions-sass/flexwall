@@ -1,17 +1,16 @@
-// Renders sample wallpapers to disk for eyeballing: bun scripts/render-sample.tsx <outdir>
+// Renders the landing samples to disk for eyeballing: bun scripts/render-sample.tsx <outdir>
 import { writeFileSync } from "node:fs";
-import { DEFAULT_CONFIG, THEME_IDS, type WallConfig } from "@/lib/config";
+import { THEME_IDS } from "@/lib/config";
 import { resolveWall } from "@/lib/metrics";
 import { renderWallpaper } from "@/lib/render";
+import { SAMPLES } from "@/lib/samples";
 
 const out = process.argv[2] ?? ".tmp";
-const base: WallConfig = { ...DEFAULT_CONFIG, heatmap: process.argv[3] ?? "", tz: "Europe/Paris" };
 for (const theme of THEME_IDS) {
-  const config = { ...base, theme };
+  const config = SAMPLES[theme];
   const t0 = performance.now();
-  const data = await resolveWall(config);
-  const res = renderWallpaper(config, data, { watermark: theme === "ink" || theme === "paper" });
-  const buf = Buffer.from(await res.arrayBuffer());
+  const data = await resolveWall({ config, mode: "sample" });
+  const buf = Buffer.from(await renderWallpaper(config, data, { watermark: false }).arrayBuffer());
   writeFileSync(`${out}/wall-${theme}.png`, buf);
-  console.log(theme, Math.round(performance.now() - t0) + "ms", buf.length + "B", JSON.stringify(process.memoryUsage().rss / 1e6 | 0) + "MB rss");
+  console.log(theme, Math.round(performance.now() - t0) + "ms", buf.length + "B");
 }

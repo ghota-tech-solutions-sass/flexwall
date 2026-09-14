@@ -7,12 +7,13 @@ import { PRO_PRICE_LABEL } from "@/lib/site";
 export const revalidate = 3600;
 
 const METRICS = [
-  { sample: "$2.3k", title: "A goal with a bar", body: "MRR, followers, kilos, words. You type the number, the bar does the guilt." },
+  { sample: "$4.8k", title: "Your Stripe MRR, live", body: "Connect a read-only key. MRR, last 30 days of revenue or paying customers, redrawn every morning." },
+  { sample: "{ }", title: "Any number from your API", body: "Point at a JSON endpoint and a field. Signups, users online, orders today: if it has a URL, it fits." },
   { sample: "47", title: "Your GitHub streak", body: "Read from your public profile every morning. Skip a day and your phone knows." },
   { sample: "43", title: "A countdown", body: "Days until launch, the race, the wedding, the end of the runway." },
   { sample: "71%", title: "How much of the year is gone", body: "The quiet one. It works better than any productivity app." },
-  { sample: "▦", title: "A contribution heatmap", body: "Your last five months of commits, drawn under the numbers." },
-  { sample: "3", title: "Any plain number", body: "Open PRs, days sober, cups of coffee. Whatever you want to stare at." },
+  { sample: "$2.3k", title: "A goal you type", body: "Kilos, words, savings. You type the number, the bar does the guilt." },
+  { sample: "▦", title: "A contribution heatmap", body: "Your last five months of commits, drawn under the numbers, plus stars and followers." },
 ];
 
 export default function Home() {
@@ -62,7 +63,7 @@ export default function Home() {
 
         <section className="section" aria-labelledby="what">
           <h2 id="what">What it can show</h2>
-          <p className="section-lede">Mix them however you like. Nothing needs a password or an API key.</p>
+          <p className="section-lede">Mix them however you like. Keys you connect are encrypted and only ever read.</p>
           <ul className="metric-list">
             {METRICS.map((m) => (
               <li key={m.title}>
@@ -86,7 +87,7 @@ export default function Home() {
               <h3>Free</h3>
               <p className="price">$0</p>
               <ul>
-                <li>Every metric and the heatmap</li>
+                <li>GitHub, countdowns, goals and the heatmap</li>
                 <li>Ink and Paper themes</li>
                 <li>Refreshed daily by your Shortcut</li>
                 <li>A small flexwall.lol at the bottom</li>
@@ -102,6 +103,7 @@ export default function Home() {
               </p>
               <ul>
                 <li>Everything in Free</li>
+                <li>Live Stripe and your own API</li>
                 <li>Old Money, Terminal, Sunset and Editorial themes</li>
                 <li>No watermark</li>
                 <li>Show it off in the gallery, if you want</li>

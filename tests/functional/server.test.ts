@@ -32,6 +32,7 @@ beforeAll(async () => {
       HOSTNAME: "0.0.0.0",
       NODE_ENV: "production",
       FLEXWALL_SECRET: "functional-test-secret",
+      FLEXWALL_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString("base64"),
       STRIPE_SECRET_KEY: "sk_test_dummy",
       STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET,
       NEXT_PUBLIC_APP_URL: BASE,
@@ -139,6 +140,49 @@ describe("wallpaper lifecycle", () => {
     expect(next.imagePath).not.toBe(view.imagePath);
     expect((await fetch(BASE + view.imagePath)).status).toBe(404);
     expect((await fetch(BASE + next.imagePath)).status).toBe(200);
+  }, 20_000);
+
+  test("connections: owner only, SSRF refused, secrets never echoed, removable", async () => {
+    const view = await create({ hero: { kind: "year-progress" } });
+    const key = keyOf(view);
+    const post = (input: Record<string, string>, source = "http", editKey = key) =>
+      fetch(`${BASE}/api/walls/${view.id}/connections`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-edit-key": editKey },
+        body: JSON.stringify({ source, input }),
+      });
+
+    expect((await post({ url: "https://example.com" }, "http", "wrong")).status).toBe(404);
+
+    for (const url of ["https://169.254.169.254/computeMetadata/v1/", "https://localtest.me/", "http://example.com/"]) {
+      const res = await post({ url, headerName: "Authorization", headerValue: "Bearer s3cret" });
+      expect(res.status).toBe(422);
+      const body = (await res.json()) as { message: string };
+      expect(body.message).not.toContain("s3cret");
+    }
+
+    const sk = await post({ key: "sk_live_0123456789abcdef" }, "stripe");
+    expect(sk.status).toBe(422);
+    expect(((await sk.json()) as { message: string }).message).toContain("restricted key");
+
+    // Nothing was stored by the failed attempts.
+    const after = (await (await fetch(`${BASE}/api/walls/${view.id}`, { headers: { "x-edit-key": key } })).json()) as { connections: unknown[] };
+    expect(after.connections).toEqual([]);
+  }, 30_000);
+
+  test("owner preview needs the edit key; the image link ignores draft configs", async () => {
+    const view = await create({ hero: { kind: "year-progress" } });
+    const draft = { hero: { kind: "number", label: "x", value: 5 } };
+    const preview = (editKey: string) =>
+      fetch(`${BASE}/api/walls/${view.id}/preview`, { method: "POST", headers: { "content-type": "application/json", "x-edit-key": editKey }, body: JSON.stringify({ config: draft, width: 402 }) });
+    expect((await preview("wrong")).status).toBe(404);
+    const ok = await preview(keyOf(view));
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get("cache-control")).toContain("no-store");
+    expect(new DataView(await ok.arrayBuffer()).getUint32(16)).toBe(402);
+    // A ?c= on the phone URL is ignored: full-size saved wallpaper comes back.
+    const phone = await fetch(`${BASE}${view.imagePath}?c=${Buffer.from(JSON.stringify(draft)).toString("base64url")}&w=300`);
+    expect(new DataView(await phone.arrayBuffer()).getUint32(16)).toBe(1206);
   }, 20_000);
 
   test("preview is capped and rejects bad configs", async () => {

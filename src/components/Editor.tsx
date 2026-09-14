@@ -7,26 +7,19 @@ import {
   DEVICE_IDS,
   DEVICES,
   encodeConfig,
+  proFeaturesUsed,
   THEME_IDS,
   THEMES,
   WallConfigSchema,
   type Metric,
-  type MetricKind,
   type WallConfig,
 } from "@/lib/config";
 import { PRO_PRICE_LABEL, type WallView } from "@/lib/site";
 import { Phone } from "@/components/Phone";
 import { ShortcutSteps } from "@/components/ShortcutSteps";
-
-const KIND_LABELS: Record<MetricKind, string> = {
-  goal: "Goal with a progress bar",
-  number: "Plain number",
-  countdown: "Countdown to a date",
-  "github-streak": "GitHub streak",
-  "github-year": "GitHub contributions (12 months)",
-  "year-progress": "How much of the year is gone",
-};
-const KINDS = Object.keys(KIND_LABELS) as MetricKind[];
+import { ConnectionsPanel } from "@/components/editor/ConnectionsPanel";
+import { CopyField } from "@/components/editor/CopyField";
+import { MetricFields } from "@/components/editor/MetricFields";
 
 const keyStore = {
   get(id: string): string | null {
@@ -44,33 +37,6 @@ const keyStore = {
     }
   },
 };
-
-function inDays(n: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
-}
-
-function defaultMetric(kind: MetricKind, githubUser: string): Metric {
-  switch (kind) {
-    case "goal":
-      return { kind, label: "MRR", current: 0, target: 1000, prefix: "$", suffix: "" };
-    case "number":
-      return { kind, label: "", value: 0, prefix: "", suffix: "" };
-    case "countdown":
-      return { kind, label: "until launch", date: inDays(30) };
-    case "github-streak":
-    case "github-year":
-      return { kind, user: githubUser };
-    case "year-progress":
-      return { kind };
-  }
-}
-
-function githubUserOf(config: WallConfig): string {
-  for (const m of [config.hero, ...config.stats]) if ("user" in m && m.user) return m.user;
-  return config.heatmap;
-}
 
 function editKeyFromPath(editPath: string): string {
   return new URL(editPath, "https://x").searchParams.get("k") ?? "";
@@ -163,17 +129,31 @@ export function Editor({ id }: { id?: string }) {
 
   const issue = useMemo(() => firstIssue(config), [config]);
 
-  // Debounced preview: the last valid config.
+  // Debounced preview of the last valid config. A saved wall previews through
+  // the owner route (edit key in a header, connections live); an unsaved one
+  // through the anonymous preview.
   const [previewSrc, setPreviewSrc] = useState("");
+  const connectionsVersion = wall?.connections.map((c) => c.id).join(",") ?? "";
   useEffect(() => {
     if (issue) return;
-    const t = setTimeout(() => {
-      const c = encodeConfig(config);
-      // A saved wall previews through its own image URL, so Pro shows without the watermark.
-      setPreviewSrc(wall ? `${wall.imagePath}?w=603&c=${c}` : `/api/preview?w=603&c=${c}`);
+    let cancelled = false;
+    let objectUrl = "";
+    const t = setTimeout(async () => {
+      const res = wall
+        ? await api(`/api/walls/${wall.id}/preview`, { method: "POST", body: JSON.stringify({ config, width: 603 }) })
+        : await fetch(`/api/preview?w=603&c=${encodeConfig(config)}`);
+      if (!res.ok || cancelled) return;
+      objectUrl = URL.createObjectURL(await res.blob());
+      if (!cancelled) setPreviewSrc(objectUrl);
     }, 300);
-    return () => clearTimeout(t);
-  }, [config, issue, wall]);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+      // Revoke the previous frame once the next one replaces it.
+      setTimeout(() => objectUrl && URL.revokeObjectURL(objectUrl), 5000);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config, issue, wall?.id, wall?.pro, connectionsVersion, api]);
 
   async function save() {
     if (issue) return;
@@ -255,10 +235,9 @@ export function Editor({ id }: { id?: string }) {
     );
   }
 
-  const proLocked = THEMES[config.theme].pro && !wall?.pro;
+  const proLocked = proFeaturesUsed(config).length > 0 && !wall?.pro;
   const imageUrl = wall ? origin + wall.imagePath : "";
   const editUrl = wall ? origin + wall.editPath : "";
-  const githubUser = githubUserOf(config);
 
   return (
     <div className="editor">
@@ -281,7 +260,7 @@ export function Editor({ id }: { id?: string }) {
         <section className="panel" aria-labelledby="p-big">
           <h2 id="p-big">Big number</h2>
           <p>The first thing you see when you pick up your phone.</p>
-          <MetricFields metric={config.hero} onChange={setHero} githubUser={githubUser} />
+          <MetricFields metric={config.hero} onChange={setHero} config={config} wall={wall} />
         </section>
 
         <section className="panel" aria-labelledby="p-small">
@@ -289,7 +268,7 @@ export function Editor({ id }: { id?: string }) {
           <p>Up to three, in a row under the big one.</p>
           {config.stats.map((m, i) => (
             <div className="metric" key={i}>
-              <MetricFields metric={m} onChange={(next) => setStat(i, next)} githubUser={githubUser} />
+              <MetricFields metric={m} onChange={(next) => setStat(i, next)} config={config} wall={wall} />
               <div>
                 <button type="button" className="link-btn" onClick={() => update({ stats: config.stats.filter((_, j) => j !== i) })}>
                   Remove
@@ -298,7 +277,7 @@ export function Editor({ id }: { id?: string }) {
             </div>
           ))}
           {config.stats.length < 3 ? (
-            <button type="button" className="btn btn-small" onClick={() => update({ stats: [...config.stats, defaultMetric("countdown", githubUser)] })}>
+            <button type="button" className="btn btn-small" onClick={() => update({ stats: [...config.stats, { kind: "year-progress" }] })}>
               Add a small number
             </button>
           ) : null}
@@ -360,6 +339,8 @@ export function Editor({ id }: { id?: string }) {
 
         {wall ? (
           <>
+            <ConnectionsPanel wall={wall} api={api} onWall={setWall} />
+
             <section className="panel highlight" aria-labelledby="p-phone" style={{ marginTop: 28 }}>
               <h2 id="p-phone">Put it on your iPhone</h2>
               <p>One automation, once. After that it runs every morning on its own.</p>
@@ -389,8 +370,8 @@ export function Editor({ id }: { id?: string }) {
                 <>
                   <h2 id="p-pro">Unlock Pro for {PRO_PRICE_LABEL}</h2>
                   <p>
-                    Old Money, Terminal, Sunset and Editorial themes, no watermark, and a spot in the gallery. One
-                    payment, this wallpaper, forever.
+                    Live Stripe and API connectors, the Old Money, Terminal, Sunset and Editorial themes, no
+                    watermark, and a spot in the gallery. One payment, this wallpaper, forever.
                   </p>
                   <button type="button" className="btn btn-signal" onClick={checkout} disabled={busy !== "" || Boolean(issue)}>
                     {busy === "checkout" ? "Opening checkout…" : `Unlock Pro, ${PRO_PRICE_LABEL}`}
@@ -413,133 +394,12 @@ export function Editor({ id }: { id?: string }) {
         {previewSrc ? <Phone src={previewSrc} alt="Preview of your wallpaper" tone={THEMES[config.theme].tone} /> : null}
         <p className="note">
           {proLocked
-            ? "Pro theme preview. Unlock Pro to put it on your phone."
+            ? "Preview with Pro features. Unlock Pro to get them on your phone."
             : wall?.pro
               ? "This is what your phone will show."
               : "Free wallpapers carry a small flexwall.lol at the bottom."}
         </p>
       </aside>
-    </div>
-  );
-}
-
-function MetricFields({ metric, onChange, githubUser }: { metric: Metric; onChange: (m: Metric) => void; githubUser: string }) {
-  const num = (v: string) => {
-    const n = Number(v.replace(/[\s,]/g, ""));
-    return Number.isFinite(n) ? n : 0;
-  };
-  return (
-    <>
-      <div className="metric-head">
-        <label className="field">
-          <span>Shows</span>
-          <select value={metric.kind} onChange={(e) => onChange(defaultMetric(e.target.value as MetricKind, githubUser))}>
-            {KINDS.map((k) => (
-              <option key={k} value={k}>
-                {KIND_LABELS[k]}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      {metric.kind === "goal" ? (
-        <div className="row">
-          <label className="field">
-            <span>Label</span>
-            <input value={metric.label} maxLength={32} onChange={(e) => onChange({ ...metric, label: e.target.value })} />
-          </label>
-          <label className="field narrow">
-            <span>Before</span>
-            <input value={metric.prefix} maxLength={4} placeholder="$" onChange={(e) => onChange({ ...metric, prefix: e.target.value })} />
-          </label>
-          <label className="field">
-            <span>Now</span>
-            <input inputMode="decimal" value={metric.current} onChange={(e) => onChange({ ...metric, current: num(e.target.value) })} />
-          </label>
-          <label className="field">
-            <span>Goal</span>
-            <input inputMode="decimal" value={metric.target} onChange={(e) => onChange({ ...metric, target: num(e.target.value) })} />
-          </label>
-          <label className="field narrow">
-            <span>After</span>
-            <input value={metric.suffix} maxLength={4} placeholder="km" onChange={(e) => onChange({ ...metric, suffix: e.target.value })} />
-          </label>
-        </div>
-      ) : null}
-      {metric.kind === "number" ? (
-        <div className="row">
-          <label className="field">
-            <span>Label</span>
-            <input value={metric.label} maxLength={32} placeholder="open PRs" onChange={(e) => onChange({ ...metric, label: e.target.value })} />
-          </label>
-          <label className="field narrow">
-            <span>Before</span>
-            <input value={metric.prefix} maxLength={4} onChange={(e) => onChange({ ...metric, prefix: e.target.value })} />
-          </label>
-          <label className="field">
-            <span>Value</span>
-            <input inputMode="decimal" value={metric.value} onChange={(e) => onChange({ ...metric, value: num(e.target.value) })} />
-          </label>
-          <label className="field narrow">
-            <span>After</span>
-            <input value={metric.suffix} maxLength={4} onChange={(e) => onChange({ ...metric, suffix: e.target.value })} />
-          </label>
-        </div>
-      ) : null}
-      {metric.kind === "countdown" ? (
-        <div className="row">
-          <label className="field">
-            <span>Words after the number</span>
-            <input value={metric.label} maxLength={32} placeholder="until launch" onChange={(e) => onChange({ ...metric, label: e.target.value })} />
-          </label>
-          <label className="field">
-            <span>Date</span>
-            <input type="date" value={metric.date} onChange={(e) => onChange({ ...metric, date: e.target.value })} />
-          </label>
-        </div>
-      ) : null}
-      {metric.kind === "github-streak" || metric.kind === "github-year" ? (
-        <div className="row">
-          <label className="field">
-            <span>GitHub username</span>
-            <input
-              value={metric.user}
-              placeholder="your-github"
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-              onChange={(e) => onChange({ ...metric, user: e.target.value.trim().replace(/^@/, "") })}
-            />
-          </label>
-        </div>
-      ) : null}
-    </>
-  );
-}
-
-function CopyField({ label, value }: { label: string; value: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <div className="field" style={{ marginBottom: 12 }}>
-      <span>{label}</span>
-      <div className="copy">
-        <input readOnly value={value} onFocus={(e) => e.currentTarget.select()} aria-label={label} />
-        <button
-          type="button"
-          className="btn btn-small"
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(value);
-              setCopied(true);
-              setTimeout(() => setCopied(false), 1600);
-            } catch {
-              /* the field is selectable as a fallback */
-            }
-          }}
-        >
-          {copied ? "Copied" : "Copy"}
-        </button>
-      </div>
     </div>
   );
 }

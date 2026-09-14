@@ -27,10 +27,16 @@ export default function LegalPage() {
           <li>Your wallpaper settings: the numbers, labels, dates and GitHub usernames you type.</li>
           <li>For Pro, the email Stripe collected at checkout, to send you your links. Card details never reach us.</li>
           <li>When a phone last fetched your image, so the editor can tell you the automation works.</li>
+          <li>
+            For connections: your Stripe restricted key, or your endpoint URL and header, encrypted with AES-256. They
+            are used only to read the numbers on your wallpaper, and the last values read are kept to redraw it.
+            Removing a connection deletes both.
+          </li>
         </ul>
         <p>
-          GitHub numbers come from public profile pages. Nothing is shared or sold. Your wallpaper is only public if you
-          tick the gallery box.
+          We only accept Stripe restricted keys, and ask for read access to Subscriptions and Balance. GitHub numbers
+          come from public profiles. Nothing is shared or sold. Your wallpaper, and the numbers on it, are only public
+          if you tick the gallery box.
         </p>
 
         <h2>Your links</h2>

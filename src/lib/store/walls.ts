@@ -1,5 +1,6 @@
-import { Firestore } from "@google-cloud/firestore";
+import { FieldPath, FieldValue, Firestore } from "@google-cloud/firestore";
 import type { WallConfig } from "@/lib/config";
+import type { Values } from "@/lib/connectors/types";
 import { optionalEnv } from "@/lib/env";
 import { newId, newNonce } from "@/lib/tokens";
 
@@ -15,6 +16,24 @@ import { newId, newNonce } from "@/lib/tokens";
  * every route bundle of the same server sees the same walls.
  */
 
+/** Credentials for one connector, saved once and referenced by metrics through `id`. */
+export interface StoredConnection {
+  id: string;
+  source: string;
+  label: string;
+  /** Non-secret details shown to the owner. */
+  public: Record<string, string>;
+  /** encryptJson() of the secret fields. Never leaves the server. */
+  sealed: string;
+  createdAt: number;
+}
+
+/** Last values fetched for one cache key, kept on the wall so a cold instance doesn't refetch. */
+export interface CachedValues {
+  at: number;
+  values: Values;
+}
+
 export interface Wall {
   id: string;
   config: WallConfig;
@@ -29,6 +48,8 @@ export interface Wall {
   proAt?: number;
   lastRenderAt?: number;
   renders?: number;
+  connections?: Record<string, StoredConnection>;
+  valueCache?: Record<string, CachedValues>;
 }
 
 const WALLS = "fw_wallpapers";
@@ -151,4 +172,41 @@ export async function noteRender(wall: Wall): Promise<void> {
     return;
   }
   await d.collection(WALLS).doc(wall.id).update({ lastRenderAt: now, renders });
+}
+
+export async function saveConnection(id: string, conn: StoredConnection): Promise<void> {
+  const d = db();
+  if (!d) {
+    const w = memory.get(id);
+    if (w) w.connections = { ...w.connections, [conn.id]: structuredClone(conn) };
+    return;
+  }
+  await d.collection(WALLS).doc(id).update(new FieldPath("connections", conn.id), conn, "updatedAt", Date.now());
+}
+
+/** Removes a connection and every cached value fetched through it. */
+export async function deleteConnection(id: string, connId: string, cacheKeys: string[]): Promise<void> {
+  const d = db();
+  if (!d) {
+    const w = memory.get(id);
+    if (!w) return;
+    delete w.connections?.[connId];
+    for (const k of cacheKeys) delete w.valueCache?.[k];
+    return;
+  }
+  const args: unknown[] = [new FieldPath("connections", connId), FieldValue.delete()];
+  for (const k of cacheKeys) args.push(new FieldPath("valueCache", k), FieldValue.delete());
+  args.push("updatedAt", Date.now());
+  const [first, firstValue, ...rest] = args;
+  await d.collection(WALLS).doc(id).update(first as FieldPath, firstValue, ...rest);
+}
+
+export async function saveCachedValues(id: string, key: string, entry: CachedValues): Promise<void> {
+  const d = db();
+  if (!d) {
+    const w = memory.get(id);
+    if (w) w.valueCache = { ...w.valueCache, [key]: structuredClone(entry) };
+    return;
+  }
+  await d.collection(WALLS).doc(id).update(new FieldPath("valueCache", key), entry);
 }
