@@ -1,0 +1,12 @@
+<FlexQueryResponse queryName="Flexwall NAV" type="AF">
+<FlexStatements count="1">
+<FlexStatement accountId="U7654321" fromDate="20260910" toDate="20260914" period="Last30CalendarDays" whenGenerated="20260915;083012">
+<AccountInformation accountId="U7654321" acctAlias="" model="" currency="USD" name="Ada &amp; Charles Lovelace" accountType="Individual" customerType="Individual" />
+<EquitySummaryInBase>
+<EquitySummaryByReportDateInBase accountId="U7654321" acctAlias="" model="" currency="USD" reportDate="20260911" cash="18250.4" cashLong="18250.4" cashShort="0" stock="390112.25" stockLong="390112.25" stockShort="0" options="0" bonds="0" funds="0" interestAccruals="41.12" dividendAccruals="120" total="408523.77" totalLong="408523.77" totalShort="0" />
+<EquitySummaryByReportDateInBase accountId="U7654321" acctAlias="" model="" currency="USD" reportDate="20260910" cash="18250.4" cashLong="18250.4" cashShort="0" stock="385002.1" stockLong="385002.1" stockShort="0" options="0" bonds="0" funds="0" interestAccruals="38.9" dividendAccruals="120" total="403411.4" totalLong="403411.4" totalShort="0" />
+<EquitySummaryByReportDateInBase accountId="U7654321" acctAlias="" model="" currency="USD" reportDate="20260914" cash="17990" cashLong="17990" cashShort="0" stock="394210.8" stockLong="394210.8" stockShort="0" options="0" bonds="0" funds="0" interestAccruals="43.33" dividendAccruals="136.2" total="412380.33" totalLong="412380.33" totalShort="0" />
+</EquitySummaryInBase>
+</FlexStatement>
+</FlexStatements>
+</FlexQueryResponse>

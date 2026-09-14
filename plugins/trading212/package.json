@@ -1,0 +1,21 @@
+{
+  "name": "@flexwall/plugin-trading212",
+  "version": "0.1.0",
+  "description": "Verified portfolio value, free cash and unrealised result from a Trading 212 account.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}
