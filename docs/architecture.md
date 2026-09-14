@@ -8,23 +8,26 @@ source of truth; this page explains how the pieces fit.
 ```
 flexwall/
 ├── apps/web/                 the hosted app (Next.js, AGPL-3.0)
-│   ├── src/app/              routes: public walls, editor, explore, API
-│   ├── src/server/           host runtime: auth, store, billing, resolver, renderers
-│   ├── src/components/       editor and page UI
-│   └── src/plugins.ts        the list of installed plugins
-├── packages/sdk/             @flexwall/sdk (MIT): types, define*, UI primitives, formatting, test kit
+│   └── src/
+│       ├── domain/           entities and rules, no framework
+│       ├── application/      ports and use cases
+│       ├── infrastructure/   adapters: persistence, guarded fetch, crypto, mail, Stripe
+│       ├── presentation/     HTTP glue
+│       ├── rendering/        one tile renderer for pages, cards and lock screens
+│       ├── components/       UI, editor
+│       ├── app/              routes (thin controllers)
+│       ├── plugins/          registry of installed plugins
+│       └── composition.ts    the composition root
+├── packages/sdk/             @flexwall/sdk (MIT): contracts, UI primitives, test kit
 ├── plugins/                  one folder per plugin (MIT)
-│   ├── core/                 generic widgets: stat, goal, countdown, sparkline, heatmap, text, link
-│   ├── github/               connector
-│   ├── stripe/               connector
-│   └── …
 ├── templates/plugin/         what `bun run new-plugin` copies
-└── docs/                     you are here
+└── docs/
 ```
 
 Bun workspaces. Packages ship TypeScript source; Next's Turbopack compiles
 workspace packages directly, so there is no build step between editing a
-plugin and seeing it in the app.
+plugin and seeing it in the app. Layers and conventions are in
+[development.md](development.md).
 
 ## The three contracts
 
@@ -136,7 +139,7 @@ One grid model, several adapters:
 
 ## Resolving a wall
 
-`apps/web/src/server/resolve.ts` turns a wall into rendered-ready inputs:
+`ResolveWall` (`apps/web/src/application/use-cases/resolve-wall.ts`) turns tiles into render-ready inputs:
 
 1. Collect every binding on the surface being drawn (public tiles only for
    the page and card).
@@ -149,7 +152,7 @@ One grid model, several adapters:
 5. `history` bindings read daily snapshots, written by a scheduled job for
    every metric used by a Pro wall.
 
-Caches: process memory, then Firestore (`values/{key}`), so a cold Cloud Run
+Caches: process memory, then the store (`values`), so a cold Cloud Run
 instance doesn't refetch. Only renders that matter (page, card, lock screen)
 write; editor previews stay in memory.
 

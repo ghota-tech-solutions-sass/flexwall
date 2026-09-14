@@ -1,0 +1,16 @@
+{
+  "name": "@flexwall/plugin-__ID__",
+  "version": "0.1.0",
+  "description": "__NAME__ for Flexwall walls.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.tsx"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}
