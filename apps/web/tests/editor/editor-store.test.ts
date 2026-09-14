@@ -208,6 +208,26 @@ describe("Editor store: accounts", () => {
     expect(store.getState().draft.tiles.map((t) => (t.inputs.value as { connection: string }).connection)).toEqual(["c1", "conn-billing"]);
   });
 
+  test("given two Billing accounts, when the owner picks the second one on a tile, then only that tile switches and the wall is saved", async () => {
+    // Given
+    const otherAccount: ConnectionView = { ...billingAccount, id: "c2", label: "Side project" };
+    const { store, gateway, scheduler, actions } = anEditor({
+      connections: [billingAccount, otherAccount],
+      wall: aWall()
+        .with(aTile().withId("a").stat().metric("billing", "mrr", { connection: "c1" }).at(0, 0, 2, 1))
+        .with(aTile().withId("b").stat().metric("billing", "mrr", { connection: "c1" }).at(2, 0, 2, 1)),
+    });
+
+    // When
+    actions.chooseAccount({ tileId: "b", inputKey: "value" }, "c2");
+    await scheduler.advance(EDITOR_TIMINGS.autosaveMs);
+
+    // Then
+    expect(store.getState().draft.tiles.map((t) => (t.inputs.value as { connection: string }).connection)).toEqual(["c1", "c2"]);
+    expect(gateway.saved).toHaveLength(1);
+    expect(gateway.resolved).toHaveLength(1);
+  });
+
   test("given a refused key, when connecting, then the reason comes back and nothing changes", async () => {
     // Given
     const { store, gateway, actions } = anEditor({ wall: aWall().with(aTile().withId("a").stat().metric("billing", "mrr", { connection: null })) });
