@@ -4,6 +4,7 @@ import "react-grid-layout/css/styles.css";
 import { CELL_UNITS, GAP_UNITS, gridUnits, themeBackground, type Size, type Theme } from "@flexwall/sdk";
 import type { TileState } from "@/application/use-cases/resolve-wall";
 import { tileName } from "@/application/editor/draft";
+import { editorTheme } from "@/application/editor/state";
 import { WALL_COLUMNS } from "@/domain/layout";
 import { BIO_MAX, TITLE_MAX, type Tile } from "@/domain/wall";
 import { catalog } from "@/plugins/registry";
@@ -22,8 +23,7 @@ const FALLBACK_SIZE: { min: Size; max: Size } = { min: [1, 1], max: [WALL_COLUMN
 const QUICK_ADD_WIDGETS = ["stat", "sparkline", "note"] as const;
 
 export function useEditorTheme(): Theme {
-  const themeId = useEditor((s) => s.draft.theme);
-  return catalog.theme(themeId) ?? catalog.defaultTheme();
+  return useEditor((s) => editorTheme(s, catalog));
 }
 
 /** The wall grid, draggable and resizable. Sizes come from each widget's declared min and max. */

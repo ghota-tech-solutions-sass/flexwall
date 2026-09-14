@@ -1,4 +1,4 @@
-import { defaultsFor, isValue, validateFields, type FieldValues, type Value, type ValueType } from "@flexwall/sdk";
+import { defaultsFor, isValue, validateFields, type FieldValues, type Theme, type Value, type ValueType } from "@flexwall/sdk";
 import type { Catalog } from "./catalog";
 import type { Connection } from "./connection";
 import { DomainError } from "./errors";
@@ -182,7 +182,12 @@ export function applyDraft(wall: Wall, draft: WallDraft, rules: WallRules, now: 
   const bio = String(draft.bio ?? "").trim();
   if (title.length > TITLE_MAX) fail(null, `The title is longer than ${TITLE_MAX} characters.`);
   if (bio.length > BIO_MAX) fail(null, `The bio is longer than ${BIO_MAX} characters.`);
-  if (!rules.catalog.theme(draft.theme)) fail(null, `Theme "${draft.theme}" isn't installed.`);
+  const theme = rules.catalog.theme(draft.theme);
+  if (!theme) fail(null, `Theme "${draft.theme}" isn't installed.`);
+  // Picking a Pro theme needs Pro. One kept from a lapsed plan stays, drawn as the default until Pro is back.
+  if (draft.theme !== wall.theme && !canUseTheme(theme, rules.entitlements)) {
+    throw new DomainError("plan_limit", `${theme.name} is a Pro theme. Go Pro to use it.`);
+  }
 
   const rawTiles = Array.isArray(draft.tiles) ? draft.tiles : [];
   if (rawTiles.length > rules.entitlements.maxTiles) {
@@ -234,10 +239,18 @@ export function publicTiles(wall: Pick<Wall, "tiles">): Tile[] {
   return wall.tiles.filter((t) => t.visibility === "public");
 }
 
-/** The theme a wall is drawn with: Pro themes need a paid owner. */
-export function effectiveTheme(wall: Pick<Wall, "theme">, catalog: Catalog, entitlements: Entitlements) {
+/** Whether an owner with these entitlements may draw a wall with this theme. */
+export function canUseTheme(theme: Pick<Theme, "tier">, entitlements: Pick<Entitlements, "proThemes">): boolean {
+  return theme.tier !== "pro" || entitlements.proThemes;
+}
+
+/**
+ * The theme a wall is drawn with, everywhere: public page, share card, lock
+ * screen, The Wall and the editor. Pro themes need a paid owner.
+ */
+export function effectiveTheme(wall: Pick<Wall, "theme">, catalog: Catalog, entitlements: Pick<Entitlements, "proThemes">): Theme {
   const theme = catalog.theme(wall.theme) ?? catalog.defaultTheme();
-  return theme.tier === "pro" && !entitlements.proThemes ? catalog.defaultTheme() : theme;
+  return canUseTheme(theme, entitlements) ? theme : catalog.defaultTheme();
 }
 
 /** A wall to start from: enough to look alive, nothing that needs an account. */
@@ -248,7 +261,7 @@ export function newWall(input: { id: string; owner: { id: string; handle: Handle
     return isoDay(d);
   };
   const tiles: Tile[] = [
-    { id: "hello", widget: "note", inputs: {}, options: { title: "Hi, I'm building things", body: "Edit this wall: drag tiles, resize them, connect your accounts." }, visibility: "public", layout: { x: 0, y: 0, w: 2, h: 1 } },
+    { id: "hello", widget: "note", inputs: {}, options: { title: "Hi, I'm building things", body: "Drag tiles, resize them, connect your accounts." }, visibility: "public", layout: { x: 0, y: 0, w: 2, h: 1 } },
     { id: "year", widget: "time-left", inputs: {}, options: { period: "year", style: "bar" }, visibility: "public", layout: { x: 2, y: 0, w: 2, h: 1 } },
     { id: "launch", widget: "countdown", inputs: {}, options: { date: inMonths(1), label: "until launch" }, visibility: "public", layout: { x: 0, y: 1, w: 1, h: 1 } },
     {

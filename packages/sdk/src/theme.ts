@@ -63,7 +63,31 @@ export const FONT_ADVANCE: Record<FontFamily, number> = {
   Geist: 0.62,
 };
 
-/** The em advance to fit display text with: the theme's own, or its font's. */
+/**
+ * How wide running text runs, in em. Letters and spaces average narrower than
+ * figures, except in a monospace face where every glyph is as wide as a digit.
+ */
+export const TEXT_ADVANCE: Record<FontFamily, number> = {
+  Grotesk: 0.52,
+  Inter: 0.52,
+  Serif: 0.52,
+  Mono: 0.61,
+  Archivo: 0.52,
+  "Archivo Wide": 0.68,
+  Geist: 0.56,
+};
+
+/** The em advance to fit a title set in the display font. */
+export function titleAdvance(theme: Pick<Theme, "display">): number {
+  return TEXT_ADVANCE[theme.display.family];
+}
+
+/** The em advance to fit a caption set in the body font. */
+export function bodyAdvance(theme: Pick<Theme, "body">): number {
+  return TEXT_ADVANCE[theme.body.family];
+}
+
+/** The em advance to fit display figures with: the theme's own, or its font's. */
 export function displayAdvance(theme: Pick<Theme, "display">): number {
   return theme.display.advance ?? FONT_ADVANCE[theme.display.family];
 }

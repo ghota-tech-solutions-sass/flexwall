@@ -2,10 +2,11 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { parseTypedNumber, themeBackground, type ConnectorDef, type WidgetInputDef } from "@flexwall/sdk";
 import { sourcesFor, type SourceOption } from "@/application/editor/draft";
+import { editorTheme } from "@/application/editor/state";
 import type { InputTarget } from "@/application/editor/store";
 import type { ConnectionView } from "@/domain/connection";
 import { connectorOfSource, sameSource, sourceOfBinding, type SourceRef } from "@/domain/source";
-import { STATIC_TEXT_MAX, VISIBILITIES, type Tile, type Visibility } from "@/domain/wall";
+import { canUseTheme, effectiveTheme, STATIC_TEXT_MAX, VISIBILITIES, type Tile, type Visibility } from "@/domain/wall";
 import { catalog } from "@/plugins/registry";
 import { BrandMark, hasMark } from "@/components/brand/Logos";
 import { ConnectForm } from "@/components/connections/ConnectForm";
@@ -334,14 +335,15 @@ function AccountPicker({ connector, target, current, own, focusKey }: { connecto
 }
 
 function WallPanel() {
-  const themeId = useEditor((s) => s.draft.theme);
+  const shown = useEditor((s) => editorTheme(s, catalog));
+  const trying = useEditor((s) => s.themePreview !== null);
+  const chosen = useEditor((s) => catalog.theme(s.draft.theme));
+  const onWall = useEditor((s) => effectiveTheme(s.draft, catalog, s.entitlements));
   const published = useEditor((s) => s.draft.published);
   const listed = useEditor((s) => s.draft.listed);
   const connections = useEditor((s) => s.connections);
-  const { proThemes } = useEditor((s) => s.entitlements);
+  const entitlements = useEditor((s) => s.entitlements);
   const actions = useEditorActions();
-  const theme = catalog.theme(themeId);
-  const lockedPro = theme?.tier === "pro" && !proThemes;
 
   return (
     <>
@@ -358,7 +360,7 @@ function WallPanel() {
       <Group title="Theme">
         <div className="ed-themes" role="radiogroup" aria-label="Theme">
           {catalog.themes().map((t) => (
-            <button key={t.id} type="button" role="radio" aria-checked={themeId === t.id} className="ed-theme" onClick={() => actions.setTheme(t.id)}>
+            <button key={t.id} type="button" role="radio" aria-checked={shown.id === t.id} className="ed-theme" onClick={() => actions.setTheme(t.id)}>
               <span className="ed-theme-swatch" style={themeBackground(t)}>
                 <i style={{ background: t.tile, boxShadow: `inset 0 0 0 1px ${t.tileBorder}` }}>
                   <b style={{ background: t.accent }} />
@@ -369,14 +371,28 @@ function WallPanel() {
               </span>
               <span className="ed-theme-name">
                 {t.name}
-                {t.tier === "pro" && !proThemes ? <span className="badge">Pro</span> : null}
+                {canUseTheme(t, entitlements) ? null : <span className="badge">Pro</span>}
               </span>
             </button>
           ))}
         </div>
-        {lockedPro ? (
+        {trying ? (
+          <div className="ed-trying" role="status">
+            <p>
+              <strong>Trying on {shown.name}.</strong> It&apos;s a Pro theme: your wall stays on {onWall.name} until you go Pro.
+            </p>
+            <div className="ed-trying-actions">
+              <a className="btn btn-signal btn-small" href={ROUTES.pricing}>
+                Go Pro
+              </a>
+              <button type="button" className="btn btn-small btn-quiet" onClick={actions.endThemePreview}>
+                Keep {onWall.name}
+              </button>
+            </div>
+          </div>
+        ) : chosen && chosen.id !== onWall.id ? (
           <p className="ed-note">
-            Your public page uses {catalog.defaultTheme().name} until you go <a href={ROUTES.pricing}>Pro</a>.
+            {chosen.name} comes back when you go <a href={ROUTES.pricing}>Pro</a>. Until then your wall uses {onWall.name}.
           </p>
         ) : null}
       </Group>

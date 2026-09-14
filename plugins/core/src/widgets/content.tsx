@@ -1,5 +1,21 @@
-import { asType, defineWidget, displayAdvance, field } from "@flexwall/sdk";
+import { asType, bodyAdvance, defineWidget, field, titleAdvance } from "@flexwall/sdk";
 import { Col, Fill, Row, Text, fitFont } from "@flexwall/sdk/ui";
+
+/** Type sizes of a note, in units. */
+const NOTE = {
+  size: 13,
+  narrowSize: 11,
+  /** Below this width a note uses the narrow size. */
+  narrowWidth: 100,
+  minSize: 10,
+  shrinkStep: 0.5,
+  leading: 1.4,
+  titleStep: 3,
+  titleLeading: 1.25,
+  titleGap: 6,
+  /** Share of a line's width words fill before wrapping. */
+  wrapFill: 0.9,
+} as const;
 
 /** A title and a few lines of text, typed by the owner or fed by a text metric. */
 export const note = defineWidget<{ title: string; body: string }>({
@@ -13,19 +29,25 @@ export const note = defineWidget<{ title: string; body: string }>({
 
   render({ inputs, options, area, theme, u }) {
     const body = asType(inputs.text?.value, "text")?.value || options.body;
-    const size = area.width < 100 ? 11 : 13;
-    const lineHeight = size * 1.4;
-    const titleHeight = options.title ? (size + 3) * 1.25 + 6 : 0;
+    const base = area.width < NOTE.narrowWidth ? NOTE.narrowSize : NOTE.size;
+    const titleHeight = options.title ? (base + NOTE.titleStep) * NOTE.titleLeading + NOTE.titleGap : 0;
+    const linesAt = (size: number) => Math.max(1, Math.floor((area.height - titleHeight) / (size * NOTE.leading)));
+    // Wrapping breaks at spaces, so a line holds a little less than its width in characters.
+    const linesNeeded = (size: number) => Math.ceil(((body ?? "").length * size * bodyAdvance(theme)) / (area.width * NOTE.wrapFill));
+    // A wide body font shrinks the text a little before anything is cut.
+    let size = base;
+    while (size > NOTE.minSize && linesNeeded(size) > linesAt(size)) size -= NOTE.shrinkStep;
+    const lineHeight = size * NOTE.leading;
     // As many whole lines as the tile holds: a note is cut between lines, never through one.
-    const lines = Math.max(1, Math.floor((area.height - titleHeight) / lineHeight));
+    const lines = linesAt(size);
     return (
       <Col style={{ width: "100%", height: "100%" }}>
         {options.title ? (
-          <Text style={{ fontSize: u(fitFont(options.title, area.width, size + 3, displayAdvance(theme) * 0.9)), lineHeight: 1.25, color: theme.ink, fontFamily: theme.display.family, fontWeight: theme.display.weight, marginBottom: u(6) }}>
+          <Text style={{ fontSize: u(fitFont(options.title, area.width, base + NOTE.titleStep, titleAdvance(theme))), lineHeight: NOTE.titleLeading, color: theme.ink, fontFamily: theme.display.family, fontWeight: theme.display.weight, marginBottom: u(NOTE.titleGap) }}>
             {options.title}
           </Text>
         ) : null}
-        <div style={{ display: "flex", height: u(lines * lineHeight), fontSize: u(size), lineHeight: 1.4, color: theme.muted, overflow: "hidden", whiteSpace: "pre-wrap" }}>{body || " "}</div>
+        <div style={{ display: "flex", height: u(lines * lineHeight), fontSize: u(size), lineHeight: NOTE.leading, color: theme.muted, overflow: "hidden", whiteSpace: "pre-wrap" }}>{body || " "}</div>
       </Col>
     );
   },
@@ -50,7 +72,7 @@ function LinkBody({ title, url, subtitle, width, theme, u }: { title: string; ur
       </Row>
       <Fill style={{ alignItems: "flex-end" }}>
         <Col>
-          <Text style={{ fontSize: u(fitFont(title || hostOf(url), width, 16, displayAdvance(theme) * 0.9)), color: theme.ink, fontFamily: theme.display.family, fontWeight: theme.display.weight }}>{title || hostOf(url)}</Text>
+          <Text style={{ fontSize: u(fitFont(title || hostOf(url), width, 16, titleAdvance(theme))), color: theme.ink, fontFamily: theme.display.family, fontWeight: theme.display.weight }}>{title || hostOf(url)}</Text>
           {subtitle ? <Text style={{ fontSize: u(11), color: theme.muted, marginTop: u(3) }}>{subtitle}</Text> : null}
         </Col>
       </Fill>

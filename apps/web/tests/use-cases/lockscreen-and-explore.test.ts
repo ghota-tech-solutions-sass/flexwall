@@ -114,6 +114,20 @@ describe("ListExplore", () => {
     expect(entry.highlights).toEqual([]);
     expect(entry.ranks.revenue).toBeUndefined();
   });
+
+  test("given a listed wall on a Pro theme whose owner isn't Pro, when The Wall lists it, then its card uses the theme its page shows", async () => {
+    // Given
+    const { walls, users, listExplore } = await setup();
+    const owner = aUser().withId("lapsed").withHandle("lapsed").build();
+    await users.save(owner);
+    await walls.save(aWall().withId("w-lapsed").ownedBy(owner).listed().theme("sunset").build());
+
+    // When
+    const [entry] = await listExplore.execute({ sort: "recent" });
+
+    // Then
+    expect(entry.theme).toBe("night");
+  });
 });
 
 describe("ReportWall", () => {

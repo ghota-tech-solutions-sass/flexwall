@@ -3,7 +3,7 @@ import type { FieldValue, FieldValues } from "@flexwall/sdk";
 import type { ConnectionView } from "@/domain/connection";
 import type { DeviceId } from "@/domain/layout";
 import type { SourceRef } from "@/domain/source";
-import type { Binding, Visibility, WallDraft } from "@/domain/wall";
+import { canUseTheme, type Binding, type Visibility, type WallDraft } from "@/domain/wall";
 import {
   addTile,
   applyLayout,
@@ -59,7 +59,9 @@ export interface EditorActions {
 
   setTitle(title: string): void;
   setBio(bio: string): void;
+  /** Puts a theme on the wall, or only on the canvas when the owner's plan doesn't include it. */
   setTheme(themeId: string): void;
+  endThemePreview(): void;
   setPublished(published: boolean): void;
   setListed(listed: boolean): void;
 
@@ -182,7 +184,14 @@ export function createEditorStore(deps: EditorDeps, init: EditorInit): EditorSto
 
       setTitle: (title) => change((d) => ({ ...d, title })),
       setBio: (bio) => change((d) => ({ ...d, bio })),
-      setTheme: (theme) => change((d) => (d.theme === theme ? d : { ...d, theme })),
+      setTheme: (themeId) => {
+        const theme = catalog.theme(themeId);
+        if (!theme) return;
+        if (!canUseTheme(theme, get().entitlements)) return set({ themePreview: theme.id });
+        set({ themePreview: null });
+        change((d) => (d.theme === theme.id ? d : { ...d, theme: theme.id }));
+      },
+      endThemePreview: () => set({ themePreview: null }),
       // Unpublishing also takes the wall off The Wall: a listing needs a public page.
       setPublished: (published) => change((d) => (d.published === published ? d : { ...d, published, listed: published && d.listed })),
       setListed: (listed) => change((d) => (d.listed === listed || (listed && !d.published) ? d : { ...d, listed })),

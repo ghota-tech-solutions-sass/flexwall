@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { EDITOR_TIMINGS } from "@/application/editor/state";
+import { EDITOR_TIMINGS, editorTheme } from "@/application/editor/state";
 import { createEditorStore } from "@/application/editor/store";
 import type { ConnectionView } from "@/domain/connection";
 import { entitlementsOf } from "@/domain/user";
@@ -84,6 +84,64 @@ describe("Editor store: saving", () => {
     // Then
     expect(store.getState().save).toEqual({ kind: "saved" });
     expect(gateway.saved).toEqual([]);
+  });
+});
+
+describe("Editor store: themes", () => {
+  test("given a free owner, when they click a Pro theme, then the canvas tries it on but the wall keeps its theme and nothing is saved", async () => {
+    // Given
+    const { store, gateway, scheduler, actions } = anEditor({ wall: aWall().theme("paper") });
+
+    // When
+    actions.setTheme("sunset");
+    await scheduler.advance(EDITOR_TIMINGS.autosaveMs);
+
+    // Then
+    const state = store.getState();
+    expect(editorTheme(state, catalog).id).toBe("sunset");
+    expect(state.draft.theme).toBe("paper");
+    expect(gateway.saved).toEqual([]);
+  });
+
+  test("given a Pro theme being tried on, when the owner picks a free theme or stops, then the canvas shows the wall's theme again", () => {
+    // Given
+    const { store, actions } = anEditor({ wall: aWall().theme("paper") });
+    actions.setTheme("sunset");
+
+    // When
+    actions.endThemePreview();
+    const afterStop = editorTheme(store.getState(), catalog).id;
+    actions.setTheme("sunset");
+    actions.setTheme("board");
+
+    // Then
+    expect(afterStop).toBe("paper");
+    expect(store.getState().themePreview).toBeNull();
+    expect(editorTheme(store.getState(), catalog).id).toBe("board");
+  });
+
+  test("given a wall kept on a Pro theme after Pro ended, when the editor opens, then it draws what the public page shows", () => {
+    // Given
+    const { store } = anEditor({ wall: aWall().theme("sunset") });
+
+    // When
+    const theme = editorTheme(store.getState(), catalog);
+
+    // Then
+    expect(theme.id).toBe(catalog.defaultTheme().id);
+  });
+
+  test("given a Pro owner, when they pick a Pro theme, then the wall is saved with it", async () => {
+    // Given
+    const { store, gateway, scheduler, actions } = anEditor({ pro: true });
+
+    // When
+    actions.setTheme("sunset");
+    await scheduler.advance(EDITOR_TIMINGS.autosaveMs);
+
+    // Then
+    expect(store.getState().themePreview).toBeNull();
+    expect(gateway.saved.map((d) => d.theme)).toEqual(["sunset"]);
   });
 });
 

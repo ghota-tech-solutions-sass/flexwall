@@ -105,6 +105,43 @@ describe("SaveWall", () => {
     await expect(attempt).rejects.toMatchObject({ code: "plan_limit" });
   });
 
+  test("given a free owner, when they save a Pro theme, then it's refused and they're pointed to Pro", async () => {
+    // Given
+    const { saveWall, walls } = await setup();
+    const draft = aWall().theme("sunset").draft();
+
+    // When
+    const attempt = saveWall.execute({ userId: "u1", draft });
+
+    // Then
+    await expect(attempt).rejects.toMatchObject({ code: "plan_limit", message: "Sunset is a Pro theme. Go Pro to use it." });
+    expect((await walls.byOwner("u1"))!.theme).toBe("night");
+  });
+
+  test("given a Pro theme kept from a lapsed plan, when the owner saves other changes, then the theme stays for when Pro is back", async () => {
+    // Given
+    const owner = aUser().withId("u1").build();
+    const { saveWall, walls } = await setup(owner);
+    await walls.save(aWall().ownedBy(owner).theme("sunset").build());
+
+    // When
+    await saveWall.execute({ userId: "u1", draft: aWall().theme("sunset").draft() });
+
+    // Then
+    expect((await walls.byOwner("u1"))!.theme).toBe("sunset");
+  });
+
+  test("given a Pro owner, when they pick a Pro theme, then it's saved", async () => {
+    // Given
+    const { saveWall, walls } = await setup(aUser().withId("u1").pro().build());
+
+    // When
+    await saveWall.execute({ userId: "u1", draft: aWall().theme("sunset").draft() });
+
+    // Then
+    expect((await walls.byOwner("u1"))!.theme).toBe("sunset");
+  });
+
   test("given a Pro owner, when they save the same tiles, then the limit doesn't apply", async () => {
     // Given
     const { saveWall, walls } = await setup(aUser().withId("u1").pro().build());

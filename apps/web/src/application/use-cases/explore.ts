@@ -3,7 +3,8 @@ import { formatValue, type Leaderboard } from "@flexwall/sdk";
 import type { Catalog } from "@/domain/catalog";
 import { DomainError } from "@/domain/errors";
 import { REPORT_REASON_MAX, REPORT_REASON_MIN, reportContact } from "@/domain/report";
-import { publicTiles, type Wall } from "@/domain/wall";
+import { entitlementsOf } from "@/domain/user";
+import { effectiveTheme, publicTiles, type Wall } from "@/domain/wall";
 import type { Clock, Mailer, UserRepository, WallRepository } from "../ports";
 import { wallNumbers } from "../wall-numbers";
 import type { ResolveWall } from "./resolve-wall";
@@ -14,6 +15,7 @@ export interface ExploreEntry {
   handle: string;
   title: string;
   bio: string;
+  /** The theme the wall is drawn with, as on its page. */
   theme: string;
   /** Up to three verified numbers, formatted, from cached values only. */
   highlights: { label: string; value: string; connector: string }[];
@@ -63,7 +65,7 @@ export class ListExplore {
       handle: wall.handle,
       title: wall.title,
       bio: wall.bio,
-      theme: wall.theme,
+      theme: effectiveTheme(wall, this.deps.catalog, entitlementsOf(owner, this.deps.clock.now())).id,
       // Only numbers read from the owner's own accounts earn a spot here.
       highlights: numbers
         .filter((n) => n.verified)

@@ -154,6 +154,10 @@
 .ed-panel textarea { min-height: 72px; }
 .ed-panel .hint, .ed-note { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
 .ed-note a { color: var(--ink); }
+.ed-trying { display: grid; gap: 10px; padding: 12px; border-radius: 10px; background: var(--surface-2); font-size: 13px; line-height: 1.45; color: var(--muted); }
+.ed-trying p { margin: 0; }
+.ed-trying strong { color: var(--ink); font-weight: 600; }
+.ed-trying-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .ed-panel .error { margin: 0; color: var(--danger); font-size: 13px; }
 
 /* Toggles from plugins (FieldInput "check") read as switches, label first. */

@@ -1,8 +1,10 @@
+import type { Theme } from "@flexwall/sdk";
 import type { TileState } from "@/application/use-cases/resolve-wall";
+import type { Catalog } from "@/domain/catalog";
 import type { ConnectionView } from "@/domain/connection";
 import type { Handle } from "@/domain/handle";
 import type { Entitlements } from "@/domain/user";
-import type { Tile, Wall, WallDraft } from "@/domain/wall";
+import { effectiveTheme, type Tile, type Wall, type WallDraft } from "@/domain/wall";
 
 /** What the editor shows the wall on. */
 export const EDITOR_SURFACES = ["wall", "lockscreen"] as const;
@@ -38,6 +40,8 @@ export interface EditorState {
   connectRequest: { tileId: string; count: number } | null;
   lockscreenPath: string;
   lockscreenError: string | null;
+  /** A theme the owner can't use yet, drawn on the canvas to try it on. Never saved. */
+  themePreview: string | null;
 }
 
 /** What the page hands the editor on load. */
@@ -53,7 +57,14 @@ export function initialState(init: EditorInit): EditorState {
     removed: null,
     connectRequest: null,
     lockscreenError: null,
+    themePreview: null,
   };
+}
+
+/** The theme the editor draws: one being tried on, or else exactly the one the public page shows. */
+export function editorTheme(state: Pick<EditorState, "draft" | "entitlements" | "themePreview">, catalog: Catalog): Theme {
+  const preview = state.themePreview ? catalog.theme(state.themePreview) : null;
+  return preview ?? effectiveTheme(state.draft, catalog, state.entitlements);
 }
 
 /** The part of a wall the owner edits. */

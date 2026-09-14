@@ -1,4 +1,4 @@
-import { daysBetween, defineWidget, displayAdvance, field } from "@flexwall/sdk";
+import { bodyAdvance, daysBetween, defineWidget, displayAdvance, field } from "@flexwall/sdk";
 import { Bar, Col, Fill, Row, Text, fitFont } from "@flexwall/sdk/ui";
 
 /** Time widgets take no input: they read the owner's date from `today`. */
@@ -20,7 +20,7 @@ export const countdown = defineWidget<{ date: string; label: string }>({
     const size = fitFont(value, area.width, area.height * 0.58, displayAdvance(theme));
     const caption = d < 0 && options.label ? `${words} ${options.label}` : words;
     // The caption shrinks before it gets cut: "days until launch" has to fit a one-cell tile.
-    const captionSize = fitFont(caption, area.width, area.width < 90 ? 10 : 12, 0.52);
+    const captionSize = fitFont(caption, area.width, area.width < 90 ? 10 : 12, bodyAdvance(theme));
     return (
       <Col style={{ width: "100%", height: "100%", justifyContent: "space-between" }}>
         <Fill style={{ alignItems: "center" }}>
