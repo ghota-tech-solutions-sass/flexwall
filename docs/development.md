@@ -24,7 +24,7 @@ To run the persistence tests against Firestore instead of memory:
 ```bash
 docker run -d --name fw-firestore -p 8080:8080 gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators \
   gcloud beta emulators firestore start --host-port=0.0.0.0:8080
-FIRESTORE_EMULATOR_HOST=localhost:8080 GOOGLE_PROJECT_ID=demo-flexwall bun --cwd apps/web test tests/infrastructure
+FIRESTORE_EMULATOR_HOST=localhost:8080 GOOGLE_PROJECT_ID=demo-flexwall bun test apps/web/tests/infrastructure
 ```
 
 ## The app, in layers
