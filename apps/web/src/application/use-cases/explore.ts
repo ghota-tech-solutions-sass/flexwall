@@ -4,6 +4,7 @@ import type { Catalog } from "@/domain/catalog";
 import { DomainError } from "@/domain/errors";
 import { publicTiles, type Wall } from "@/domain/wall";
 import type { Clock, Mailer, UserRepository, WallRepository } from "../ports";
+import { wallNumbers } from "../wall-numbers";
 import type { ResolveWall } from "./resolve-wall";
 
 export type ExploreSort = "recent" | Leaderboard;
@@ -47,15 +48,7 @@ export class ListExplore {
     const tiles = publicTiles(wall);
     const { states } = await this.deps.resolve.execute({ tiles, owner, surface: "page", cacheOnly: true });
 
-    const numbers = tiles.flatMap((tile) => {
-      const state = states[tile.id];
-      if (state?.status !== "ready") return [];
-      return Object.entries(tile.inputs).flatMap(([key, binding]) => {
-        const input = state.inputs[key];
-        if (binding.kind !== "metric" || !input || input.value.type !== "number") return [];
-        return [{ tile, binding, value: input.value, verified: Boolean(input.source?.verified) }];
-      });
-    });
+    const numbers = wallNumbers(tiles, states, this.deps.catalog);
 
     const ranks: ExploreEntry["ranks"] = {};
     for (const n of numbers) {
@@ -75,7 +68,7 @@ export class ListExplore {
         .filter((n) => n.verified)
         .slice(0, 3)
         .map((n) => ({
-          label: String(n.tile.options.label || this.deps.catalog.metric(n.binding.connector, n.binding.metric)?.name || ""),
+          label: n.label,
           value: formatValue(n.value),
           connector: this.deps.catalog.connector(n.binding.connector)?.name ?? n.binding.connector,
         })),

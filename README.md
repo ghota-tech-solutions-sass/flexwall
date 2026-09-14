@@ -65,6 +65,7 @@ know about each other, which is why any new connector works in every widget.
 - [Plugins](docs/plugins/README.md): [connectors](docs/plugins/connectors.md), [widgets](docs/plugins/widgets.md), [themes](docs/plugins/themes.md)
 - [Self-hosting](docs/self-hosting.md)
 - [Deploying flexwall.lol](docs/deployment.md)
+- [Search and sharing](docs/seo.md)
 - [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Code of conduct](CODE_OF_CONDUCT.md)
 
 ## License

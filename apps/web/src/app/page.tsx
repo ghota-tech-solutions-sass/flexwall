@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { TopBar, Footer } from "@/components/site/Chrome";
 import { ClaimForm } from "@/components/site/ClaimForm";
 import { WallGrids, wallStyle } from "@/components/wall/WallView";
@@ -6,7 +8,13 @@ import { container } from "@/composition";
 import { todayIn } from "@/domain/time";
 import { demoWall, sampleStates } from "@/rendering/samples";
 import { sessionUserId } from "@/presentation/http";
+import { pageMetadata } from "@/presentation/seo/metadata";
+import { siteOrigin } from "@/presentation/seo/origin";
+import { integrationPath } from "@/presentation/seo/integrations";
+import { organizationLd, SITE_DESCRIPTION, websiteLd } from "@/presentation/seo/structured-data";
 import { SOURCE_URL } from "@/site";
+
+export const metadata: Metadata = pageMetadata({ title: "Flexwall: your numbers, live, on one page", absoluteTitle: true, description: SITE_DESCRIPTION, path: "/" });
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +33,7 @@ export default async function Home() {
 
   return (
     <>
+      <JsonLd data={[organizationLd(siteOrigin()), websiteLd(siteOrigin())]} />
       <div className="page">
         <TopBar signedIn={signedIn} />
 
@@ -82,7 +91,9 @@ export default async function Home() {
           <ul className="connector-list">
             {connectors.map((conn) => (
               <li key={conn.id}>
-                <h3>{conn.name}</h3>
+                <h3>
+                  <Link href={integrationPath(conn.id)}>{conn.name}</Link>
+                </h3>
                 <p>{conn.description}</p>
                 <span className="tags">
                   {conn.verified ? <span className="badge quiet">Verified</span> : null}
@@ -91,6 +102,9 @@ export default async function Home() {
               </li>
             ))}
           </ul>
+          <p className="more">
+            <Link href="/integrations">Every integration, and what it measures</Link>
+          </p>
         </section>
 
         <section className="section">

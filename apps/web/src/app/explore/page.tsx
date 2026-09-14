@@ -5,12 +5,16 @@ import { Footer, TopBar } from "@/components/site/Chrome";
 import { container } from "@/composition";
 import { formatNumber } from "@flexwall/sdk";
 import { sessionUserId } from "@/presentation/http";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { pageMetadata } from "@/presentation/seo/metadata";
+import { siteOrigin } from "@/presentation/seo/origin";
+import { breadcrumbLd, itemListLd } from "@/presentation/seo/structured-data";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "The Wall",
   description: "Builders who show their real numbers. Ranked by verified revenue, streaks and stars.",
-  alternates: { canonical: "/explore" },
-};
+  path: "/explore",
+});
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +32,19 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="page">
+      <JsonLd
+        data={[
+          breadcrumbLd(siteOrigin(), [
+            { name: "Flexwall", path: "/" },
+            { name: "The Wall", path: "/explore" },
+          ]),
+          itemListLd(
+            siteOrigin(),
+            SORTS.find((s) => s.id === current)!.label,
+            entries.map((e) => ({ name: e.title || `@${e.handle}`, path: `/@${e.handle}` }))
+          ),
+        ]}
+      />
       <TopBar signedIn={Boolean(await sessionUserId())} />
       <main>
         <div className="page-head">

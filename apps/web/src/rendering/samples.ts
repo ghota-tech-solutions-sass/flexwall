@@ -1,7 +1,8 @@
-import type { InputValue } from "@flexwall/sdk";
+import { defaultsFor, type ConnectorDef, type InputValue, type ValueType } from "@flexwall/sdk";
 import type { TileState } from "@/application/use-cases/resolve-wall";
 import type { Catalog } from "@/domain/catalog";
 import type { Handle } from "@/domain/handle";
+import { firstFreeSpot, WALL_COLUMNS, type Box } from "@/domain/layout";
 import type { Tile, Wall } from "@/domain/wall";
 
 /**
@@ -80,3 +81,41 @@ export function demoWall(today: string): Wall {
     updatedAt: 0,
   };
 }
+
+/** The widget and size an integration page uses to show each kind of value. */
+const SHOWCASE: Record<ValueType, { widget: string; w: number; h: number }> = {
+  number: { widget: "stat", w: 1, h: 1 },
+  series: { widget: "sparkline", w: 2, h: 1 },
+  calendar: { widget: "heatmap", w: 4, h: 1 },
+  text: { widget: "note", w: 2, h: 1 },
+};
+
+/**
+ * Example tiles for one connector: each of its metrics (up to `limit`) on the
+ * widget that suits its kind of value, packed into the wall grid. Shown with
+ * `sampleStates`, so integration pages and their cards never fetch anything.
+ */
+export function connectorShowcase(connector: ConnectorDef, catalog: Catalog, today: string, limit = 6): Tile[] {
+  const placed: Box[] = [];
+  const tiles: Tile[] = [];
+  connector.metrics.slice(0, limit).forEach((def, i) => {
+    const shape = SHOWCASE[def.type];
+    const widget = catalog.widget(shape.widget);
+    const input = widget?.inputs.find((x) => x.accepts.includes(def.type));
+    if (!widget || !input) return;
+    // The first number gets room to breathe.
+    const w = def.type === "number" && i === 0 ? 2 : shape.w;
+    const layout = firstFreeSpot(placed, w, shape.h, WALL_COLUMNS);
+    placed.push(layout);
+    tiles.push({
+      id: `${connector.id}-${def.id}`,
+      widget: widget.id,
+      inputs: { [input.key]: { ...metric(connector.id, def.id, {}, connector.auth ? "demo" : null), params: defaultsFor(def.params ?? [], today) } },
+      options: { ...defaultsFor(widget.options, today), ...(def.defaults ?? {}) },
+      visibility: "public",
+      layout,
+    });
+  });
+  return tiles;
+}
+

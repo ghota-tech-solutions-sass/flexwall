@@ -38,6 +38,7 @@ export function Footer() {
       <nav aria-label="Footer">
         <Link href="/explore">The Wall</Link>
         <Link href="/pricing">Pricing</Link>
+        <Link href="/integrations">Integrations</Link>
         {SOURCE_URL ? <a href={`${SOURCE_URL}/tree/main/docs`}>Docs</a> : null}
         <Link href="/terms">Terms</Link>
         <Link href="/privacy">Privacy</Link>

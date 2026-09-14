@@ -131,3 +131,13 @@ jobs:
             test "$code" = "200"
           done
           echo "### Deployed ${{ github.sha }} to $URL" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # Tell Bing and the other IndexNow engines that pages changed. A refusal
+      # doesn't undo a good deploy: the step reports, it doesn't block.
+      - name: Submit sitemap to IndexNow
+        continue-on-error: true
+        run: bun scripts/seo/indexnow.ts ${{ env.APP_URL }}

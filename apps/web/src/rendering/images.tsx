@@ -72,10 +72,13 @@ function Grid({ placed, states, theme, catalog, today, scale, left, top, surface
   );
 }
 
-async function png(element: React.ReactElement, width: number, height: number): Promise<Response> {
+/** Marketing cards show sample numbers only: anyone may cache them. */
+export const PUBLIC_IMAGE_HEADERS = { "Cache-Control": "public, max-age=3600, s-maxage=86400" };
+
+async function png(element: React.ReactElement, width: number, height: number, headers: Record<string, string> = IMAGE_HEADERS): Promise<Response> {
   // Buffered so a layout error becomes a 500 here, not a truncated image on a phone.
   const body = await new ImageResponse(element, { width, height, fonts: FONTS }).arrayBuffer();
-  return new Response(body, { headers: { ...IMAGE_HEADERS, "Content-Type": "image/png" } });
+  return new Response(body, { headers: { ...headers, "Content-Type": "image/png" } });
 }
 
 /**
@@ -106,29 +109,47 @@ export function lockscreenImage(input: { device: DeviceId; placed: Placed[]; sta
   );
 }
 
-/** The share card: handle and title on the left, the first public tiles on a 2-row grid on the right. */
-export function shareCardImage(input: { handle: string; title: string; bio: string; placed: Placed[]; states: Record<string, TileState>; theme: Theme; catalog: Catalog; today: string }) {
-  const width = 1200;
-  const height = 630;
+interface CardText {
+  /** Small line above the title: a handle, or what the page is. */
+  kicker: string;
+  title: string;
+  body: string;
+}
+
+const CARD = { width: 1200, height: 630, gridLeft: 470 };
+
+function card(text: CardText, input: { placed: Placed[]; states: Record<string, TileState>; theme: Theme; catalog: Catalog; today: string }, headers?: Record<string, string>) {
+  const { width, height, gridLeft } = CARD;
   const theme = input.theme;
-  const gridLeft = 470;
   const scale = (width - gridLeft - 56) / (4 * 100 + 3 * GAP_UNITS);
   const rows = Math.max(1, input.placed.reduce((h, p) => Math.max(h, p.box.y + p.box.h), 0));
   const gridHeight = (rows * 100 + (rows - 1) * GAP_UNITS) * scale;
+  const titleSize = text.title.length > 28 ? 44 : 54;
 
   return png(
     <div style={{ display: "flex", width: "100%", height: "100%", position: "relative", background: theme.page, color: theme.ink, fontFamily: theme.body.family }}>
       <div style={{ position: "absolute", left: 64, top: 64, width: 360, bottom: 64, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", fontSize: 28, color: theme.muted }}>{`@${input.handle}`}</div>
-          <div style={{ display: "flex", fontSize: 54, lineHeight: 1.05, marginTop: 14, fontFamily: theme.display.family, fontWeight: theme.display.weight }}>{input.title}</div>
-          {input.bio ? <div style={{ display: "flex", fontSize: 24, lineHeight: 1.35, marginTop: 18, color: theme.muted }}>{input.bio.slice(0, 120)}</div> : null}
+          <div style={{ display: "flex", fontSize: 28, color: theme.muted }}>{text.kicker}</div>
+          <div style={{ display: "flex", fontSize: titleSize, lineHeight: 1.05, marginTop: 14, fontFamily: theme.display.family, fontWeight: theme.display.weight }}>{text.title}</div>
+          {text.body ? <div style={{ display: "flex", fontSize: 24, lineHeight: 1.35, marginTop: 18, color: theme.muted }}>{text.body.slice(0, 120)}</div> : null}
         </div>
         <div style={{ display: "flex", fontSize: 22, color: theme.muted }}>flexwall.lol</div>
       </div>
       <Grid placed={input.placed} states={input.states} theme={theme} catalog={input.catalog} today={input.today} scale={scale} left={gridLeft} top={(height - gridHeight) / 2} surface="card" />
     </div>,
     width,
-    height
+    height,
+    headers
   );
+}
+
+/** The share card: handle and title on the left, the first public tiles on a 2-row grid on the right. */
+export function shareCardImage(input: { handle: string; title: string; bio: string; placed: Placed[]; states: Record<string, TileState>; theme: Theme; catalog: Catalog; today: string }) {
+  return card({ kicker: `@${input.handle}`, title: input.title, body: input.bio }, input);
+}
+
+/** A card for a site page (home, pricing, an integration): what the page is on the left, sample tiles on the right. */
+export function pageCardImage(input: { kicker: string; title: string; body: string; placed: Placed[]; states: Record<string, TileState>; theme: Theme; catalog: Catalog; today: string }) {
+  return card({ kicker: input.kicker, title: input.title, body: input.body }, input, PUBLIC_IMAGE_HEADERS);
 }

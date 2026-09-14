@@ -6,8 +6,16 @@ import { FREE_TILE_LIMIT } from "@/domain/user";
 import { container } from "@/composition";
 import { REFERRAL_DISCOUNT_PERCENT } from "@/domain/referral";
 import { sessionUserId } from "@/presentation/http";
+import { pageMetadata } from "@/presentation/seo/metadata";
+import { siteOrigin } from "@/presentation/seo/origin";
+import { PLAN_PRICES_USD, softwareApplicationLd } from "@/presentation/seo/structured-data";
+import { JsonLd } from "@/components/seo/JsonLd";
 
-export const metadata: Metadata = { title: "Pricing", alternates: { canonical: "/pricing" } };
+export const metadata: Metadata = pageMetadata({
+  title: "Pricing",
+  description: `Every public wall is free. Pro is $${PLAN_PRICES_USD.monthly} a month or $${PLAN_PRICES_USD.yearly} a year for verified revenue, history and a clean lock screen. Lifetime is $${PLAN_PRICES_USD.lifetime} once.`,
+  path: "/pricing",
+});
 
 export default async function PricingPage() {
   const userId = await sessionUserId();
@@ -15,6 +23,7 @@ export default async function PricingPage() {
   const invitedBy = userId ? ((await container().getReferralProgram.execute({ userId }))?.invitedBy ?? null) : null;
   return (
     <div className="page">
+      <JsonLd data={softwareApplicationLd(siteOrigin())} />
       <TopBar signedIn={signedIn} />
       <main>
         <div className="page-head">
