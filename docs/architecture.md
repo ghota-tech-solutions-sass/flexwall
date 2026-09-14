@@ -63,7 +63,7 @@ defineConnector({
 })
 ```
 
-Rules a connector must follow (checked in review, see `plugins.md`):
+Rules a connector must follow (checked in review, see [plugins/connectors.md](plugins/connectors.md)):
 
 - **All network goes through `ctx.fetch`**, the host's guarded fetch: https
   only, private and metadata addresses refused at connect time, no redirects,
@@ -96,16 +96,16 @@ lock screen all call the same `render`. Two constraints make that possible:
 
 - **Satori-safe markup.** Images are drawn by Satori, which understands
   flexbox and absolute positioning, not CSS grid, and requires `display: flex`
-  on any element with several children. The SDK's `Row`, `Col`, `Text` and
-  `Svg` primitives take care of it. No hooks, no event handlers, no classes:
+  on any element with several children. The SDK's `Row`, `Col`, `Fill` and
+  `Text` primitives take care of it. No hooks, no event handlers, no classes:
   inline styles only.
 - **Sizes in units, never pixels.** `u(n)` is n hundredths of a grid cell. On an
   image it returns pixels; on the page it returns a CSS length tied to the
   tile's width through container query units. A widget written with `u()`
   scales from a 1×1 tile on a phone to a 4×2 tile on a share card.
 
-A widget may export `renderWeb` for an interactive or richer page version
-(tooltips, links). It must still be a pure function of its props.
+A widget may export `renderPage` for a richer version on the public page
+(real links, titles). It must still be a pure function of its props.
 
 ## Walls, layouts, surfaces
 
@@ -149,8 +149,9 @@ One grid model, several adapters:
    (single flight), wait at most 4 s, fall back to the last known values.
 4. Gate by tier: a `pro` connector on a free owner's public wall resolves to a
    "needs Pro" placeholder.
-5. `history` bindings read daily snapshots, written by a scheduled job for
-   every metric used by a Pro wall.
+5. `history` bindings read daily snapshots. Every number resolved for a page,
+   card or lock screen records the day's reading (at most once an hour), so
+   history builds itself from the renders a wall already gets.
 
 Caches: process memory, then the store (`values`), so a cold Cloud Run
 instance doesn't refetch. Only renders that matter (page, card, lock screen)
@@ -162,20 +163,21 @@ write; editor previews stay in memory.
   cookie. A handle is claimed once, atomically, against a reserved-words list.
 - **Connections** belong to the user, not a wall, and can feed any wall they own.
 - **Plans:** `free`, `pro` (Stripe subscription, monthly or yearly), `lifetime`
-  (one-time). `entitlements(user)` is the only place that reads a plan; the
-  webhook keeps `user.plan` in sync with subscription events.
+  (one-time). `entitlementsOf(user)` is the only place that turns a plan into
+  permissions; the plan is derived from the stored subscription and lifetime
+  flag, which the Stripe webhook keeps in sync.
 
-## Data (Firestore)
+## Data (Firestore, collections prefixed `fw_`)
 
 | Collection | Doc | Holds |
 |---|---|---|
-| `users` | uid | email, handle, plan, Stripe customer and subscription state |
+| `users` | uid | email, handle, time zone, Stripe customer, subscription, lifetime flag |
 | `handles` | handle | uid (uniqueness) |
-| `walls` | id | owner, handle, theme, tiles, lock screen placements, image nonce |
+| `walls` | id | owner, handle, theme, tiles, lock screen placements, lock link nonce |
 | `connections` | id | owner, connector, label, public details, sealed secret |
 | `values` | cache key | last values fetched and when |
 | `snapshots` | series key | daily points for history |
-| `payments` | Stripe event id | idempotency for webhooks |
+| `events` | hashed event id | idempotency for webhooks |
 
 ## Security model
 
