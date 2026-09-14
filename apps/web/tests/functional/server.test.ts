@@ -112,7 +112,7 @@ describe("From sign-in to a shared wall", () => {
 
   test("given a session, when a handle is claimed, then the editor opens on a starter wall", async () => {
     // Given / When
-    const claim = await http("/api/me/handle", { method: "POST", json: { handle: "ada_builds" } });
+    const claim = await http("/api/me/handle", { method: "POST", json: { handle: "Ada Builds" } });
     const editor = await http("/edit");
 
     // Then
@@ -138,13 +138,16 @@ describe("From sign-in to a shared wall", () => {
       json: { title: "Ada Builds", bio: "Shipping in public", theme: "night", tiles: wall.tiles, lockscreen: wall.lockscreen, published: true, listed: true },
     });
     cookie = "";
-    const page = await http("/@ada_builds");
-    const card = await http("/u/ada_builds/opengraph-image");
+    const page = await http("/@ada-builds");
+    const loose = await http("/@Ada_Builds");
+    const card = await http("/u/ada-builds/opengraph-image");
 
     // Then
     expect(saved.status).toBe(200);
     expect(page.status).toBe(200);
     expect(await page.text()).toContain("Ada Builds");
+    expect(loose.status).toBe(308);
+    expect(loose.headers.get("location")).toEndWith("/@ada-builds");
     expect(card.headers.get("content-type")).toContain("image/png");
   });
 

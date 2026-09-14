@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { WallGrids, wallStyle } from "@/components/wall/WallView";
 import { container } from "@/composition";
 import { DomainError } from "@/domain/errors";
@@ -34,6 +34,8 @@ export default async function PublicWallPage({ params }: Props) {
   const { handle } = await params;
   const c = container();
   const { wall, owner, entitlements, preview } = await load(handle);
+  // /@Ada_Builds finds @ada-builds: send it to the one address that gets shared and indexed.
+  if (decodeURIComponent(handle) !== wall.handle) permanentRedirect(`/@${wall.handle}`);
   const { states, today } = await c.resolveWall.execute({ tiles: wall.tiles, owner, surface: "page" });
   const theme = effectiveTheme(wall, c.catalog, entitlements);
 

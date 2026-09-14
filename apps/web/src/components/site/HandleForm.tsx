@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { HANDLE_MAX_LENGTH, Handle } from "@/domain/handle";
 
 export function HandleForm() {
   const router = useRouter();
@@ -11,7 +12,7 @@ export function HandleForm() {
 
   useEffect(() => {
     try {
-      setHandle(sessionStorage.getItem("fw:wanted-handle") ?? "");
+      setHandle(Handle.slugify(sessionStorage.getItem("fw:wanted-handle") ?? ""));
     } catch {
       /* nothing remembered */
     }
@@ -34,9 +35,19 @@ export function HandleForm() {
         <span>Handle</span>
         <div className="claim" style={{ maxWidth: "none" }}>
           <span>@</span>
-          <input value={handle} onChange={(e) => setHandle(e.target.value.toLowerCase())} placeholder="yourname" autoCapitalize="off" autoCorrect="off" spellCheck={false} maxLength={24} required />
+          <input
+            value={handle}
+            onChange={(e) => setHandle(Handle.slugify(e.target.value))}
+            onBlur={() => setHandle((h) => h.replace(/-+$/, ""))}
+            placeholder="your-name"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            maxLength={HANDLE_MAX_LENGTH}
+            required
+          />
         </div>
-        <small>2 to 24 letters, digits or underscores.</small>
+        <small>Letters, digits and hyphens. Spaces become hyphens as you type.</small>
       </label>
       <button type="submit" className="btn btn-signal" disabled={busy}>
         {busy ? "Claiming…" : "Claim and build my wall"}
