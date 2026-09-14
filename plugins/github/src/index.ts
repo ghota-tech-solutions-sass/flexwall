@@ -78,11 +78,11 @@ const githubConnector = defineConnector({
   verified: false,
   ttl: 3600,
   metrics: [
-    { id: "streak", name: "Commit streak", type: "number", unit: "count", params: [user], defaults: { label: "day streak" } },
+    { id: "streak", name: "Commit streak", type: "number", unit: "count", params: [user], defaults: { label: "day streak" }, leaderboard: "streak" },
     { id: "contributions", name: "Contributions, last 12 months", type: "number", unit: "count", params: [user], defaults: { label: "contributions this year" } },
     { id: "activity", name: "Contribution graph", type: "calendar", params: [user], defaults: { label: "Contributions" } },
     { id: "followers", name: "Followers", type: "number", unit: "count", params: [user], defaults: { label: "GitHub followers" } },
-    { id: "stars", name: "Repository stars", type: "number", unit: "count", params: [repo], defaults: { label: "stars" } },
+    { id: "stars", name: "Repository stars", type: "number", unit: "count", params: [repo], defaults: { label: "stars" }, leaderboard: "stars" },
   ],
 
   // One calendar page answers streak, contributions and activity for a user.

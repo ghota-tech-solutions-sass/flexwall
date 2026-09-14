@@ -176,7 +176,7 @@ const stripeConnector = defineConnector({
     ],
   },
   metrics: [
-    { id: "mrr", name: "MRR", type: "number", unit: "currency", defaults: { label: "MRR" } },
+    { id: "mrr", name: "MRR", type: "number", unit: "currency", defaults: { label: "MRR" }, leaderboard: "revenue" },
     { id: "revenue30d", name: "Revenue, last 30 days", type: "number", unit: "currency", defaults: { label: "Revenue, 30 days" } },
     { id: "revenue-daily", name: "Daily revenue, last 30 days", type: "series", unit: "currency", defaults: { label: "Revenue, 30 days" } },
     { id: "subscribers", name: "Active subscriptions", type: "number", unit: "count", defaults: { label: "paying customers" } },
