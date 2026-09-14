@@ -20,15 +20,15 @@ describe("ClaimHandle", () => {
     await users.save(user);
 
     // When
-    const wall = await claimHandle.execute({ userId: "u1", handle: "@Ada_Builds" });
+    const wall = await claimHandle.execute({ userId: "u1", handle: "@Ada Builds" });
 
     // Then
-    expect(wall.handle).toBe("ada_builds" as never);
+    expect(wall.handle).toBe("ada-builds" as never);
     expect(wall.ownerId).toBe("u1");
     expect(wall.published).toBe(false);
     expect(wall.tiles.length).toBeGreaterThan(0);
-    expect((await users.byId("u1"))!.handle).toBe("ada_builds" as never);
-    expect(await handles.ownerOf("ada_builds" as never)).toBe("u1");
+    expect((await users.byId("u1"))!.handle).toBe("ada-builds" as never);
+    expect(await handles.ownerOf("ada-builds" as never)).toBe("u1");
     expect(await walls.byOwner("u1")).not.toBeNull();
   });
 
@@ -53,7 +53,7 @@ describe("ClaimHandle", () => {
 
     // When
     const reserved = claimHandle.execute({ userId: "u1", handle: "admin" }).catch((e: DomainError) => e.code);
-    const malformed = claimHandle.execute({ userId: "u1", handle: "a b" }).catch((e: DomainError) => e.code);
+    const malformed = claimHandle.execute({ userId: "u1", handle: "!!" }).catch((e: DomainError) => e.code);
 
     // Then
     expect(await reserved).toBe("handle_reserved");

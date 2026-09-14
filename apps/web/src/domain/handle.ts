@@ -1,12 +1,15 @@
 import { DomainError } from "./errors";
 
 /**
- * The name in `flexwall.lol/@handle`. Lowercase, 2 to 24 of a–z, 0–9 and
- * underscore, not a word the site needs for itself or that impersonates it.
+ * The name in `flexwall.lol/@handle`: a URL slug. Lowercase a–z and 0–9 in
+ * words joined by single hyphens, 2 to 30 characters, not a word the site
+ * needs for itself or that impersonates it.
  */
 export type Handle = string & { readonly __brand: "Handle" };
 
-const PATTERN = /^[a-z0-9_]{2,24}$/;
+export const HANDLE_MAX_LENGTH = 30;
+
+const PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /** Words that would read as official, collide with routes, or invite impersonation. */
 const RESERVED = new Set([
@@ -17,10 +20,25 @@ const RESERVED = new Set([
 ]);
 
 export const Handle = {
+  /**
+   * What a handle field shows while someone types: "Ghota Tech_Solutions"
+   * becomes "ghota-tech-solutions". Accents are dropped, anything else becomes a
+   * hyphen. A trailing hyphen is kept so the next word can be typed.
+   */
+  slugify(raw: string): string {
+    return raw
+      .normalize("NFKD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+/, "")
+      .slice(0, HANDLE_MAX_LENGTH);
+  },
+
   parse(raw: string): Handle {
-    const value = raw.trim().replace(/^@/, "").toLowerCase();
-    if (!PATTERN.test(value)) {
-      throw new DomainError("invalid_handle", "Handles are 2 to 24 characters: letters, digits and underscores.");
+    const value = Handle.slugify(raw).replace(/-+$/, "");
+    if (value.length < 2 || !PATTERN.test(value)) {
+      throw new DomainError("invalid_handle", `Handles are 2 to ${HANDLE_MAX_LENGTH} characters: letters, digits and hyphens.`);
     }
     if (RESERVED.has(value)) throw new DomainError("handle_reserved", `@${value} is reserved.`);
     return value as Handle;

@@ -7,15 +7,55 @@ import { aTile, aUser, NOW } from "../builders";
 import { testCatalog } from "../fakes/test-plugin";
 
 describe("Handle", () => {
-  test("given mixed case and an @, when parsed, then it's normalized", () => {
+  test("given mixed case, an @, spaces and underscores, when parsed, then it becomes a hyphenated slug", () => {
     // Given
-    const raw = " @Ada_Lovelace ";
+    const raw = " @Ada_Lovelace  Builds ";
 
     // When
     const handle = Handle.parse(raw);
 
     // Then
-    expect(handle).toBe("ada_lovelace" as Handle);
+    expect(handle).toBe("ada-lovelace-builds" as Handle);
+  });
+
+  test("given accents and punctuation, when slugified, then accents are dropped and the rest joins with single hyphens", () => {
+    // Given
+    const raw = "Élodie & Co.!!";
+
+    // When
+    const slug = Handle.slugify(raw);
+
+    // Then
+    expect(slug).toBe("elodie-co-");
+    expect(Handle.parse(raw)).toBe("elodie-co" as Handle);
+  });
+
+  test("given someone typing a second word, when the field is slugified, then the trailing hyphen stays so they can keep typing", () => {
+    // Given
+    const typing = "ghota ";
+
+    // When
+    const slug = Handle.slugify(typing);
+
+    // Then
+    expect(slug).toBe("ghota-");
+  });
+
+  test("given a name longer than the limit, when slugified, then it's cut to the limit", () => {
+    // Given
+    const raw = "a".repeat(40);
+
+    // When
+    const slug = Handle.slugify(raw);
+
+    // Then
+    expect(slug.length).toBe(30);
+    expect(Handle.isValid(raw)).toBe(true);
+  });
+
+  test("given nothing usable, when parsed, then it's refused with the rule", () => {
+    // Given / When / Then
+    for (const raw of ["", "!!", "a", "-"]) expect(() => Handle.parse(raw)).toThrow("letters, digits and hyphens");
   });
 
   test("given words the site needs, when parsed, then they're reserved", () => {
