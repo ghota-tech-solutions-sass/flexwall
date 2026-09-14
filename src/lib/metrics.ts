@@ -107,6 +107,12 @@ export function resolveLocal(metric: Exclude<Metric, ConnectorMetric>, today: st
 // ── Connector values: cache, stale fallback, one flight per key ──────
 
 const TTL_FLOOR_MS = 60_000;
+/**
+ * How long a render waits for a connector. Past it, the render uses the last
+ * known value (or a dash) and the fetch carries on in the background to fill
+ * the cache: the Shortcut must get an image, not a timeout.
+ */
+const RENDER_DEADLINE_MS = 4000;
 const g = globalThis as unknown as { __fwValues?: Map<string, CachedValues>; __fwFlights?: Map<string, Promise<Values>> };
 const memoryValues = (g.__fwValues ??= new Map());
 const flights = (g.__fwFlights ??= new Map());
@@ -121,7 +127,29 @@ export function cacheKeysForConnection(wall: Pick<Wall, "valueCache">, source: s
   return Object.keys(wall.valueCache ?? {}).filter((k) => k.startsWith(prefix));
 }
 
-async function valuesFor(connector: Connector, metric: ConnectorMetric, connection: ConnectionData | null, wall: Wall | null, today: string): Promise<Values> {
+export class DeadlineError extends Error {}
+
+export function deadline<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  return Promise.race([
+    promise.finally(() => clearTimeout(timer)),
+    new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new DeadlineError(`no answer within ${ms}ms`)), ms);
+    }),
+  ]);
+}
+
+async function valuesFor(
+  connector: Connector,
+  metric: ConnectorMetric,
+  connection: ConnectionData | null,
+  input: ResolveInput,
+  today: string
+): Promise<Values> {
+  const wall = input.wall ?? null;
+  // Only the phone's render persists: editor previews fire on every keystroke
+  // and would fill the wall doc with values for half-typed usernames.
+  const persist = input.mode === "phone" && wall !== null;
   const key = valueCacheKey(metric.source, metric.connection, connector.cacheKey(metric));
   const now = Date.now();
   const ttl = Math.max(TTL_FLOOR_MS, connector.ttlMs);
@@ -135,14 +163,16 @@ async function valuesFor(connector: Connector, metric: ConnectorMetric, connecti
       .then((values) => {
         const entry = { at: Date.now(), values };
         memoryValues.set(key, entry);
-        if (wall) saveCachedValues(wall.id, key, entry).catch((error) => console.error("value cache write failed:", error));
+        if (persist && wall) saveCachedValues(wall.id, key, entry).catch((error) => console.error("value cache write failed:", error));
         return values;
       })
       .finally(() => flights.delete(key));
     flights.set(key, flight);
+    // The flight may outlive this render; its failure is logged by whoever awaits it.
+    flight.catch(() => {});
   }
   try {
-    return await flight;
+    return await deadline(flight, RENDER_DEADLINE_MS);
   } catch (error) {
     // Yesterday's number beats a dash: the phone can't tell anyone the API was down.
     if (known) {
@@ -170,7 +200,7 @@ async function resolveConnector(metric: ConnectorMetric, input: ResolveInput, to
   try {
     // Inside the try: a rotated encryption key must degrade to a dash, not a 500.
     const connection: ConnectionData | null = stored ? { secret: decryptJson<Record<string, string>>(stored.sealed), public: stored.public } : null;
-    const values = await valuesFor(connector, metric, connection, input.wall ?? null, today);
+    const values = await valuesFor(connector, metric, connection, input, today);
     const n = values[metric.field];
     return n === null || n === undefined ? { value: "–", label } : numberDisplay(n, metric);
   } catch (error) {

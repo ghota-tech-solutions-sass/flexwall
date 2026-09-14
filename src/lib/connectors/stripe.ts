@@ -3,8 +3,8 @@ import { CATALOG, checkFields } from "@/lib/connectors/catalog";
 import { ConnectorError, type Connector, type Values } from "@/lib/connectors/types";
 
 /**
- * Stripe, through a restricted key with read access to Subscriptions and
- * Balance. Stripe has no MRR endpoint, so it's computed, deliberately simple
+ * Stripe, through a restricted key with read access to Subscriptions,
+ * Balance and Coupons (optional: without it, MRR ignores discounts). Stripe has no MRR endpoint, so it's computed, deliberately simple
  * and stated in the editor:
  *  - active subscriptions only (no trials, no past_due, no paused collection)
  *  - licensed prices with a unit amount (metered and tiered prices are skipped)
@@ -60,9 +60,38 @@ function explain(error: unknown): never {
     throw new ConnectorError("Stripe refused the key. It may have been deleted or rolled.");
   }
   if (error instanceof Stripe.errors.StripePermissionError) {
-    throw new ConnectorError("The key is missing a permission. Give it Read access to Subscriptions and Balance.");
+    throw new ConnectorError("The key is missing a permission. Give it Read access to Subscriptions, Balance and Coupons.");
   }
   throw error;
+}
+
+/**
+ * Active subscriptions with their coupons expanded. Reading coupons needs its
+ * own permission; a key without it still gets an MRR, before discounts, rather
+ * than no number at all.
+ */
+async function activeSubscriptions(stripe: Stripe): Promise<AsyncIterable<Stripe.Subscription>> {
+  const params: Stripe.SubscriptionListParams = { status: "active", limit: 100, expand: ["data.discounts.source.coupon"] };
+  let first: Stripe.ApiList<Stripe.Subscription>;
+  try {
+    first = await stripe.subscriptions.list(params);
+  } catch (error) {
+    if (!(error instanceof Stripe.errors.StripePermissionError)) throw error;
+    console.warn("stripe key can't read coupons: MRR ignores discounts");
+    const plain: Stripe.SubscriptionListParams = { status: "active", limit: 100 };
+    return pagesFrom(stripe, plain, await stripe.subscriptions.list(plain));
+  }
+  return pagesFrom(stripe, params, first);
+}
+
+/** Pages on from an already-fetched first page, keeping the expansion. */
+async function* pagesFrom(stripe: Stripe, params: Stripe.SubscriptionListParams, first: Stripe.ApiList<Stripe.Subscription>) {
+  let page = first;
+  for (;;) {
+    yield* page.data;
+    if (!page.has_more || page.data.length === 0) return;
+    page = await stripe.subscriptions.list({ ...params, starting_after: page.data[page.data.length - 1].id });
+  }
 }
 
 async function readAccount(stripe: Stripe): Promise<{ currency: string; values: Values }> {
@@ -73,10 +102,8 @@ async function readAccount(stripe: Stripe): Promise<{ currency: string; values: 
 
     let mrrMinor = 0;
     let subscribers = 0;
-    let seen = 0;
-    for await (const sub of stripe.subscriptions.list({ status: "active", limit: 100, expand: ["data.discounts.source.coupon"] })) {
-      if (++seen > MAX_OBJECTS) break;
-      subscribers++;
+    for await (const sub of await activeSubscriptions(stripe)) {
+      if (++subscribers > MAX_OBJECTS) break;
       mrrMinor += monthlyValue(sub, currency, nowSec);
     }
 

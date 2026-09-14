@@ -54,6 +54,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   };
   await saveConnection(wall.id, conn);
   if (result.values) {
+    // Seeds the cache with what connect() just read. Assumes the connector's
+    // cache key doesn't depend on metric params, true for connectors with a
+    // connection today (one account, one endpoint). A connector breaking that
+    // simply skips the seed: return no `values` from connect().
     const key = valueCacheKey(body.source, conn.id, connector.cacheKey({ field: connector.spec.metrics[0].id, params: {} }));
     await saveCachedValues(wall.id, key, { at: Date.now(), values: result.values });
   }
