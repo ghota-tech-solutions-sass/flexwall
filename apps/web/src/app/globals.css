@@ -548,36 +548,7 @@ main ~ .footer { margin-top: 120px; }
 .conn-list li + li { box-shadow: inset 0 1px 0 var(--hairline); }
 .connect-form { display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: var(--r-field); background: var(--surface-2); }
 
-/* ── Editor ───────────────────────────────────── */
-.editor { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100dvh; }
-.editor-bar { display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 14px; margin: 10px 10px 0; border-radius: 999px; background: var(--glass); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 0 0 1px var(--hairline), var(--shadow-soft); flex-wrap: wrap; }
-.editor-bar .brand { margin: 0 8px; }
-.editor-bar .spacer { flex: 1; }
-.editor-bar .status { font-size: 14px; color: var(--muted); }
-.editor-bar .status.error { color: var(--danger); }
-.segmented { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--shell); box-shadow: 0 0 0 1px var(--hairline); }
-.segmented button { border: 0; background: transparent; color: var(--ink-2); padding: 7px 16px; border-radius: 999px; cursor: pointer; font-size: 14px; transition: background-color 0.3s var(--spring); }
-.segmented button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 560; box-shadow: 0 0 0 1px var(--hairline), var(--shadow-soft); }
-.editor-body { display: grid; grid-template-columns: 260px minmax(0, 1fr) 340px; gap: 10px; padding: 10px; min-height: 0; }
-.editor-side { overflow: auto; padding: 18px; border-radius: var(--r-core); background: var(--surface); box-shadow: 0 0 0 1px var(--hairline), var(--shadow-soft); }
-.editor-side h2 { font-size: 13px; color: var(--muted); font-weight: 560; margin: 22px 0 8px; letter-spacing: 0; }
-.editor-side h2:first-child { margin-top: 0; }
-.library { display: flex; flex-direction: column; gap: 6px; }
-.library button { text-align: left; padding: 11px 13px; border: 0; border-radius: var(--r-field); background: var(--surface-2); color: var(--ink); cursor: pointer; transition: transform 0.4s var(--spring), box-shadow 0.4s var(--spring); }
-.library button:hover { box-shadow: 0 0 0 1px var(--hairline-strong); }
-.library button:active { transform: scale(0.98); }
-.library button strong { display: block; font-size: 15px; font-weight: 600; letter-spacing: -0.015em; }
-.library button span { display: block; font-size: 13px; color: var(--muted); }
-.canvas { overflow: auto; padding: 24px; border-radius: var(--r-core); box-shadow: inset 0 0 0 1px var(--hairline); background-image: radial-gradient(var(--hairline-strong) 1px, transparent 1px); background-size: 22px 22px; }
-.canvas-frame { max-width: 900px; margin: 0 auto; border-radius: var(--r-frame); padding: 24px; box-shadow: 0 0 0 1px var(--hairline), var(--shadow-float); }
-.grid-item { cursor: grab; }
-.grid-item:active { cursor: grabbing; }
-.grid-item.selected { outline: 2.5px solid var(--accent); outline-offset: 4px; border-radius: 18px; }
-.grid-item .react-resizable-handle { opacity: 0; }
-.grid-item:hover .react-resizable-handle, .grid-item.selected .react-resizable-handle { opacity: 1; }
-.inspector { display: flex; flex-direction: column; gap: 14px; }
-.inspector section { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: var(--r-field); background: var(--surface-2); }
-.inspector h3 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
+/* ── Lock screen phone (editor styles live in components/editor/editor.css) ── */
 .phone-wrap { display: flex; justify-content: center; }
 .phone { position: relative; width: 340px; max-width: 100%; aspect-ratio: 1206 / 2622; border-radius: 52px; padding: 11px; background: linear-gradient(145deg, #4a4c52, #1b1c20 38%, #0d0e10 62%, #3b3d43); box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.12), var(--shadow-float); }
 .phone-screen { position: relative; width: 100%; height: 100%; border-radius: 42px; overflow: hidden; container-type: inline-size; }
@@ -585,13 +556,6 @@ main ~ .footer { margin-top: 120px; }
 .phone-clock div:first-child { font-size: 4.6cqw; font-weight: 600; }
 .phone-clock div:last-child { font-size: 25cqw; font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; }
 .phone-clock.dark { color: rgba(18,18,18,.88); }
-@media (max-width: 1100px) { .editor-body { grid-template-columns: 220px minmax(0, 1fr) 300px; } }
-@media (max-width: 860px) {
-  .editor { height: auto; }
-  .editor-bar { border-radius: 24px; }
-  .editor-body { grid-template-columns: minmax(0, 1fr); }
-}
-.react-grid-item.react-grid-placeholder { background: var(--accent); opacity: 0.16; border-radius: 18px; }
 
 /* ── Prose: pricing intro, integrations, legal ── */
 .prose { max-width: 66ch; }

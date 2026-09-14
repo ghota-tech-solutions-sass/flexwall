@@ -2,10 +2,14 @@ import { describe, expect, test } from "bun:test";
 import {
   addTile,
   applyLayout,
+  attachConnection,
   bindingFor,
   dataSignature,
+  detachConnection,
+  duplicateTile,
   placeOnLockscreen,
   removeTile,
+  restoreTile,
   setBinding,
   sourcesFor,
 } from "@/components/editor/editor-model";
@@ -98,6 +102,53 @@ describe("Editor model", () => {
 
     // Then
     expect(result).toEqual({ error: "The lock screen is full. Remove a tile or make one smaller." });
+  });
+
+  test("given tiles waiting for a billing account, when one is connected from the editor, then they use it and other bindings stay", () => {
+    // Given
+    const draft = aWall()
+      .with(aTile().withId("waiting").stat().metric("billing", "mrr", { connection: null }))
+      .with(aTile().withId("bound").stat().metric("billing", "mrr", { connection: "c1" }))
+      .with(aTile().withId("other").stat().metric("analytics", "visitors", { params: { site: "x" } }))
+      .draft();
+    const fresh = { id: "c2", connector: "billing", label: "Second", public: {}, createdAt: 1 };
+
+    // When
+    const next = attachConnection(draft, fresh, connections);
+
+    // Then
+    expect(next.tiles.map((t) => (t.inputs.value as { connection: string | null }).connection)).toEqual(["c2", "c1", null]);
+    expect(dataSignature(next)).not.toBe(dataSignature(draft));
+  });
+
+  test("given two billing accounts, when the one a tile uses is removed, then the tile falls back to the other", () => {
+    // Given
+    const second = { id: "c2", connector: "billing", label: "Second", public: {}, createdAt: 1 };
+    const draft = aWall().with(aTile().withId("a").stat().metric("billing", "mrr", { connection: "c2" })).draft();
+
+    // When
+    const next = detachConnection(draft, second, connections);
+    const orphan = detachConnection(next, connections[0], []);
+
+    // Then
+    expect(next.tiles[0].inputs.value).toMatchObject({ connection: "c1" });
+    expect(orphan.tiles[0].inputs.value).toMatchObject({ connection: null });
+  });
+
+  test("given a removed tile, when it's duplicated or restored, then it lands in a free spot with the same settings", () => {
+    // Given
+    const draft = aWall().with(aTile().withId("a").note().at(0, 0, 2, 1)).draft();
+
+    // When
+    const copy = duplicateTile(draft, "a")!;
+    const removed = removeTile(copy.draft, "a");
+    const restored = restoreTile(removed, draft.tiles[0]);
+
+    // Then
+    expect(copy.draft.tiles[1]).toMatchObject({ widget: "note", layout: { x: 2, y: 0, w: 2, h: 1 } });
+    expect(copy.tileId).not.toBe("a");
+    expect(restored.tiles.find((t) => t.id === "a")?.layout).toEqual({ x: 0, y: 0, w: 2, h: 1 });
+    expect(restoreTile(restored, draft.tiles[0])).toBe(restored);
   });
 
   test("given a layout change, when only positions move, then the data signature is unchanged and no refetch is needed", () => {

@@ -48,8 +48,8 @@ export function sourcesFor(input: WidgetInputDef, catalog: BrowsableCatalog): So
       const pro = connector.tier === "pro";
       if (input.accepts.includes(metric.type)) options.push({ value: `metric:${connector.id}:${metric.id}`, label: metric.name, group, pro });
       if (metric.type === "number" && input.accepts.includes("series")) {
-        options.push({ value: `history:${connector.id}:${metric.id}:30d`, label: `${metric.name}, last 30 days`, group, pro: true });
-        options.push({ value: `history:${connector.id}:${metric.id}:90d`, label: `${metric.name}, last 90 days`, group, pro: true });
+        options.push({ value: `history:${connector.id}:${metric.id}:30d`, label: `${metric.name}, 30-day history`, group, pro: true });
+        options.push({ value: `history:${connector.id}:${metric.id}:90d`, label: `${metric.name}, 90-day history`, group, pro: true });
       }
     }
   }
@@ -109,6 +109,63 @@ export function removeTile(draft: WallDraft, tileId: string): WallDraft {
     tiles: draft.tiles.filter((t) => t.id !== tileId),
     lockscreen: { ...draft.lockscreen, placements: draft.lockscreen.placements.filter((p) => p.tileId !== tileId) },
   };
+}
+
+/** A copy of a tile in the first free spot, or null when the tile is gone. */
+export function duplicateTile(draft: WallDraft, tileId: string): { draft: WallDraft; tileId: string } | null {
+  const tile = draft.tiles.find((t) => t.id === tileId);
+  if (!tile) return null;
+  const layout = firstFreeSpot(
+    draft.tiles.map((t) => t.layout),
+    tile.layout.w,
+    tile.layout.h,
+    WALL_COLUMNS
+  );
+  const copy: Tile = { ...tile, id: newTileId(), layout };
+  return { draft: { ...draft, tiles: [...draft.tiles, copy] }, tileId: copy.id };
+}
+
+/** Puts a tile back where it was, after an undo. Its lock screen placement doesn't come back. */
+export function restoreTile(draft: WallDraft, tile: Tile): WallDraft {
+  if (draft.tiles.some((t) => t.id === tile.id)) return draft;
+  const taken = draft.tiles.some((t) => t.layout.x < tile.layout.x + tile.layout.w && tile.layout.x < t.layout.x + t.layout.w && t.layout.y < tile.layout.y + tile.layout.h && tile.layout.y < t.layout.y + t.layout.h);
+  const layout = taken ? firstFreeSpot(draft.tiles.map((t) => t.layout), tile.layout.w, tile.layout.h, WALL_COLUMNS) : tile.layout;
+  return { ...draft, tiles: [...draft.tiles, { ...tile, layout }] };
+}
+
+/** A freshly connected account feeds every metric of its connector still waiting for one. */
+export function attachConnection(draft: WallDraft, connection: ConnectionView, known: readonly ConnectionView[]): WallDraft {
+  const ids = new Set(known.map((c) => c.id));
+  let changed = false;
+  const tiles = draft.tiles.map((tile) => {
+    let inputs = tile.inputs;
+    for (const [key, binding] of Object.entries(tile.inputs)) {
+      if (binding.kind !== "metric" || binding.connector !== connection.connector) continue;
+      if (binding.connection && ids.has(binding.connection)) continue;
+      inputs = { ...inputs, [key]: { ...binding, connection: connection.id } };
+    }
+    if (inputs === tile.inputs) return tile;
+    changed = true;
+    return { ...tile, inputs };
+  });
+  return changed ? { ...draft, tiles } : draft;
+}
+
+/** Tiles fed by a removed account fall back to another account of the same connector, or wait for one. */
+export function detachConnection(draft: WallDraft, removed: ConnectionView, remaining: readonly ConnectionView[]): WallDraft {
+  const fallback = remaining.find((c) => c.connector === removed.connector)?.id ?? null;
+  let changed = false;
+  const tiles = draft.tiles.map((tile) => {
+    let inputs = tile.inputs;
+    for (const [key, binding] of Object.entries(tile.inputs)) {
+      if (binding.kind !== "metric" || binding.connection !== removed.id) continue;
+      inputs = { ...inputs, [key]: { ...binding, connection: fallback } };
+    }
+    if (inputs === tile.inputs) return tile;
+    changed = true;
+    return { ...tile, inputs };
+  });
+  return changed ? { ...draft, tiles } : draft;
 }
 
 /** Sets an input's binding and, for a fresh metric, offers its default label to the widget. */
