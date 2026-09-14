@@ -141,7 +141,7 @@ locals {
     {
       FLEXWALL_SECRET         = google_secret_manager_secret.flexwall_secret.secret_id
       FLEXWALL_ENCRYPTION_KEY = google_secret_manager_secret.encryption_key.secret_id
-      STRIPE_SECRET_KEY       = var.stripe_secret_key_secret_id
+      STRIPE_SECRET_KEY       = google_secret_manager_secret.stripe_secret_key.secret_id
       STRIPE_WEBHOOK_SECRET   = google_secret_manager_secret.stripe_webhook_secret.secret_id
       YOUTUBE_API_KEY         = google_secret_manager_secret.youtube_api_key.secret_id
     },
@@ -176,7 +176,7 @@ resource "google_secret_manager_secret_iam_member" "flexwall_access" {
 locals {
   # Single source of truth for the public origin: links in mail, Stripe
   # redirects, the webhook endpoint.
-  app_url = var.enable_domain_mapping ? "https://${var.domain}" : "https://flexwall-${data.google_project.app.number}.${var.region}.run.app"
+  app_url = var.enable_domain_mapping ? "https://${var.domain}" : "https://flexwall-${google_project.app.number}.${var.region}.run.app"
 
   plain_env = merge(
     {

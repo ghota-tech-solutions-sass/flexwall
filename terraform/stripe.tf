@@ -13,9 +13,35 @@
 #
 # =============================================================================
 
+# The container is Terraform's; its versions are written by hand. Cloud Run and
+# the provider below read the latest one.
+locals {
+  stripe_secret_key_id = "outflex-stripe-secret-key"
+}
+
+import {
+  to = google_secret_manager_secret.stripe_secret_key
+  id = "projects/${var.project_id}/secrets/${local.stripe_secret_key_id}"
+}
+
+resource "google_secret_manager_secret" "stripe_secret_key" {
+  secret_id = local.stripe_secret_key_id
+  project   = var.project_id
+
+  replication {
+    auto {}
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+# By id, not through the resource: the provider needs the key while planning,
+# before any change to the container is applied.
 data "google_secret_manager_secret_version" "stripe_secret_key" {
   project = var.project_id
-  secret  = var.stripe_secret_key_secret_id
+  secret  = local.stripe_secret_key_id
 }
 
 provider "stripe" {
@@ -124,8 +150,15 @@ resource "stripe_portal_configuration" "billing" {
 
     # Cancelling keeps Pro until the end of the paid period.
     subscription_cancel {
-      enabled = true
-      mode    = "at_period_end"
+      enabled            = true
+      mode               = "at_period_end"
+      proration_behavior = "none"
+
+      # Why people leave, asked once at cancellation.
+      cancellation_reason {
+        enabled = true
+        options = ["too_expensive", "missing_features", "switched_service", "unused", "other"]
+      }
     }
 
     # Monthly and yearly are the same product: switching is a price change.

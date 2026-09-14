@@ -8,6 +8,18 @@ variable "project_id" {
   default     = "ghota-outflex-prod"
 }
 
+variable "billing_account" {
+  description = "Billing account of the project."
+  type        = string
+  default     = "01C21A-FDDA7A-9A3CE7"
+}
+
+variable "folder_id" {
+  description = "Resource Manager folder of the project."
+  type        = string
+  default     = "folders/559527833921"
+}
+
 variable "bootstrap_project_id" {
   description = "Shared infra project used as billing/quota project and state host."
   type        = string
@@ -31,9 +43,9 @@ variable "domain" {
 }
 
 variable "enable_domain_mapping" {
-  description = "Serve var.domain (and www) from this service. While false, the app runs on its run.app URL and flexwall.lol keeps pointing at the previous service. Before turning it on, remove the previous mappings from the terraform/outflex state and delete them: a domain maps to one service at a time."
+  description = "Serve var.domain (and www) from this service. While false, the app runs on its run.app URL. A domain maps to one service at a time: delete any other mapping of it first."
   type        = bool
-  default     = false
+  default     = true
 }
 
 # =============================================================================
@@ -68,12 +80,6 @@ variable "email_from" {
   default     = "flexwall.lol <villers@ghotatechsolutions.com>"
 }
 
-variable "email_signer_account_id" {
-  description = "Service account whose domain-wide delegation signs Gmail tokens. outflex-sa is already authorized for gmail.send in Workspace, so the app signs as it rather than waiting on a new authorization. Empty signs as the app's own account, which then needs its own authorization (output service_account_client_id)."
-  type        = string
-  default     = "outflex-sa"
-}
-
 variable "moderation_inbox" {
   description = "Where wall reports are sent."
   type        = string
@@ -83,12 +89,6 @@ variable "moderation_inbox" {
 # =============================================================================
 # STRIPE
 # =============================================================================
-
-variable "stripe_secret_key_secret_id" {
-  description = "Secret Manager secret holding the Stripe secret key. It is written by hand, never by Terraform, so the key never sits in tfvars, CI secrets or state inputs: Terraform reads it to configure the provider and the service reads it at startup."
-  type        = string
-  default     = "outflex-stripe-secret-key"
-}
 
 variable "price_monthly_cents" {
   description = "Pro, monthly, in US cents."

@@ -2,11 +2,13 @@
 # FLEXWALL - TERRAFORM CONFIGURATION
 # =============================================================================
 #
-# The Flexwall platform on Cloud Run, in the project that already hosts
-# flexwall.lol. That project, its Firestore database and the flexwall.lol
-# domain mappings belong to the previous app (state prefix terraform/outflex):
-# this configuration reads them, it doesn't own them. The domain moves here
-# with enable_domain_mapping, see cloud_run.tf.
+# The Flexwall platform on Cloud Run: the project, its Firestore database, the
+# service, secrets, Stripe billing and the flexwall.lol domain.
+#
+# The project hosted the previous flexwall.lol app, hence its id and a few
+# resource names (ghota-outflex-prod, outflex-sa, outflex-stripe-secret-key).
+# Those are kept, not renamed: renaming a project is impossible, and renaming
+# the others would cost a Workspace authorization or the live Stripe key.
 #
 # =============================================================================
 
@@ -42,12 +44,41 @@ provider "google" {
   billing_project       = var.bootstrap_project_id
 }
 
+provider "google" {
+  alias                 = "bootstrap"
+  project               = var.bootstrap_project_id
+  region                = var.region
+  user_project_override = true
+  billing_project       = var.bootstrap_project_id
+}
+
 # =============================================================================
-# PROJECT (read, not owned)
+# PROJECT
 # =============================================================================
 
-data "google_project" "app" {
-  project_id = var.project_id
+import {
+  to = google_project.app
+  id = var.project_id
+}
+
+resource "google_project" "app" {
+  provider = google.bootstrap
+
+  project_id      = var.project_id
+  name            = "Flexwall Production"
+  billing_account = var.billing_account
+  folder_id       = trimprefix(var.folder_id, "folders/")
+
+  labels = {
+    managed_by  = "terraform"
+    platform    = "ghota"
+    application = "flexwall"
+    environment = "production"
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # =============================================================================
