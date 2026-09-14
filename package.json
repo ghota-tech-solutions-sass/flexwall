@@ -1,23 +1,20 @@
 {
   "name": "flexwall",
-  "version": "0.1.0",
-  "type": "module",
   "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "plugins/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "test": "bun test tests/unit",
-    "test:functional": "bun test tests/functional",
-    "check": "bunx tsc --noEmit -p tsconfig.json && bun test tests/unit && next build && bun test tests/functional"
-  },
-  "dependencies": {
-    "@google-cloud/firestore": "^9.0.0",
-    "next": "16.3.2",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "stripe": "^22.5.0",
-    "zod": "^4.4.3"
+    "dev": "bun --cwd apps/web run dev",
+    "build": "bun --cwd apps/web run build",
+    "typecheck": "bunx tsc --noEmit -p apps/web/tsconfig.json && bunx tsc --noEmit -p packages/sdk/tsconfig.json",
+    "test": "bun test packages plugins apps/web/tests/unit",
+    "test:functional": "bun --cwd apps/web test tests/functional",
+    "check": "bun run typecheck && bun run test && bun run build && bun run test:functional",
+    "new-plugin": "bun scripts/new-plugin.ts"
   },
   "devDependencies": {
     "@types/bun": "^1.4.0",

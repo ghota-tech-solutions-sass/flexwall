@@ -1,0 +1,16 @@
+{
+  "name": "@flexwall/plugin-core",
+  "version": "0.1.0",
+  "description": "Flexwall's built-in widgets and themes.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}
