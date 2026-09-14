@@ -1,3 +1,5 @@
+import type { Tier } from "./tier";
+
 /**
  * Theme tokens. Widgets read colors and fonts from here, never hardcode them,
  * so one widget looks right on every theme, on the page and on images.
@@ -19,7 +21,7 @@ export type Gradient = `linear-gradient(${string})` | `radial-gradient(${string}
 export interface Theme {
   id: string;
   name: string;
-  tier: "free" | "pro";
+  tier: Tier;
   /** Tells the host which way to tint chrome drawn around tiles (and the iOS clock). */
   mode: "dark" | "light";
   /** Solid ground behind the whole wall. Also the color of text drawn on `ink`. */

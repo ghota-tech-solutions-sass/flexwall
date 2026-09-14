@@ -11,6 +11,7 @@ import lemonSqueezy from "@flexwall/plugin-lemon-squeezy";
 import polar from "@flexwall/plugin-polar";
 import plausible from "@flexwall/plugin-plausible";
 import youtube from "@flexwall/plugin-youtube";
+import { DEFAULT_THEME_ID } from "@/domain/wall";
 import { createCatalog } from "./catalog";
 
 /**
@@ -22,4 +23,4 @@ import { createCatalog } from "./catalog";
  */
 export const PLUGINS: readonly PluginDef[] = [core, github, stripe, http, npm, pypi, bluesky, hackernews, lemonSqueezy, polar, plausible, youtube];
 
-export const catalog = createCatalog(PLUGINS, "daylight");
+export const catalog = createCatalog(PLUGINS, DEFAULT_THEME_ID);

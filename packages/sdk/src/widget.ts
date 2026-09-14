@@ -52,17 +52,25 @@ export interface WidgetProps<O extends FieldValues = FieldValues> {
 
 export type Size = readonly [w: number, h: number];
 
+/** Library shelves, in the order the editor lists them. */
+export const WIDGET_CATEGORIES = ["numbers", "charts", "progress", "time", "content"] as const;
+export type WidgetCategory = (typeof WIDGET_CATEGORIES)[number];
+
+/** How a widget is framed: the theme's card around it, or the full tile. */
+export type Chrome = "card" | "bare";
+export const DEFAULT_CHROME: Chrome = "card";
+
 export interface WidgetDef<O extends FieldValues = FieldValues> {
   /** Unique across all plugins. Lowercase, digits, dashes. */
   id: string;
   name: string;
   description: string;
-  category: "numbers" | "progress" | "time" | "charts" | "content";
+  category: WidgetCategory;
   inputs: WidgetInputDef[];
   options: Field[];
   size: { default: Size; min: Size; max: Size };
   /** "card" draws the theme's tile background and padding around the widget; "bare" gives it the full tile. */
-  chrome?: "card" | "bare";
+  chrome?: Chrome;
   /** Surfaces this widget can't draw on. Images can't show interactive content, for instance. */
   excludeSurfaces?: Surface[];
   /** Pure: no hooks, no handlers, inline styles, Satori-safe elements. Runs on the server and in the editor. */
@@ -71,16 +79,24 @@ export interface WidgetDef<O extends FieldValues = FieldValues> {
   renderPage?(props: WidgetProps<O>): ReactElement;
 }
 
+/** One grid cell, in units. Units are a hundredth of a cell so widgets size themselves without pixels. */
+export const CELL_UNITS = 100;
+
 /** Space between tiles, in units. Fixed so widgets can reason about multi-cell tiles. */
 export const GAP_UNITS = 12;
+
+/** Length of a run of `cells` cells and the gaps between them, in units. */
+export function gridUnits(cells: number): number {
+  return cells * CELL_UNITS + (cells - 1) * GAP_UNITS;
+}
 
 /** Padding of "card" chrome, in units, on every side. */
 export const CARD_PADDING_UNITS = 14;
 
 /** The widget's drawing area in units for a tile of `box` cells. */
-export function areaOf(box: { w: number; h: number }, chrome: "card" | "bare" = "card"): { width: number; height: number } {
+export function areaOf(box: { w: number; h: number }, chrome: Chrome = DEFAULT_CHROME): { width: number; height: number } {
   const pad = chrome === "card" ? CARD_PADDING_UNITS * 2 : 0;
-  return { width: box.w * 100 + (box.w - 1) * GAP_UNITS - pad, height: box.h * 100 + (box.h - 1) * GAP_UNITS - pad };
+  return { width: gridUnits(box.w) - pad, height: gridUnits(box.h) - pad };
 }
 
 export function defineWidget<O extends FieldValues = FieldValues>(def: WidgetDef<O>): WidgetDef<O> {

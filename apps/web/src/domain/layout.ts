@@ -101,3 +101,5 @@ export const DEVICES = {
 
 export type DeviceId = keyof typeof DEVICES;
 export const DEVICE_IDS = Object.keys(DEVICES) as DeviceId[];
+/** The phone new walls are set up for. */
+export const DEFAULT_DEVICE: DeviceId = "iphone-17-pro";

@@ -1,3 +1,4 @@
+export * from "./tier";
 export * from "./values";
 export * from "./fields";
 export * from "./theme";

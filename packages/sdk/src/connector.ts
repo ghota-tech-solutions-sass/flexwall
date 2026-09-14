@@ -1,3 +1,4 @@
+import type { Tier } from "./tier";
 import type { Field, FieldValues } from "./fields";
 import type { Unit, Value, ValueType } from "./values";
 
@@ -95,7 +96,7 @@ export interface ConnectorDef {
   /** 24×24 SVG path, drawn in the connector's badge. */
   icon?: string;
   /** "pro" connectors render on public walls only for paying owners. */
-  tier: "free" | "pro";
+  tier: Tier;
   /** True when values come from the owner's own authenticated account. Earns the verified badge. */
   verified: boolean;
   /** Omit for public data that needs no account. */

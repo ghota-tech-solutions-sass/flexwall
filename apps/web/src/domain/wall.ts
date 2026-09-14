@@ -3,8 +3,17 @@ import type { Catalog } from "./catalog";
 import type { Connection } from "./connection";
 import { DomainError } from "./errors";
 import type { Handle } from "./handle";
-import { DEVICE_IDS, firstOverlap, fitsColumns, LOCK_COLUMNS, LOCK_ROWS, WALL_COLUMNS, type Box, type DeviceId } from "./layout";
+import { DEFAULT_DEVICE, DEVICE_IDS, firstOverlap, fitsColumns, LOCK_COLUMNS, LOCK_ROWS, WALL_COLUMNS, type Box, type DeviceId } from "./layout";
 import type { Entitlements } from "./user";
+
+/** How far back a number's daily snapshots go when shown as a series. */
+export const HISTORY_WINDOWS = ["30d", "90d"] as const;
+export type HistoryWindow = (typeof HISTORY_WINDOWS)[number];
+export const HISTORY_DAYS: Record<HistoryWindow, number> = { "30d": 30, "90d": 90 };
+
+export function isHistoryWindow(value: unknown): value is HistoryWindow {
+  return HISTORY_WINDOWS.includes(value as HistoryWindow);
+}
 
 /** Where a tile input's value comes from. */
 export type Binding =
@@ -16,11 +25,13 @@ export type Binding =
       /** Required for connectors with auth; must be one of the owner's connections. */
       connection: string | null;
       /** A number metric's daily snapshots, as a series. Pro. */
-      history: "30d" | "90d" | null;
+      history: HistoryWindow | null;
     }
   | { kind: "static"; value: Value };
 
-export type Visibility = "public" | "private";
+export const VISIBILITIES = ["public", "private"] as const;
+export type Visibility = (typeof VISIBILITIES)[number];
+export const DEFAULT_VISIBILITY: Visibility = "public";
 
 export interface Tile {
   id: string;
@@ -68,6 +79,11 @@ export interface WallDraft {
 
 export const TITLE_MAX = 60;
 export const BIO_MAX = 280;
+/** Longest text an owner types into a tile. */
+export const STATIC_TEXT_MAX = 280;
+export const TILE_ID_PATTERN = /^[A-Za-z0-9_-]{1,40}$/;
+/** The theme new walls start with, and the one Pro themes fall back to without Pro. */
+export const DEFAULT_THEME_ID = "daylight";
 
 export interface WallRules {
   catalog: Catalog;
@@ -99,13 +115,14 @@ function sanitizeBinding(tile: string, key: string, accepts: readonly ValueType[
   if (binding.kind === "static") {
     if (!isValue(binding.value)) fail(tile, `"${key}" has a value the widget can't read.`);
     if (!accepts.includes(binding.value.type)) fail(tile, `"${key}" takes ${accepts.join(" or ")}, not ${binding.value.type}.`);
+    if (binding.value.type === "text" && binding.value.value.length > STATIC_TEXT_MAX) fail(tile, `"${key}" is longer than ${STATIC_TEXT_MAX} characters.`);
     return { kind: "static", value: binding.value };
   }
   const connector = rules.catalog.connector(binding.connector);
   if (!connector) fail(tile, `connector "${binding.connector}" isn't installed.`);
   const metric = rules.catalog.metric(binding.connector, binding.metric);
   if (!metric) fail(tile, `${connector.name} has no metric "${binding.metric}".`);
-  const history = binding.history === "30d" || binding.history === "90d" ? binding.history : null;
+  const history = isHistoryWindow(binding.history) ? binding.history : null;
   if (history && metric.type !== "number") fail(tile, "only numbers have a history.");
   const produced = history ? "series" : metric.type;
   if (!accepts.includes(produced)) fail(tile, `"${key}" takes ${accepts.join(" or ")}, ${metric.name} gives ${produced}.`);
@@ -125,7 +142,7 @@ function sanitizeBinding(tile: string, key: string, accepts: readonly ValueType[
 }
 
 function sanitizeTile(raw: Tile, rules: WallRules): Tile {
-  if (!raw || typeof raw.id !== "string" || !/^[A-Za-z0-9_-]{1,40}$/.test(raw.id)) fail(null, "A tile has no valid id.");
+  if (!raw || typeof raw.id !== "string" || !TILE_ID_PATTERN.test(raw.id)) fail(null, "A tile has no valid id.");
   const where = describe(raw, rules.catalog);
   const widget = rules.catalog.widget(raw.widget);
   if (!widget) fail(where, `widget "${raw.widget}" isn't installed.`);
@@ -151,7 +168,7 @@ function sanitizeTile(raw: Tile, rules: WallRules): Tile {
     inputs[input.key] = sanitizeBinding(where, input.key, input.accepts, binding, rules);
   }
 
-  return { id: raw.id, widget: widget.id, inputs, options: options.values, visibility: raw.visibility === "public" ? "public" : "private", layout };
+  return { id: raw.id, widget: widget.id, inputs, options: options.values, visibility: VISIBILITIES.includes(raw.visibility) ? raw.visibility : "private", layout };
 }
 
 /**
@@ -248,9 +265,9 @@ export function newWall(input: { id: string; owner: { id: string; handle: Handle
     handle: input.owner.handle,
     title: `@${input.owner.handle}`,
     bio: "",
-    theme: "daylight",
+    theme: DEFAULT_THEME_ID,
     tiles,
-    lockscreen: { device: "iphone-17-pro", placements: [{ tileId: "year", box: { x: 0, y: 0, w: 4, h: 1 } }] },
+    lockscreen: { device: DEFAULT_DEVICE, placements: [{ tileId: "year", box: { x: 0, y: 0, w: 4, h: 1 } }] },
     lockNonce: input.lockNonce,
     published: false,
     listed: false,

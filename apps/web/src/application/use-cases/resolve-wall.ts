@@ -3,7 +3,7 @@ import type { Catalog } from "@/domain/catalog";
 import type { Connection } from "@/domain/connection";
 import { entitlementsOf, type Entitlements, type User } from "@/domain/user";
 import { shiftDay, todayIn } from "@/domain/time";
-import type { Binding, Tile } from "@/domain/wall";
+import { HISTORY_DAYS, type Binding, type Tile } from "@/domain/wall";
 import type { CachedValues, Clock, ConnectionRepository, ConnectorRuntime, SecretBox, SnapshotStore, ValueCache } from "../ports";
 
 /** What a tile can draw: its inputs, or the reason it can't yet. */
@@ -249,7 +249,7 @@ export class ResolveWall {
       if (value.type === "number" && opts.record && !result.stale) await this.recordOnce(seriesKey(binding), opts.today, value.value);
 
       if (binding.history && value.type === "number") {
-        const days = binding.history === "90d" ? 90 : 30;
+        const days = HISTORY_DAYS[binding.history];
         const points = await this.deps.snapshots.range(seriesKey(binding), shiftDay(opts.today, -(days - 1)), opts.today);
         const withToday = points.filter((p) => p.t !== opts.today).concat({ t: opts.today, v: value.value });
         inputs[key] = { value: series(withToday, { unit: value.unit, currency: value.currency }), stale: result.stale, source };
