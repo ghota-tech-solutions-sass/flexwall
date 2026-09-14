@@ -1,0 +1,13 @@
+{
+  "name": "@flexwall/plugin-bluesky",
+  "version": "0.1.0",
+  "description": "Bluesky for Flexwall walls.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  }
+}

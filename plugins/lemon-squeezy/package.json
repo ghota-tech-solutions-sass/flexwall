@@ -1,0 +1,13 @@
+{
+  "name": "@flexwall/plugin-lemon-squeezy",
+  "version": "0.1.0",
+  "description": "Verified Lemon Squeezy MRR, subscriptions and revenue for Flexwall walls.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  }
+}

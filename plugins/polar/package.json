@@ -1,0 +1,13 @@
+{
+  "name": "@flexwall/plugin-polar",
+  "version": "0.1.0",
+  "description": "Verified Polar MRR and subscriptions for Flexwall walls.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  }
+}

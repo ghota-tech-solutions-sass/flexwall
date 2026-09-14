@@ -1,0 +1,31 @@
+{
+  "items": [
+    {
+      "created_at": "2026-01-01T00:00:00.000000Z",
+      "modified_at": "2026-01-01T00:00:00.000000Z",
+      "id": "1dbfc517-0bbf-4301-9ba8-555ca42b9737",
+      "name": "Acme Inc",
+      "slug": "acme",
+      "avatar_url": null,
+      "proration_behavior": "invoice",
+      "allow_customer_updates": true,
+      "email": null,
+      "website": "https://acme.example",
+      "socials": [],
+      "status": "active",
+      "details_submitted_at": "2026-01-01T00:00:00.000000Z",
+      "onboarding_resubmission_requested_at": null,
+      "sso_enforced": false,
+      "default_presentment_currency": "usd",
+      "default_tax_behavior": "location",
+      "feature_settings": null,
+      "embed_hosts": [],
+      "account_id": null,
+      "payout_account_id": null
+    }
+  ],
+  "pagination": {
+    "total_count": 1,
+    "max_page": 1
+  }
+}

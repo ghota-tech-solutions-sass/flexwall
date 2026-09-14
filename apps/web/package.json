@@ -10,10 +10,18 @@
     "start": "next start"
   },
   "dependencies": {
+    "@flexwall/plugin-bluesky": "workspace:*",
     "@flexwall/plugin-core": "workspace:*",
     "@flexwall/plugin-github": "workspace:*",
+    "@flexwall/plugin-hackernews": "workspace:*",
     "@flexwall/plugin-http": "workspace:*",
+    "@flexwall/plugin-lemon-squeezy": "workspace:*",
+    "@flexwall/plugin-npm": "workspace:*",
+    "@flexwall/plugin-plausible": "workspace:*",
+    "@flexwall/plugin-polar": "workspace:*",
+    "@flexwall/plugin-pypi": "workspace:*",
     "@flexwall/plugin-stripe": "workspace:*",
+    "@flexwall/plugin-youtube": "workspace:*",
     "@flexwall/sdk": "workspace:*",
     "@google-cloud/firestore": "^9.0.0",
     "next": "16.3.2",

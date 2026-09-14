@@ -1,0 +1,13 @@
+{
+  "name": "@flexwall/plugin-youtube",
+  "version": "0.1.0",
+  "description": "YouTube channel statistics for Flexwall walls.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  }
+}

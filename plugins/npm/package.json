@@ -1,0 +1,13 @@
+{
+  "name": "@flexwall/plugin-npm",
+  "version": "0.1.0",
+  "description": "npm download counts for Flexwall walls.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  }
+}
