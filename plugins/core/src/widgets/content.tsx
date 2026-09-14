@@ -1,4 +1,4 @@
-import { asType, defineWidget, field } from "@flexwall/sdk";
+import { asType, defineWidget, displayAdvance, field } from "@flexwall/sdk";
 import { Col, Fill, Row, Text, fitFont } from "@flexwall/sdk/ui";
 
 /** A title and a few lines of text, typed by the owner or fed by a text metric. */
@@ -50,7 +50,7 @@ function LinkBody({ title, url, subtitle, width, theme, u }: { title: string; ur
       </Row>
       <Fill style={{ alignItems: "flex-end" }}>
         <Col>
-          <Text style={{ fontSize: u(fitFont(title || hostOf(url), width, 16, 0.5)), color: theme.ink, fontFamily: theme.display.family, fontWeight: theme.display.weight }}>{title || hostOf(url)}</Text>
+          <Text style={{ fontSize: u(fitFont(title || hostOf(url), width, 16, displayAdvance(theme) * 0.9)), color: theme.ink, fontFamily: theme.display.family, fontWeight: theme.display.weight }}>{title || hostOf(url)}</Text>
           {subtitle ? <Text style={{ fontSize: u(11), color: theme.muted, marginTop: u(3) }}>{subtitle}</Text> : null}
         </Col>
       </Fill>

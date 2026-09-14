@@ -1,6 +1,27 @@
 import { defineTheme } from "@flexwall/sdk";
 
-/** Two free themes that suit most walls, four Pro ones with a point of view. */
+/** Three free themes that suit most walls, four Pro ones with a point of view. */
+
+/** The default: a results board. White tiles on porcelain, wide black numbers, green only where a number went up. */
+export const board = defineTheme({
+  id: "board",
+  name: "Board",
+  tier: "free",
+  mode: "light",
+  page: "#f1f2f4",
+  tile: "#ffffff",
+  tileBorder: "#dcdfe5",
+  ink: "#111216",
+  muted: "#626874",
+  accent: "#111216",
+  positive: "#0a8f5a",
+  negative: "#d1432d",
+  track: "rgba(17,18,22,0.08)",
+  heat: ["#eceef1", "#bfe3cf", "#7cc9a2", "#2fa574", "#0a7a4c"],
+  radius: 6,
+  display: { family: "Archivo Wide", weight: 800 },
+  body: { family: "Archivo", weight: 400 },
+});
 
 export const night = defineTheme({
   id: "night",
@@ -122,4 +143,4 @@ export const editorial = defineTheme({
   body: { family: "Inter", weight: 400 },
 });
 
-export const themes = [night, paper, terminal, sunset, oldMoney, editorial];
+export const themes = [board, night, paper, terminal, sunset, oldMoney, editorial];

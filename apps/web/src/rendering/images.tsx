@@ -22,6 +22,10 @@ const FONTS = [
   { name: "Mono", data: font("jetbrains-mono-500.woff"), weight: 500 as const, style: "normal" as const },
   { name: "Mono", data: font("jetbrains-mono-800.woff"), weight: 800 as const, style: "normal" as const },
   { name: "Serif", data: font("instrument-serif-400.woff"), weight: 400 as const, style: "normal" as const },
+  { name: "Archivo", data: font("archivo-400.ttf"), weight: 400 as const, style: "normal" as const },
+  { name: "Archivo", data: font("archivo-600.ttf"), weight: 600 as const, style: "normal" as const },
+  { name: "Archivo Wide", data: font("archivo-wide-600.ttf"), weight: 600 as const, style: "normal" as const },
+  { name: "Archivo Wide", data: font("archivo-wide-800.ttf"), weight: 800 as const, style: "normal" as const },
 ];
 
 export const IMAGE_HEADERS = { "Cache-Control": "no-store, max-age=0", "X-Robots-Tag": "noindex" };

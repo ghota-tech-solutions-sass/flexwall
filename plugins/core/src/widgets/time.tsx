@@ -1,4 +1,4 @@
-import { daysBetween, defineWidget, field } from "@flexwall/sdk";
+import { daysBetween, defineWidget, displayAdvance, field } from "@flexwall/sdk";
 import { Bar, Col, Fill, Row, Text, fitFont } from "@flexwall/sdk/ui";
 
 /** Time widgets take no input: they read the owner's date from `today`. */
@@ -17,7 +17,7 @@ export const countdown = defineWidget<{ date: string; label: string }>({
     const value = d === 0 ? "Today" : d > 0 ? String(d) : `+${-d}`;
     const unit = d === 0 ? "" : Math.abs(d) === 1 ? "day" : "days";
     const words = d < 0 ? `${unit} since` : `${unit} ${options.label || "to go"}`.trim();
-    const size = fitFont(value, area.width, area.height * 0.58, 0.58);
+    const size = fitFont(value, area.width, area.height * 0.58, displayAdvance(theme));
     return (
       <Col style={{ width: "100%", height: "100%", justifyContent: "space-between" }}>
         <Fill style={{ alignItems: "center" }}>
@@ -95,7 +95,7 @@ export const timeLeft = defineWidget<{ period: Period; style: "bar" | "dots" }>(
     return (
       <Col style={{ width: "100%", height: "100%", justifyContent: "space-between" }}>
         <Text style={{ fontSize: u(11), color: theme.muted }}>{`${label}`}</Text>
-        <Text style={{ fontSize: u(fitFont(title, area.width, area.height * 0.42)), lineHeight: 1, color: theme.ink, fontFamily: theme.display.family, fontWeight: theme.display.weight }}>
+        <Text style={{ fontSize: u(fitFont(title, area.width, area.height * 0.42, displayAdvance(theme) * 1.15)), lineHeight: 1, color: theme.ink, fontFamily: theme.display.family, fontWeight: theme.display.weight }}>
           {title}
         </Text>
         <Bar value={done / total} height={u(6)} color={theme.accent} track={theme.track} />

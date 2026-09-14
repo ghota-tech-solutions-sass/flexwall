@@ -1,4 +1,4 @@
-import { asType, currencySymbol, defineWidget, field, formatNumber, formatPercent, seriesChange } from "@flexwall/sdk";
+import { asType, currencySymbol, defineWidget, displayAdvance, field, formatNumber, formatPercent, seriesChange } from "@flexwall/sdk";
 import { Col, Fill, Row, Text, fitFont, sparkPoints } from "@flexwall/sdk/ui";
 
 /** A number's recent history as a line, with the latest value and the change. */
@@ -21,7 +21,7 @@ export const sparkline = defineWidget<{ label: string; prefix: string }>({
     const change = seriesChange(s);
     const prefix = options.prefix || (s.unit === "currency" ? currencySymbol(s.currency) : "");
     const shown = prefix + formatNumber(last);
-    const valueSize = fitFont(shown, area.width * 0.55, Math.min(area.height * 0.38, 64));
+    const valueSize = fitFont(shown, area.width * 0.55, Math.min(area.height * 0.38, 64), displayAdvance(theme));
     const chartHeight = area.height - valueSize - 18;
     const points = sparkPoints(values);
 

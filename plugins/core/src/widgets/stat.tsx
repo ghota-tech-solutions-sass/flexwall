@@ -1,4 +1,4 @@
-import { asType, defineWidget, field, formatNumber, formatPercent, seriesChange, currencySymbol } from "@flexwall/sdk";
+import { asType, currencySymbol, defineWidget, displayAdvance, field, formatNumber, formatPercent, seriesChange } from "@flexwall/sdk";
 import { Bar, Col, Fill, Row, Text, fitFont } from "@flexwall/sdk/ui";
 
 type Options = { label: string; prefix: string; suffix: string; goal?: number };
@@ -38,7 +38,7 @@ export const stat = defineWidget<Options>({
     const labelSize = small ? 10 : 12;
     const footer = goal !== null || change !== null;
     const valueMax = Math.min(area.height * (footer ? 0.5 : 0.62), 120);
-    const valueSize = fitFont(shown, area.width, valueMax, theme.display.family === "Mono" ? 0.62 : 0.56);
+    const valueSize = fitFont(shown, area.width, valueMax, displayAdvance(theme));
 
     return (
       <Col style={{ width: "100%", height: "100%", justifyContent: "space-between" }}>

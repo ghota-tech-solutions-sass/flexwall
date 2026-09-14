@@ -248,7 +248,7 @@ export function newWall(input: { id: string; owner: { id: string; handle: Handle
     handle: input.owner.handle,
     title: `@${input.owner.handle}`,
     bio: "",
-    theme: "night",
+    theme: "board",
     tiles,
     lockscreen: { device: "iphone-17-pro", placements: [{ tileId: "year", box: { x: 0, y: 0, w: 4, h: 1 } }] },
     lockNonce: input.lockNonce,

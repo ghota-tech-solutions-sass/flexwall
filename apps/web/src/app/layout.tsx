@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque } from "next/font/google";
+import { Archivo } from "next/font/google";
 import "./globals.css";
 
-const ui = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-ui" });
+// One family, two voices: normal width for reading, the width axis at 125% for numbers and headlines.
+const ui = Archivo({ subsets: ["latin"], variable: "--font-ui", axes: ["wdth"] });
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
 };
 
-export const viewport: Viewport = { themeColor: "#0d0f1f" };
+export const viewport: Viewport = { themeColor: "#f1f2f4" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

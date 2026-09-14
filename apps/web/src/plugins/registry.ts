@@ -22,4 +22,4 @@ import { createCatalog } from "./catalog";
  */
 export const PLUGINS: readonly PluginDef[] = [core, github, stripe, http, npm, pypi, bluesky, hackernews, lemonSqueezy, polar, plausible, youtube];
 
-export const catalog = createCatalog(PLUGINS, "night");
+export const catalog = createCatalog(PLUGINS, "board");
