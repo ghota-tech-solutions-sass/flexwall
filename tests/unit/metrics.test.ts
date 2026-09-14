@@ -1,9 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import type { Metric } from "@/lib/config";
-import { formatAmount, formatCompact, resolveMetric, resolveWall, sampleGithub, todayIn } from "@/lib/metrics";
+import { formatAmount, formatCompact, resolveLocal, resolveWall, todayIn } from "@/lib/metrics";
 
-const noGithub = async () => null;
-const at = (m: Metric, today: string) => resolveMetric(m, today, noGithub);
+const at = (m: Exclude<Metric, { kind: "connector" }>, today: string) => Promise.resolve(resolveLocal(m, today));
 
 describe("metrics", () => {
   test("countdown: future, today, past", async () => {
@@ -36,11 +35,6 @@ describe("metrics", () => {
     expect(formatCompact(2500)).toBe("2.5k");
   });
 
-  test("github metrics degrade to a dash when the user is unknown", async () => {
-    const d = await at({ kind: "github-streak", user: "nobody-here" }, "2026-09-14");
-    expect(d.value).toBe("–");
-  });
-
   test("today is computed in the owner's zone", () => {
     const lateUtc = new Date("2026-09-14T22:30:00Z");
     expect(todayIn("UTC", lateUtc)).toBe("2026-09-14");
@@ -48,12 +42,20 @@ describe("metrics", () => {
     expect(todayIn("America/Los_Angeles", lateUtc)).toBe("2026-09-14");
   });
 
-  test("resolveWall with sample data never touches the network", async () => {
-    const r = await resolveWall(
-      { device: "iphone-17-pro", theme: "ink", caption: "", hero: { kind: "github-streak", user: "x" }, stats: [], heatmap: "x", tz: "UTC" },
-      new Date("2026-09-14T08:00:00Z"),
-      sampleGithub
-    );
+  test("resolveWall in sample mode never touches the network", async () => {
+    const r = await resolveWall({
+      config: {
+        device: "iphone-17-pro",
+        theme: "ink",
+        caption: "",
+        hero: { kind: "connector", source: "github", field: "streak", params: { user: "x" }, connection: "", label: "streak", prefix: "", suffix: "" },
+        stats: [],
+        heatmap: "x",
+        tz: "UTC",
+      },
+      mode: "sample",
+      now: new Date("2026-09-14T08:00:00Z"),
+    });
     expect(r.hero.value).toBe("47");
     expect(r.heatmap!.at(-1)!.date).toBe("2026-09-14");
   });

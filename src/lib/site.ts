@@ -19,4 +19,6 @@ export interface WallView {
   imagePath: string;
   editPath: string;
   lastRenderAt: number | null;
+  /** Connector credentials, minus the secrets. */
+  connections: { id: string; source: string; label: string; public: Record<string, string> }[];
 }

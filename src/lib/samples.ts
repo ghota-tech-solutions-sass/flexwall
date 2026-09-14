@@ -1,4 +1,4 @@
-import { encodeConfig, type ThemeId, type WallConfig } from "@/lib/config";
+import { encodeConfig, type Metric, type ThemeId, type WallConfig } from "@/lib/config";
 
 /** Sample countdowns stay in the future whenever the page is rendered. */
 function inDays(n: number): string {
@@ -7,15 +7,25 @@ function inDays(n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** A connector metric for samples: connectors answer with their sample numbers, nothing is fetched. */
+function connector(
+  source: string,
+  field: string,
+  display: { label: string; prefix?: string; suffix?: string; target?: number },
+  params: Record<string, string> = {}
+): Metric {
+  return { kind: "connector", source, field, params, connection: "", prefix: "", suffix: "", ...display };
+}
+
 /** Landing page wallpapers. The heatmap user is ignored: samples render with synthetic history. */
 export const SAMPLES: Record<ThemeId, WallConfig> = {
   ink: {
     device: "iphone-17-pro",
     theme: "ink",
     caption: "building in public",
-    hero: { kind: "goal", label: "MRR", current: 2340, target: 10000, prefix: "$", suffix: "" },
+    hero: connector("stripe", "mrr", { label: "MRR", prefix: "$", target: 10000 }),
     stats: [
-      { kind: "github-streak", user: "sample" },
+      connector("github", "streak", { label: "day commit streak" }, { user: "sample" }),
       { kind: "countdown", label: "until launch", date: inDays(43) },
     ],
     heatmap: "sample",
@@ -34,9 +44,9 @@ export const SAMPLES: Record<ThemeId, WallConfig> = {
     device: "iphone-17-pro",
     theme: "terminal",
     caption: "~/ship-it",
-    hero: { kind: "github-streak", user: "sample" },
+    hero: connector("github", "streak", { label: "day commit streak" }, { user: "sample" }),
     stats: [
-      { kind: "github-year", user: "sample" },
+      connector("github", "stars", { label: "GitHub stars" }, { repo: "sample/repo" }),
       { kind: "number", label: "open PRs", value: 3, prefix: "", suffix: "" },
     ],
     heatmap: "sample",
@@ -46,7 +56,7 @@ export const SAMPLES: Record<ThemeId, WallConfig> = {
     device: "iphone-17-pro",
     theme: "sunset",
     caption: "road to 10k",
-    hero: { kind: "goal", label: "followers on X", current: 1613, target: 10000, prefix: "", suffix: "" },
+    hero: connector("http", "value", { label: "followers on X", target: 10000 }),
     stats: [
       { kind: "countdown", label: "left in the challenge", date: inDays(108) },
       { kind: "year-progress" },

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { checkFields, connectorSpec, metricSpec } from "@/lib/connectors/catalog";
 
 /**
  * A wallpaper is a small JSON config. Everything the renderer draws comes from
@@ -39,15 +40,44 @@ const ghUser = z
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be YYYY-MM-DD");
 const amount = z.number().min(0).max(1e12);
 
+/**
+ * A number that comes from a connector (src/lib/connectors). The config only
+ * names where the number lives: source, field, public params, and for
+ * connectors with credentials the id of a connection stored server-side.
+ * Never a secret: configs travel in request bodies and previews.
+ */
+const ConnectorMetricSchema = z
+  .object({
+    kind: z.literal("connector"),
+    source: z.string().max(32),
+    field: z.string().max(32),
+    params: z.record(z.string().max(32), z.string().max(200)).default({}),
+    connection: z.string().max(32).default(""),
+    label,
+    prefix: affix,
+    suffix: affix,
+    /** Turns the number into a goal with a progress bar. */
+    target: amount.positive().optional(),
+  })
+  .superRefine((m, ctx) => {
+    const spec = metricSpec(m.source, m.field);
+    if (!spec) {
+      ctx.addIssue({ code: "custom", message: `unknown metric ${m.source}.${m.field}` });
+      return;
+    }
+    const problem = checkFields(spec.params, m.params);
+    if (problem) ctx.addIssue({ code: "custom", message: problem, path: ["params"] });
+  });
+
 export const MetricSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("github-streak"), user: ghUser }),
-  z.object({ kind: z.literal("github-year"), user: ghUser }),
   z.object({ kind: z.literal("countdown"), label, date: isoDate }),
   z.object({ kind: z.literal("goal"), label, current: amount, target: amount.positive(), prefix: affix, suffix: affix }),
   z.object({ kind: z.literal("number"), label, value: amount, prefix: affix, suffix: affix }),
   z.object({ kind: z.literal("year-progress") }),
+  ConnectorMetricSchema,
 ]);
 export type Metric = z.infer<typeof MetricSchema>;
+export type ConnectorMetric = Extract<Metric, { kind: "connector" }>;
 export type MetricKind = Metric["kind"];
 
 export const WallConfigSchema = z.object({
@@ -102,6 +132,9 @@ export function parseConfig(input: unknown): WallConfig | null {
 export function proFeaturesUsed(config: WallConfig): string[] {
   const used: string[] = [];
   if (THEMES[config.theme].pro) used.push(`theme:${config.theme}`);
+  for (const m of [config.hero, ...config.stats]) {
+    if (m.kind === "connector" && connectorSpec(m.source)?.pro) used.push(`connector:${m.source}`);
+  }
   return used;
 }
 

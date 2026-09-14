@@ -701,3 +701,41 @@ select:focus-visible {
     transition: none !important;
   }
 }
+
+/* ── Connections ─────────────────────────── */
+.hint {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+  max-width: 60ch;
+}
+.mono {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 13px;
+  color: var(--muted);
+}
+.conn-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+}
+.conn-list li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding-block: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.connect-form {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.connect-form .hint {
+  margin-bottom: 12px;
+}
+.row > .field.wide {
+  flex-basis: 100%;
+}

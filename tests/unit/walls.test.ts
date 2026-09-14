@@ -58,3 +58,24 @@ describe("walls store (memory)", () => {
     expect(view.imagePath).toBe(`/i/${wall.id}/${imageKey(wall.id, wall.imgNonce)}`);
   });
 });
+
+describe("connections store", () => {
+  test("save, cache values, delete with its cache", async () => {
+    const { saveConnection, saveCachedValues, deleteConnection } = await import("@/lib/store/walls");
+    const wall = await createWall(DEFAULT_CONFIG);
+    await saveConnection(wall.id, { id: "c0nn1234", source: "http", label: "api.example.com", public: { host: "api.example.com" }, sealed: "v1.x.y.z", createdAt: 1 });
+    await saveCachedValues(wall.id, "http|c0nn1234|value", { at: 5, values: { value: 42 } });
+    await saveCachedValues(wall.id, "github|-|repo:vercel/next.js", { at: 6, values: { stars: 1 } });
+    let w = (await getWall(wall.id))!;
+    expect(w.connections?.c0nn1234.label).toBe("api.example.com");
+    expect(w.valueCache?.["http|c0nn1234|value"].values.value).toBe(42);
+    expect(w.valueCache?.["github|-|repo:vercel/next.js"].values.stars).toBe(1);
+
+    await deleteConnection(wall.id, "c0nn1234", ["http|c0nn1234|value"]);
+    w = (await getWall(wall.id))!;
+    expect(w.connections?.c0nn1234).toBeUndefined();
+    expect(w.valueCache?.["http|c0nn1234|value"]).toBeUndefined();
+    expect(w.valueCache?.["github|-|repo:vercel/next.js"]).toBeDefined();
+    expect(JSON.stringify(toView(w))).not.toContain("v1.x.y.z");
+  });
+});

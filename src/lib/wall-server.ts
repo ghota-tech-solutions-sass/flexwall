@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { THEMES, type WallConfig } from "@/lib/config";
-import { resolveWall, sampleGithub } from "@/lib/metrics";
+import { resolveWall, type ResolveMode } from "@/lib/metrics";
 import { renderWallpaper } from "@/lib/render";
 import { getWall, type Wall } from "@/lib/store/walls";
 import type { WallView } from "@/lib/site";
@@ -40,13 +40,21 @@ export const IMAGE_HEADERS = {
  */
 const SAMPLE_HEADERS = { "Cache-Control": "public, max-age=3600", "X-Robots-Tag": "noindex" };
 
-export async function renderPng(config: WallConfig, opts: { watermark: boolean; width?: number; sample?: boolean }): Promise<Response> {
+export interface RenderRequest {
+  config: WallConfig;
+  mode: ResolveMode;
+  wall?: Wall | null;
+  watermark: boolean;
+  width?: number;
+}
+
+export async function renderPng({ config, mode, wall, watermark, width }: RenderRequest): Promise<Response> {
   try {
-    const data = opts.sample ? await resolveWall(config, new Date(), sampleGithub) : await resolveWall(config);
+    const data = await resolveWall({ config, mode, wall });
     // ImageResponse renders lazily while streaming; buffer it so a layout
     // error becomes a 500 here instead of a truncated PNG on someone's phone.
-    const png = await renderWallpaper(config, data, opts).arrayBuffer();
-    const headers = opts.sample ? SAMPLE_HEADERS : IMAGE_HEADERS;
+    const png = await renderWallpaper(config, data, { watermark, width }).arrayBuffer();
+    const headers = mode === "sample" ? SAMPLE_HEADERS : IMAGE_HEADERS;
     return new Response(png, { headers: { ...headers, "Content-Type": "image/png" } });
   } catch (error) {
     console.error("render failed:", error);
@@ -63,5 +71,14 @@ export function toView(wall: Wall): WallView {
     imagePath: `/i/${wall.id}/${imageKey(wall.id, wall.imgNonce)}`,
     editPath: `/edit/${wall.id}?k=${editKey(wall.id, wall.editNonce)}`,
     lastRenderAt: wall.lastRenderAt ?? null,
+    connections: Object.values(wall.connections ?? {})
+      .sort((a, b) => a.createdAt - b.createdAt)
+      .map(({ id, source, label, public: details }) => ({ id, source, label, public: details })),
   };
+}
+
+/** Preview widths stay well under phone resolution, so a preview can't stand in for the image. */
+export function previewWidth(raw: unknown): number {
+  const w = Number(raw ?? 402);
+  return Math.max(200, Math.min(603, Number.isFinite(w) ? w : 402));
 }
