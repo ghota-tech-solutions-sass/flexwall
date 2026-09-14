@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRightIcon, SealCheckIcon } from "@phosphor-icons/react/ssr";
+import { asType, currencySymbol, formatNumber, formatPercent, seriesChange } from "@flexwall/sdk";
+import { sparkPoints } from "@flexwall/sdk/ui";
 import { BrandMark, hasMark } from "@/components/brand/Logos";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { TopBar, Footer } from "@/components/site/Chrome";
@@ -31,6 +33,11 @@ export default async function Home() {
   const states = sampleStates(wall.tiles, c.catalog);
   const signedIn = Boolean(await sessionUserId());
   const connectors = c.catalog.connectors();
+  const revenueState = states.revenue;
+  const revenue = revenueState?.status === "ready" ? asType(revenueState.inputs.series?.value, "series") : null;
+  const trend = revenue ? sparkPoints(revenue.points.map((p) => p.v)) : "";
+  const revenueNow = revenue ? currencySymbol(revenue.currency) + formatNumber(revenue.points.at(-1)?.v ?? 0) : null;
+  const revenueChange = revenue ? seriesChange(revenue) : null;
   const date = new Date(now).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
 
   return (
@@ -48,6 +55,20 @@ export default async function Home() {
             </div>
 
             <div className="phone-stage">
+              <div className="float-card float-chip glass" aria-hidden="true">
+                <SealCheckIcon size={20} weight="fill" />
+                Read from Stripe
+              </div>
+              <div className="float-card float-mrr glass" aria-hidden="true">
+                <span className="label">Revenue, 30 days</span>
+                <b>{revenueNow}</b>
+                {revenueChange !== null ? <span className="delta">{formatPercent(revenueChange, true)}</span> : null}
+                {trend ? (
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <polyline points={trend} fill="none" stroke="currentColor" strokeWidth="2.5" vectorEffect="non-scaling-stroke" style={{ color: "var(--accent)" }} />
+                  </svg>
+                ) : null}
+              </div>
               <div className="device" role="img" aria-label="An iPhone lock screen showing live Flexwall widgets">
                 <div className="device-screen">
                   <span className="device-island" />
