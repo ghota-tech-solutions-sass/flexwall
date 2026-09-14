@@ -21,7 +21,8 @@ export const note = defineWidget<{ title: string; body: string }>({
             {options.title}
           </Text>
         ) : null}
-        <div style={{ display: "flex", fontSize: u(size), lineHeight: 1.4, color: theme.muted, overflow: "hidden", whiteSpace: "pre-wrap" }}>{body || " "}</div>
+        {/* The text box fills what's left and cuts off below, so long notes never spill out of the tile. */}
+        <div style={{ display: "flex", flex: 1, minHeight: 0, fontSize: u(size), lineHeight: 1.4, color: theme.muted, overflow: "hidden", whiteSpace: "pre-wrap" }}>{body || " "}</div>
       </Col>
     );
   },

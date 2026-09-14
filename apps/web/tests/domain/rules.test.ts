@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { Handle } from "@/domain/handle";
-import { firstFreeSpot, mobileLayout } from "@/domain/layout";
+import { firstFreeSpot, mobileLayout, packInto } from "@/domain/layout";
 import { entitlementsOf, PAST_DUE_GRACE_MS } from "@/domain/user";
 import { effectiveTheme } from "@/domain/wall";
 import { aTile, aUser, NOW } from "../builders";
@@ -77,5 +77,25 @@ describe("Mobile layout", () => {
 
     // Then
     expect(spot).toEqual({ x: 0, y: 1, w: 2, h: 1 });
+  });
+
+  test("given tiles spread over many rows, when packed for a share card, then two rows fill in reading order and the rest is left out", () => {
+    // Given
+    const tiles = [
+      aTile().withId("tall").at(0, 1, 1, 3).build(),
+      aTile().withId("first").at(0, 0, 4, 1).build(),
+      aTile().withId("wide").at(1, 1, 3, 1).build(),
+      aTile().withId("late").at(0, 9, 4, 1).build(),
+    ];
+
+    // When
+    const packed = packInto(tiles, 4, 2);
+
+    // Then
+    expect(packed.map(({ item, box }) => [item.id, box])).toEqual([
+      ["first", { x: 0, y: 0, w: 4, h: 1 }],
+      ["tall", { x: 0, y: 1, w: 1, h: 1 }],
+      ["wide", { x: 1, y: 1, w: 3, h: 1 }],
+    ]);
   });
 });

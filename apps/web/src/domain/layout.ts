@@ -56,6 +56,28 @@ export function mobileLayout<T extends { layout: Box }>(items: readonly T[]): { 
   return out;
 }
 
+/**
+ * Packs items in reading order into a fixed columns×rows frame, shrinking each
+ * to fit and skipping what doesn't. Share cards use it: whatever the wall's
+ * layout, the card shows as many tiles as its two rows can hold.
+ */
+export function packInto<T extends { layout: Box }>(items: readonly T[], columns: number, rows: number): { item: T; box: Box }[] {
+  const ordered = [...items].sort((a, b) => a.layout.y - b.layout.y || a.layout.x - b.layout.x);
+  const placed: Box[] = [];
+  const out: { item: T; box: Box }[] = [];
+  for (const item of ordered) {
+    // Try the tile's height first, then shorter, before giving up on it.
+    for (let h = Math.min(item.layout.h, rows); h >= 1; h--) {
+      const box = firstFreeSpot(placed, Math.min(item.layout.w, columns), h, columns);
+      if (box.y + box.h > rows) continue;
+      placed.push(box);
+      out.push({ item, box });
+      break;
+    }
+  }
+  return out;
+}
+
 /** Top-most, then left-most free position for a w×h box. */
 export function firstFreeSpot(placed: readonly Box[], w: number, h: number, columns: number): Box {
   for (let y = 0; ; y++) {

@@ -57,6 +57,8 @@ export interface NumberField extends BaseField {
 export interface DateField extends BaseField {
   kind: "date";
   default?: string;
+  /** A default relative to the day the field is filled in, e.g. 30 for "a month from now". */
+  defaultInDays?: number;
 }
 
 export interface SelectField extends BaseField {
@@ -92,12 +94,16 @@ export const field = {
   toggle: (key: string, label: string, o: Opts<ToggleField> = {}): ToggleField => ({ kind: "toggle", key, label, ...o }),
 };
 
-/** Default values for a set of fields, for a new tile or a new form. */
-export function defaultsFor(fields: readonly Field[]): FieldValues {
+/** Default values for a set of fields, for a new tile or a new form. `today` (YYYY-MM-DD) resolves relative dates. */
+export function defaultsFor(fields: readonly Field[], today = new Date().toISOString().slice(0, 10)): FieldValues {
   const out: FieldValues = {};
   for (const f of fields) {
     if ("default" in f && f.default !== undefined) out[f.key] = f.default;
-    else if (f.kind === "toggle") out[f.key] = false;
+    else if (f.kind === "date" && f.defaultInDays !== undefined) {
+      const d = new Date(today + "T00:00:00Z");
+      d.setUTCDate(d.getUTCDate() + f.defaultInDays);
+      out[f.key] = d.toISOString().slice(0, 10);
+    } else if (f.kind === "toggle") out[f.key] = false;
   }
   return out;
 }
