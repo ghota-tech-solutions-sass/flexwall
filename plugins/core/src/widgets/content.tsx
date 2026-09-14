@@ -1,5 +1,5 @@
 import { asType, defineWidget, field } from "@flexwall/sdk";
-import { Col, Fill, Row, Text } from "@flexwall/sdk/ui";
+import { Col, Fill, Row, Text, fitFont } from "@flexwall/sdk/ui";
 
 /** A title and a few lines of text, typed by the owner or fed by a text metric. */
 export const note = defineWidget<{ title: string; body: string }>({
@@ -14,15 +14,18 @@ export const note = defineWidget<{ title: string; body: string }>({
   render({ inputs, options, area, theme, u }) {
     const body = asType(inputs.text?.value, "text")?.value || options.body;
     const size = area.width < 100 ? 11 : 13;
+    const lineHeight = size * 1.4;
+    const titleHeight = options.title ? (size + 3) * 1.25 + 6 : 0;
+    // As many whole lines as the tile holds: a note is cut between lines, never through one.
+    const lines = Math.max(1, Math.floor((area.height - titleHeight) / lineHeight));
     return (
       <Col style={{ width: "100%", height: "100%" }}>
         {options.title ? (
-          <Text style={{ fontSize: u(size + 3), color: theme.ink, fontFamily: theme.display.family, fontWeight: theme.display.weight, marginBottom: u(6) }}>
+          <Text style={{ fontSize: u(size + 3), lineHeight: 1.25, color: theme.ink, fontFamily: theme.display.family, fontWeight: theme.display.weight, marginBottom: u(6) }}>
             {options.title}
           </Text>
         ) : null}
-        {/* The text box fills what's left and cuts off below, so long notes never spill out of the tile. */}
-        <div style={{ display: "flex", flex: 1, minHeight: 0, fontSize: u(size), lineHeight: 1.4, color: theme.muted, overflow: "hidden", whiteSpace: "pre-wrap" }}>{body || " "}</div>
+        <div style={{ display: "flex", height: u(lines * lineHeight), fontSize: u(size), lineHeight: 1.4, color: theme.muted, overflow: "hidden", whiteSpace: "pre-wrap" }}>{body || " "}</div>
       </Col>
     );
   },
@@ -36,7 +39,7 @@ function hostOf(url: string): string {
   }
 }
 
-function LinkBody({ title, url, subtitle, theme, u }: { title: string; url: string; subtitle: string; theme: Parameters<typeof note.render>[0]["theme"]; u: Parameters<typeof note.render>[0]["u"] }) {
+function LinkBody({ title, url, subtitle, width, theme, u }: { title: string; url: string; subtitle: string; width: number; theme: Parameters<typeof note.render>[0]["theme"]; u: Parameters<typeof note.render>[0]["u"] }) {
   return (
     <Col style={{ width: "100%", height: "100%", justifyContent: "space-between" }}>
       <Row style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -47,7 +50,7 @@ function LinkBody({ title, url, subtitle, theme, u }: { title: string; url: stri
       </Row>
       <Fill style={{ alignItems: "flex-end" }}>
         <Col>
-          <Text style={{ fontSize: u(16), color: theme.ink, fontFamily: theme.display.family, fontWeight: theme.display.weight }}>{title || hostOf(url)}</Text>
+          <Text style={{ fontSize: u(fitFont(title || hostOf(url), width, 16, 0.5)), color: theme.ink, fontFamily: theme.display.family, fontWeight: theme.display.weight }}>{title || hostOf(url)}</Text>
           {subtitle ? <Text style={{ fontSize: u(11), color: theme.muted, marginTop: u(3) }}>{subtitle}</Text> : null}
         </Col>
       </Fill>
@@ -68,11 +71,11 @@ export const link = defineWidget<{ url: string; title: string; subtitle: string 
     field.text("subtitle", "Subtitle", { maxLength: 60, optional: true }),
   ],
   size: { default: [1, 1], min: [1, 1], max: [2, 2] },
-  render: ({ options, theme, u }) => <LinkBody title={options.title} url={options.url} subtitle={options.subtitle} theme={theme} u={u} />,
-  renderPage: ({ options, theme, u }) => (
+  render: ({ options, area, theme, u }) => <LinkBody title={options.title} url={options.url} subtitle={options.subtitle} width={area.width} theme={theme} u={u} />,
+  renderPage: ({ options, area, theme, u }) => (
     // Owner-supplied link on a public page: never pass reputation, never give the target window access.
     <a href={options.url} target="_blank" rel="nofollow ugc noopener noreferrer" style={{ display: "flex", width: "100%", height: "100%", color: "inherit", textDecoration: "none" }}>
-      <LinkBody title={options.title} url={options.url} subtitle={options.subtitle} theme={theme} u={u} />
+      <LinkBody title={options.title} url={options.url} subtitle={options.subtitle} width={area.width} theme={theme} u={u} />
     </a>
   ),
 });
