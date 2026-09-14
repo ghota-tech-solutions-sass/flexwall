@@ -1,0 +1,4 @@
+/** The public origin pages describe themselves with, from build or runtime configuration. */
+export function siteOrigin(): string {
+  return (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
+}

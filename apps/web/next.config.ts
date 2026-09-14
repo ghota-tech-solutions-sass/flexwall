@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
   turbopack: { root },
   // Image renderers read the fonts from disk at runtime.
   outputFileTracingIncludes: { "/**": ["./public/fonts/**/*"] },
+  async redirects() {
+    // One address per page for search engines: www goes to the apex, path and query kept.
+    return [{ source: "/:path*", has: [{ type: "host", value: "www.flexwall.lol" }], destination: "https://flexwall.lol/:path*", permanent: true }];
+  },
   async rewrites() {
     // Walls live at /@handle; the route folder is /u/[handle] because "@" starts a parallel route in the app router.
     return [{ source: "/@:handle", destination: "/u/:handle" }];

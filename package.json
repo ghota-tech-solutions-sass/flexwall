@@ -12,7 +12,7 @@
     "dev": "cd apps/web && bun run dev",
     "build": "cd apps/web && bun run build",
     "typecheck": "bunx tsc --noEmit -p apps/web/tsconfig.json && bunx tsc --noEmit -p packages/sdk/tsconfig.json",
-    "test": "bun test packages plugins && cd apps/web && bun test tests/domain tests/use-cases tests/infrastructure tests/editor tests/plugins",
+    "test": "bun test packages plugins && cd apps/web && bun test tests/domain tests/use-cases tests/infrastructure tests/editor tests/plugins tests/presentation",
     "test:functional": "cd apps/web && bun test tests/functional",
     "deploy": "bash scripts/deploy.sh",
     "check": "bun run typecheck && bun run test && bun run build && bun run test:functional",
