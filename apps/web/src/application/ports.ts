@@ -1,6 +1,7 @@
 import type { ConnectorContext, FieldValues, SeriesPoint, Value } from "@flexwall/sdk";
 import type { Connection } from "@/domain/connection";
 import type { Handle } from "@/domain/handle";
+import type { Referral } from "@/domain/referral";
 import type { Subscription, User } from "@/domain/user";
 import type { Wall } from "@/domain/wall";
 
@@ -20,6 +21,13 @@ export interface HandleRegistry {
   /** Atomic: true if the handle was free and is now the user's. */
   claim(handle: Handle, userId: string): Promise<boolean>;
   ownerOf(handle: Handle): Promise<string | null>;
+}
+
+export interface ReferralRepository {
+  /** The referral that brought this invitee, if any. */
+  byReferee(refereeId: string): Promise<Referral | null>;
+  byReferrer(referrerId: string): Promise<Referral[]>;
+  save(referral: Referral): Promise<void>;
 }
 
 export interface WallRepository {
@@ -104,11 +112,21 @@ export interface CheckoutConsent {
 /** A payment provider event, already verified and translated. */
 export type BillingEvent =
   | { id: string; type: "subscription"; customerId: string; userId: string | null; subscription: Subscription }
-  | { id: string; type: "lifetime"; customerId: string; userId: string };
+  | { id: string; type: "lifetime"; customerId: string; userId: string }
+  /** A charge refunded in full. */
+  | { id: string; type: "refund"; customerId: string };
 
 export interface PaymentGateway {
   enabled(): boolean;
-  checkoutUrl(input: { user: User; plan: BillingPlan; consent: CheckoutConsent; successUrl: string; cancelUrl: string }): Promise<{ url: string; customerId: string }>;
+  checkoutUrl(input: {
+    user: User;
+    plan: BillingPlan;
+    consent: CheckoutConsent;
+    /** The invitee discount applies to this payment. */
+    referralDiscount: boolean;
+    successUrl: string;
+    cancelUrl: string;
+  }): Promise<{ url: string; customerId: string }>;
   portalUrl(input: { customerId: string; returnUrl: string }): Promise<string>;
   /** Null for events that don't change entitlements. Throws on a bad signature. */
   parseEvent(rawBody: string, signature: string): Promise<BillingEvent | null>;

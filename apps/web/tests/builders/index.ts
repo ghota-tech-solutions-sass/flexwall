@@ -2,6 +2,7 @@ import type { Value } from "@flexwall/sdk";
 import type { Connection } from "@/domain/connection";
 import type { Handle } from "@/domain/handle";
 import type { Box } from "@/domain/layout";
+import type { Referral, ReferralStatus } from "@/domain/referral";
 import type { Subscription, User } from "@/domain/user";
 import type { Binding, Tile, Visibility, Wall, WallDraft } from "@/domain/wall";
 
@@ -24,9 +25,19 @@ export class UserBuilder {
     stripeCustomerId: null,
     subscription: null,
     lifetime: false,
+    referredBy: null,
+    bonusProUntil: null,
   };
   withId(id: string) {
     this.user.id = id;
+    return this;
+  }
+  referredBy(userId: string) {
+    this.user.referredBy = userId;
+    return this;
+  }
+  withBonusProUntil(at: number | null) {
+    this.user.bonusProUntil = at;
     return this;
   }
   withEmail(email: string) {
@@ -216,4 +227,32 @@ export const aSubscription = () => new SubscriptionBuilder();
 export const aTile = () => new TileBuilder();
 export const aWall = () => new WallBuilder();
 export const aConnection = () => new ConnectionBuilder();
+export class ReferralBuilder {
+  private referral: Referral = { id: "referee-1", referrerId: "referrer-1", refereeId: "referee-1", createdAt: NOW, status: "signed_up", convertedAt: null, rewarded: false };
+  from(referrerId: string) {
+    this.referral.referrerId = referrerId;
+    return this;
+  }
+  to(refereeId: string) {
+    this.referral.id = refereeId;
+    this.referral.refereeId = refereeId;
+    return this;
+  }
+  converted(at = NOW, rewarded = true) {
+    this.referral.status = "converted";
+    this.referral.convertedAt = at;
+    this.referral.rewarded = rewarded;
+    return this;
+  }
+  withStatus(status: ReferralStatus) {
+    this.referral.status = status;
+    return this;
+  }
+  build(): Referral {
+    return { ...this.referral };
+  }
+}
+
+export const aReferral = () => new ReferralBuilder();
+
 export { NOW };

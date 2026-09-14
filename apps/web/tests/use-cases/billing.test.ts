@@ -4,7 +4,7 @@ import type { BillingEvent } from "@/application/ports";
 import { TERMS_VERSION } from "@/domain/publisher";
 import { planOf } from "@/domain/user";
 import { aSubscription, aUser, NOW } from "../builders";
-import { FakePayments, FixedClock, InMemoryEventLog, InMemoryUsers } from "../fakes";
+import { FakePayments, FixedClock, InMemoryEventLog, InMemoryReferrals, InMemoryUsers } from "../fakes";
 
 describe("StartCheckout", () => {
   test("given a free user, when they pick yearly, then they're sent to checkout and remembered as a customer", async () => {
@@ -12,14 +12,14 @@ describe("StartCheckout", () => {
     const users = new InMemoryUsers();
     const payments = new FakePayments();
     await users.save(aUser().withId("u1").build());
-    const checkout = new StartCheckout({ users, payments, clock: new FixedClock(), appUrl: "https://flexwall.test" });
+    const checkout = new StartCheckout({ users, referrals: new InMemoryReferrals(), payments, clock: new FixedClock(), appUrl: "https://flexwall.test" });
 
     // When
     const { url } = await checkout.execute({ userId: "u1", plan: "yearly", acceptedTerms: true });
 
     // Then
     expect(url).toBe("https://pay.test/yearly");
-    expect(payments.checkouts).toEqual([{ userId: "u1", plan: "yearly", consent: { termsVersion: TERMS_VERSION, acceptedAt: NOW } }]);
+    expect(payments.checkouts).toEqual([{ userId: "u1", plan: "yearly", consent: { termsVersion: TERMS_VERSION, acceptedAt: NOW }, referralDiscount: false }]);
     expect((await users.byId("u1"))!.stripeCustomerId).toBe("cus_u1");
   });
 
@@ -28,7 +28,7 @@ describe("StartCheckout", () => {
     const users = new InMemoryUsers();
     const payments = new FakePayments();
     await users.save(aUser().withId("u1").build());
-    const checkout = new StartCheckout({ users, payments, clock: new FixedClock(), appUrl: "https://flexwall.test" });
+    const checkout = new StartCheckout({ users, referrals: new InMemoryReferrals(), payments, clock: new FixedClock(), appUrl: "https://flexwall.test" });
 
     // When
     const attempt = checkout.execute({ userId: "u1", plan: "monthly", acceptedTerms: false });
@@ -42,7 +42,7 @@ describe("StartCheckout", () => {
     // Given
     const users = new InMemoryUsers();
     await users.save(aUser().withId("u1").pro().build());
-    const checkout = new StartCheckout({ users, payments: new FakePayments(), clock: new FixedClock(), appUrl: "https://flexwall.test" });
+    const checkout = new StartCheckout({ users, referrals: new InMemoryReferrals(), payments: new FakePayments(), clock: new FixedClock(), appUrl: "https://flexwall.test" });
 
     // When
     const attempt = checkout.execute({ userId: "u1", plan: "monthly", acceptedTerms: true });
@@ -55,7 +55,7 @@ describe("StartCheckout", () => {
     // Given
     const users = new InMemoryUsers();
     await users.save(aUser().withId("u1").build());
-    const checkout = new StartCheckout({ users, payments: new FakePayments(false), clock: new FixedClock(), appUrl: "https://flexwall.test" });
+    const checkout = new StartCheckout({ users, referrals: new InMemoryReferrals(), payments: new FakePayments(false), clock: new FixedClock(), appUrl: "https://flexwall.test" });
 
     // When
     const attempt = checkout.execute({ userId: "u1", plan: "lifetime", acceptedTerms: true });
@@ -91,7 +91,7 @@ describe("ApplyBillingEvent", () => {
   async function setup() {
     const users = new InMemoryUsers();
     await users.save(aUser().withId("u1").withStripeCustomer("cus_1").build());
-    return { users, apply: new ApplyBillingEvent({ users, events: new InMemoryEventLog() }) };
+    return { users, apply: new ApplyBillingEvent({ users, events: new InMemoryEventLog(), referrals: new InMemoryReferrals(), clock: new FixedClock() }) };
   }
 
   test("given an active subscription event, when applied, then the customer becomes Pro", async () => {

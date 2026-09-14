@@ -20,6 +20,8 @@ export interface CheckoutOptions {
   automaticTax: boolean;
   /** Stripe's own terms checkbox. Needs a terms URL in the account's public details, or session creation fails. */
   collectTermsConsent: boolean;
+  /** The invitee coupon (20% off once). Without one, invitees pay full price. */
+  referralCoupon: string | null;
 }
 
 /** The Checkout session for a plan, kept pure so what a buyer sees and agrees to is testable without Stripe. */
@@ -29,11 +31,13 @@ export function checkoutSessionParams(input: {
   plan: BillingPlan;
   priceId: string | null;
   consent: CheckoutConsent;
+  referralDiscount: boolean;
   successUrl: string;
   cancelUrl: string;
   options: CheckoutOptions;
 }): Stripe.Checkout.SessionCreateParams {
   const lifetime = input.plan === "lifetime";
+  const coupon = input.referralDiscount ? input.options.referralCoupon : null;
   // The consent recorded on our side travels with the payment: proof of the terms version and of the request to start right away.
   const metadata = {
     userId: input.userId,
@@ -57,7 +61,8 @@ export function checkoutSessionParams(input: {
     customer: input.customerId,
     mode: lifetime ? "payment" : "subscription",
     line_items: [lineItem],
-    allow_promotion_codes: true,
+    // Stripe refuses promotion codes alongside a discount: an invitee gets theirs applied instead.
+    ...(coupon ? { discounts: [{ coupon }] } : { allow_promotion_codes: true }),
     metadata,
     ...(lifetime ? { payment_intent_data: { metadata }, invoice_creation: { enabled: true } } : { subscription_data: { metadata } }),
     custom_text: {
@@ -117,7 +122,7 @@ export class StripeGateway implements PaymentGateway {
     return customer.id;
   }
 
-  async checkoutUrl(input: { user: User; plan: BillingPlan; consent: CheckoutConsent; successUrl: string; cancelUrl: string }) {
+  async checkoutUrl(input: { user: User; plan: BillingPlan; consent: CheckoutConsent; referralDiscount: boolean; successUrl: string; cancelUrl: string }) {
     const customerId = await this.customerFor(input.user);
     const session = await this.stripe().checkout.sessions.create(
       checkoutSessionParams({
@@ -126,9 +131,10 @@ export class StripeGateway implements PaymentGateway {
         plan: input.plan,
         priceId: this.config.prices[input.plan],
         consent: input.consent,
+        referralDiscount: input.referralDiscount,
         successUrl: input.successUrl,
         cancelUrl: input.cancelUrl,
-        options: this.config.checkout ?? { automaticTax: false, collectTermsConsent: false },
+        options: this.config.checkout ?? { automaticTax: false, collectTermsConsent: false, referralCoupon: null },
       })
     );
     if (!session.url) throw new Error("Stripe returned a checkout session without a URL");
@@ -157,6 +163,13 @@ export class StripeGateway implements PaymentGateway {
         const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;
         if (!customerId || !session.metadata?.userId) return null;
         return { id: event.id, type: "lifetime", customerId, userId: session.metadata.userId };
+      }
+      case "charge.refunded": {
+        const charge = event.data.object;
+        const customerId = typeof charge.customer === "string" ? charge.customer : charge.customer?.id;
+        // Partial refunds keep the purchase, and the referral with it.
+        if (!charge.refunded || !customerId) return null;
+        return { id: event.id, type: "refund", customerId };
       }
       case "customer.subscription.created":
       case "customer.subscription.updated":

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { RequestSignInLink, SignIn } from "@/application/use-cases/auth";
 import { aUser } from "../builders";
-import { FakeTokens, FixedClock, InMemoryUsers, RecordingMailer, SequentialIds } from "../fakes";
+import { FakeTokens, FixedClock, InMemoryHandles, InMemoryReferrals, InMemoryUsers, RecordingMailer, SequentialIds } from "../fakes";
 
 describe("RequestSignInLink", () => {
   test("given an email address, when a link is requested, then a sign-in link is mailed to it", async () => {
@@ -35,7 +35,7 @@ describe("RequestSignInLink", () => {
 describe("SignIn", () => {
   function setup() {
     const users = new InMemoryUsers();
-    return { users, signIn: new SignIn({ tokens: new FakeTokens(), users, ids: new SequentialIds(), clock: new FixedClock() }) };
+    return { users, signIn: new SignIn({ tokens: new FakeTokens(), users, handles: new InMemoryHandles(), referrals: new InMemoryReferrals(), ids: new SequentialIds(), clock: new FixedClock() }) };
   }
 
   test("given a first-time email, when its link is opened, then an account is created in the browser's time zone", async () => {

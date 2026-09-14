@@ -3,12 +3,16 @@ import { Footer, TopBar } from "@/components/site/Chrome";
 import { CheckoutConsentScope } from "@/components/site/CheckoutConsent";
 import { UpgradeButton } from "@/components/site/UpgradeButton";
 import { FREE_TILE_LIMIT } from "@/domain/user";
+import { container } from "@/composition";
+import { REFERRAL_DISCOUNT_PERCENT } from "@/domain/referral";
 import { sessionUserId } from "@/presentation/http";
 
 export const metadata: Metadata = { title: "Pricing", alternates: { canonical: "/pricing" } };
 
 export default async function PricingPage() {
-  const signedIn = Boolean(await sessionUserId());
+  const userId = await sessionUserId();
+  const signedIn = Boolean(userId);
+  const invitedBy = userId ? ((await container().getReferralProgram.execute({ userId }))?.invitedBy ?? null) : null;
   return (
     <div className="page">
       <TopBar signedIn={signedIn} />
@@ -17,6 +21,11 @@ export default async function PricingPage() {
           <h1>Pricing</h1>
           <p>Every wall is free and public. Pro is for when the numbers matter: verified revenue, history, a clean lock screen.</p>
           <p className="hint">Prices in US dollars, taxes included. Cancel any time from Settings.</p>
+          {invitedBy ? (
+            <p className="hint">
+              Invited by @{invitedBy}: {REFERRAL_DISCOUNT_PERCENT}% off your first payment, applied at checkout.
+            </p>
+          ) : null}
         </div>
         <CheckoutConsentScope signedIn={signedIn}>
           <div className="plans">

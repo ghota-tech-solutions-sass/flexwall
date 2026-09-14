@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LEGAL_PATHS, LegalDocument, legalMetadata, MediatorBlock } from "@/components/legal/LegalDocument";
+import { REFERRAL_DISCOUNT_PERCENT, REFERRAL_REWARD_CAP, REFERRAL_REWARD_DAYS } from "@/domain/referral";
 import { FREE_TILE_LIMIT } from "@/domain/user";
 import { PUBLISHER } from "@/domain/publisher";
 
@@ -139,7 +140,17 @@ export default function CgvPage() {
         avant son entrée en vigueur. La version applicable à une commande est celle acceptée lors de celle-ci.
       </p>
 
-      <h2>16. Réclamations, médiation et droit applicable</h2>
+      <h2>16. Parrainage</h2>
+      <p>
+        Chaque compte dispose d&apos;un lien d&apos;invitation. La personne qui crée son compte par ce lien bénéficie de {REFERRAL_DISCOUNT_PERCENT} % de
+        réduction sur son premier paiement, quelle que soit l&apos;offre. Pour chaque invité dont le premier paiement aboutit, le parrain reçoit{" "}
+        {REFERRAL_REWARD_DAYS} jours de Pro, dans la limite de {REFERRAL_REWARD_CAP} invités récompensés ; les périodes s&apos;enchaînent. Si ce premier
+        paiement est remboursé dans les 14 jours, la récompense est retirée. Les récompenses n&apos;ont aucune valeur monétaire et ne sont ni échangeables ni
+        cessibles. Il est interdit de se parrainer soi-même ou de créer des comptes pour obtenir des récompenses : celles ainsi obtenues sont retirées.{" "}
+        {PUBLISHER.companyName} peut modifier ou arrêter le programme pour l&apos;avenir ; les récompenses déjà acquises sont conservées.
+      </p>
+
+      <h2>17. Réclamations, médiation et droit applicable</h2>
       <p>
         Toute réclamation s&apos;adresse d&apos;abord à <a href={`mailto:${email}`}>{email}</a>.
       </p>

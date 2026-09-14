@@ -5,12 +5,13 @@ import { ConnectAccount, RemoveConnection } from "@/application/use-cases/connec
 import { ListExplore, ReportWall } from "@/application/use-cases/explore";
 import { GetLockscreen } from "@/application/use-cases/lockscreen";
 import { ResolveWall } from "@/application/use-cases/resolve-wall";
+import { GetReferralProgram } from "@/application/use-cases/referrals";
 import { GetOwnerWall, GetPublicWall, RotateLockscreenLink, SaveWall } from "@/application/use-cases/walls";
 import { StripeGateway } from "@/infrastructure/billing/stripe-gateway";
 import { optionalEnv } from "@/infrastructure/env";
 import { ConsoleMailer, GmailMailer } from "@/infrastructure/mail/mailers";
 import { db } from "@/infrastructure/persistence/db";
-import { DbConnections, DbEventLog, DbHandles, DbSnapshots, DbUsers, DbValueCache, DbWalls } from "@/infrastructure/persistence/repositories";
+import { DbConnections, DbEventLog, DbHandles, DbReferrals, DbSnapshots, DbUsers, DbValueCache, DbWalls } from "@/infrastructure/persistence/repositories";
 import { AesSecretBox } from "@/infrastructure/security/secret-box";
 import { HmacTokenService } from "@/infrastructure/security/tokens";
 import { GuardedRuntime, RandomIds, SystemClock } from "@/infrastructure/system";
@@ -35,6 +36,7 @@ function build() {
   const cache = new DbValueCache(store);
   const snapshots = new DbSnapshots(store);
   const events = new DbEventLog(store);
+  const referrals = new DbReferrals(store);
   const tokens = new HmacTokenService(optionalEnv("FLEXWALL_SECRET") || undefined, production, clock);
   const secrets = new AesSecretBox(optionalEnv("FLEXWALL_ENCRYPTION_KEY") || undefined, production);
   const mailbox = optionalEnv("EMAIL_IMPERSONATE");
@@ -51,6 +53,7 @@ function build() {
     checkout: {
       automaticTax: optionalEnv("STRIPE_AUTOMATIC_TAX") === "true",
       collectTermsConsent: optionalEnv("STRIPE_COLLECT_TERMS_CONSENT") === "true",
+      referralCoupon: optionalEnv("STRIPE_REFERRAL_COUPON") || null,
     },
   });
   const runtime = new GuardedRuntime(["GITHUB_TOKEN", "YOUTUBE_API_KEY"]);
@@ -63,7 +66,7 @@ function build() {
     appUrl,
     mailerIsConsole: !mailbox,
     requestSignInLink: new RequestSignInLink({ tokens, mailer, appUrl }),
-    signIn: new SignIn({ tokens, users, ids, clock }),
+    signIn: new SignIn({ tokens, users, handles, referrals, ids, clock }),
     claimHandle: new ClaimHandle({ users, handles, walls, ids, clock }),
     getOwnerWall: new GetOwnerWall({ users, walls, connections, tokens, clock }),
     saveWall: new SaveWall({ users, walls, connections, catalog, clock }),
@@ -75,9 +78,10 @@ function build() {
     getLockscreen: new GetLockscreen({ walls, users, tokens }),
     listExplore: new ListExplore({ walls, users, resolve: resolveWall, catalog, clock }),
     reportWall: new ReportWall({ walls, mailer, moderationInbox: optionalEnv("MODERATION_INBOX", "report@flexwall.lol") }),
-    startCheckout: new StartCheckout({ users, payments, clock, appUrl }),
+    startCheckout: new StartCheckout({ users, referrals, payments, clock, appUrl }),
     openBillingPortal: new OpenBillingPortal({ users, payments, appUrl }),
-    applyBillingEvent: new ApplyBillingEvent({ users, events }),
+    applyBillingEvent: new ApplyBillingEvent({ users, events, referrals, clock }),
+    getReferralProgram: new GetReferralProgram({ users, referrals, clock, appUrl }),
     payments,
     users,
   };

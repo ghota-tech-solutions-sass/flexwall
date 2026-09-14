@@ -151,6 +151,21 @@ describe("From sign-in to a shared wall", () => {
     expect(card.headers.get("content-type")).toContain("image/png");
   });
 
+  test("given a free published wall, when its footer invite is followed, then the browser remembers who invited it", async () => {
+    // Given
+    cookie = "";
+    const page = await http("/@ada-builds");
+
+    // When
+    const invite = await http("/r/ada-builds");
+
+    // Then
+    expect(await page.text()).toContain('href="/r/ada-builds"');
+    expect(invite.status).toBe(307);
+    expect(invite.headers.get("set-cookie")).toContain("fw_ref=ada-builds");
+    expect(invite.headers.get("set-cookie")?.toLowerCase()).toContain("httponly");
+  });
+
   test("given a published wall, when its lock screen link is fetched without any cookie, then a fresh PNG comes back", async () => {
     // Given
     const token = new HmacTokenService(SECRET, true, { now: () => Date.now() }).magic("ada@example.com");

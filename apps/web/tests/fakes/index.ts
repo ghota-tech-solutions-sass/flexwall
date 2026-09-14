@@ -14,6 +14,7 @@ import type {
   Mail,
   Mailer,
   PaymentGateway,
+  ReferralRepository,
   SecretBox,
   SnapshotStore,
   TokenService,
@@ -23,6 +24,7 @@ import type {
 } from "@/application/ports";
 import type { Connection } from "@/domain/connection";
 import type { Handle } from "@/domain/handle";
+import type { Referral } from "@/domain/referral";
 import type { User } from "@/domain/user";
 import type { Wall } from "@/domain/wall";
 
@@ -70,6 +72,19 @@ export class InMemoryHandles implements HandleRegistry {
   }
   async ownerOf(handle: Handle) {
     return this.items.get(handle) ?? null;
+  }
+}
+
+export class InMemoryReferrals implements ReferralRepository {
+  readonly items = new Map<string, Referral>();
+  async byReferee(refereeId: string) {
+    return structuredClone(this.items.get(refereeId) ?? null);
+  }
+  async byReferrer(referrerId: string) {
+    return structuredClone([...this.items.values()].filter((r) => r.referrerId === referrerId));
+  }
+  async save(referral: Referral) {
+    this.items.set(referral.id, structuredClone(referral));
   }
 }
 
@@ -169,7 +184,7 @@ export class RecordingMailer implements Mailer {
 }
 
 export class FakePayments implements PaymentGateway {
-  readonly checkouts: { userId: string; plan: BillingPlan; consent: CheckoutConsent }[] = [];
+  readonly checkouts: { userId: string; plan: BillingPlan; consent: CheckoutConsent; referralDiscount: boolean }[] = [];
   constructor(
     private readonly on = true,
     private readonly events: Record<string, BillingEvent | null> = {}
@@ -177,8 +192,8 @@ export class FakePayments implements PaymentGateway {
   enabled() {
     return this.on;
   }
-  async checkoutUrl(input: { user: User; plan: BillingPlan; consent: CheckoutConsent }) {
-    this.checkouts.push({ userId: input.user.id, plan: input.plan, consent: input.consent });
+  async checkoutUrl(input: { user: User; plan: BillingPlan; consent: CheckoutConsent; referralDiscount: boolean }) {
+    this.checkouts.push({ userId: input.user.id, plan: input.plan, consent: input.consent, referralDiscount: input.referralDiscount });
     return { url: `https://pay.test/${input.plan}`, customerId: input.user.stripeCustomerId ?? `cus_${input.user.id}` };
   }
   async portalUrl(input: { customerId: string }) {

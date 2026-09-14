@@ -2,11 +2,13 @@ import type { Catalog } from "@/domain/catalog";
 import { viewOf, type ConnectionView } from "@/domain/connection";
 import { DomainError, notFound } from "@/domain/errors";
 import { Handle } from "@/domain/handle";
-import { entitlementsOf, type Entitlements, type User } from "@/domain/user";
+import { entitlementsOf, paidPlanOf, type Entitlements, type Plan, type User } from "@/domain/user";
 import { applyDraft, publicTiles, type Wall, type WallDraft } from "@/domain/wall";
 import type { Clock, ConnectionRepository, IdGenerator, TokenService, UserRepository, WallRepository } from "../ports";
 
 export interface OwnerWall {
+  /** The plan paid for, ignoring referral rewards: whether upgrading still makes sense. */
+  paidPlan: Plan;
   user: User;
   wall: Wall;
   entitlements: Entitlements;
@@ -38,6 +40,7 @@ export class GetOwnerWall {
       user,
       wall,
       entitlements: entitlementsOf(user, this.deps.clock.now()),
+      paidPlan: paidPlanOf(user, this.deps.clock.now()),
       connections: connections.map(viewOf),
       lockscreenPath: `/l/${wall.id}/${this.deps.tokens.lockKey(wall.id, wall.lockNonce)}`,
     };

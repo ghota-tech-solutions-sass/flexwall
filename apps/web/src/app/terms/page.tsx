@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LEGAL_PATHS, LegalDocument, legalMetadata, MediatorBlock } from "@/components/legal/LegalDocument";
+import { REFERRAL_DISCOUNT_PERCENT, REFERRAL_REWARD_CAP, REFERRAL_REWARD_DAYS } from "@/domain/referral";
 import { FREE_TILE_LIMIT } from "@/domain/user";
 import { PUBLISHER } from "@/domain/publisher";
 
@@ -133,7 +134,16 @@ export default function TermsPage() {
         governed by the version accepted when it was placed.
       </p>
 
-      <h2>16. Complaints, mediation and governing law</h2>
+      <h2>16. Referrals</h2>
+      <p>
+        Every account has an invite link. Someone who creates their account through it gets {REFERRAL_DISCOUNT_PERCENT}% off their first payment, on any
+        plan. For each invitee whose first payment goes through, the referrer gets {REFERRAL_REWARD_DAYS} days of Pro, up to {REFERRAL_REWARD_CAP} rewarded
+        invitees; reward periods run one after another. If that first payment is refunded within 14 days, the reward is withdrawn. Rewards have no cash value
+        and can&apos;t be exchanged or transferred. Inviting yourself, or creating accounts to collect rewards, isn&apos;t allowed: rewards obtained that way
+        are withdrawn. {PUBLISHER.companyName} may change or end the program for the future; rewards already earned are kept.
+      </p>
+
+      <h2>17. Complaints, mediation and governing law</h2>
       <p>
         Send any complaint first to <a href={`mailto:${email}`}>{email}</a>.
       </p>
