@@ -3,7 +3,7 @@ import { money, text } from "@flexwall/sdk";
 import { GetOwnerWall, GetPublicWall, RotateLockscreenLink, SaveWall } from "@/application/use-cases/walls";
 import { FREE_TILE_LIMIT } from "@/domain/user";
 import { aConnection, aTile, aUser, aWall } from "../builders";
-import { FakeTokens, FixedClock, InMemoryConnections, InMemoryUsers, InMemoryWalls, SequentialIds } from "../fakes";
+import { FakeLinks, FakeTokens, FixedClock, InMemoryConnections, InMemoryUsers, InMemoryWalls, SequentialIds } from "../fakes";
 import { testCatalog } from "../fakes/test-plugin";
 
 async function setup(user = aUser().withId("u1").build()) {
@@ -20,7 +20,7 @@ async function setup(user = aUser().withId("u1").build()) {
     connections,
     clock,
     saveWall: new SaveWall({ users, walls, connections, catalog, clock }),
-    getOwnerWall: new GetOwnerWall({ users, walls, connections, tokens: new FakeTokens(), clock }),
+    getOwnerWall: new GetOwnerWall({ users, walls, connections, tokens: new FakeTokens(), links: new FakeLinks(), clock }),
     getPublicWall: new GetPublicWall({ walls, users, clock }),
   };
 }
@@ -194,7 +194,7 @@ describe("RotateLockscreenLink", () => {
     const walls = new InMemoryWalls();
     const tokens = new FakeTokens();
     await walls.save(aWall().ownedBy(aUser().withId("u1").build()).build());
-    const rotate = new RotateLockscreenLink({ walls, ids: new SequentialIds(), tokens, clock: new FixedClock() });
+    const rotate = new RotateLockscreenLink({ walls, ids: new SequentialIds(), tokens, links: new FakeLinks(), clock: new FixedClock() });
 
     // When
     const { lockscreenPath } = await rotate.execute({ userId: "u1" });

@@ -3,6 +3,7 @@ import type { Connection } from "@/domain/connection";
 import type { Handle } from "@/domain/handle";
 import type { Referral } from "@/domain/referral";
 import type { Subscription, User } from "@/domain/user";
+import type { BillingPlan } from "@/domain/pricing";
 import type { Wall } from "@/domain/wall";
 
 /**
@@ -101,7 +102,27 @@ export interface Mailer {
   send(mail: Mail): Promise<void>;
 }
 
-export type BillingPlan = "monthly" | "yearly" | "lifetime";
+export type { BillingPlan } from "@/domain/pricing";
+
+/**
+ * Addresses a use case hands out: in emails, to the payment provider, in
+ * answers to the editor. The host builds them from its routes, so the
+ * application never spells a path.
+ */
+export interface AppLinks {
+  /** Absolute: opened from an email. */
+  signIn(token: string): string;
+  /** Relative to the app: the lock screen image of a wall, keyed so it can be revoked. */
+  lockscreen(wallId: string, key: string): string;
+  /** Absolute: where the payment provider sends a buyer after paying. */
+  checkoutSucceeded(): string;
+  /** Absolute: where the payment provider sends a buyer who gave up. */
+  checkoutCancelled(): string;
+  /** Absolute: where the billing portal returns to. */
+  billingReturn(): string;
+  /** Absolute and shareable: an invite from `handle`. */
+  referral(handle: string): string;
+}
 
 /** What a buyer agreed to before paying: the terms in force, and to start right away despite the withdrawal period. */
 export interface CheckoutConsent {

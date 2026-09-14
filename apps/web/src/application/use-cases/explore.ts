@@ -2,6 +2,7 @@ import { Handle } from "@/domain/handle";
 import { formatValue, type Leaderboard } from "@flexwall/sdk";
 import type { Catalog } from "@/domain/catalog";
 import { DomainError } from "@/domain/errors";
+import { REPORT_REASON_MAX, REPORT_REASON_MIN, reportContact } from "@/domain/report";
 import { publicTiles, type Wall } from "@/domain/wall";
 import type { Clock, Mailer, UserRepository, WallRepository } from "../ports";
 import { wallNumbers } from "../wall-numbers";
@@ -84,15 +85,16 @@ export class ReportWall {
 
   async execute(input: { handle: string; reason: string; contact?: string }): Promise<void> {
     const reason = input.reason.trim();
-    if (reason.length < 5 || reason.length > 1000) throw new DomainError("invalid_input", "Tell us what's wrong in a few words (up to 1000 characters).");
+    if (reason.length < REPORT_REASON_MIN || reason.length > REPORT_REASON_MAX) throw new DomainError("invalid_input", `Tell us what's wrong in a few words (up to ${REPORT_REASON_MAX} characters).`);
+    const contact = reportContact(input.contact);
     if (!Handle.isValid(input.handle)) return;
     const wall = await this.deps.walls.byHandle(Handle.parse(input.handle));
     if (!wall) return;
     await this.deps.mailer.send({
       to: this.deps.moderationInbox,
       subject: `Report: @${wall.handle}`,
-      text: `Wall: @${wall.handle} (${wall.id})\nContact: ${input.contact || "none"}\n\n${reason}`,
-      html: `<p>Wall: @${wall.handle} (${wall.id})<br>Contact: ${escapeHtml(input.contact || "none")}</p><pre>${escapeHtml(reason)}</pre>`,
+      text: `Wall: @${wall.handle} (${wall.id})\nContact: ${contact || "none"}\n\n${reason}`,
+      html: `<p>Wall: @${wall.handle} (${wall.id})<br>Contact: ${escapeHtml(contact || "none")}</p><pre>${escapeHtml(reason)}</pre>`,
     });
   }
 }

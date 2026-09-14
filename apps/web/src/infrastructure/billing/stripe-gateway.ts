@@ -93,6 +93,9 @@ export function checkoutSessionParams(input: {
  * both the session and the subscription, so events can be matched even before
  * the customer id is stored.
  */
+/** The header Stripe signs webhook deliveries in. */
+export const STRIPE_SIGNATURE_HEADER = "stripe-signature";
+
 export class StripeGateway implements PaymentGateway {
   private client: Stripe | null = null;
 

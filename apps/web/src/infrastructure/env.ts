@@ -11,6 +11,11 @@ export function requireEnv(name: string): string {
   return value;
 }
 
+/** Production build and runtime: secrets become mandatory and cookies secure. */
+export function isProduction(): boolean {
+  return process.env.NODE_ENV === "production";
+}
+
 export function optionalEnv(name: string, fallback = ""): string {
   return process.env[name]?.trim() || fallback;
 }

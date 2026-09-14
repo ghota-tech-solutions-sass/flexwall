@@ -6,11 +6,28 @@
 
 const segment = (value: string) => encodeURIComponent(value);
 
+/** Query parameters of the sign-in link. The browser adds its time zone so a new account starts on the owner's day. */
+export const SIGN_IN_PARAMS = { token: "token", timeZone: "tz" } as const;
+
+/** Query parameters /settings reads. */
+export const SETTINGS_PARAMS = { upgraded: "upgraded" } as const;
+
+/** Query parameters /login reads. */
+export const LOGIN_PARAMS = { expired: "expired" } as const;
+
+/** A query flag's "on" value. */
+const FLAG_ON = "1";
+
+/** Where route families start, for prefixes (robots) and builders alike. */
+const PREFIX = { api: "/api/", lockscreen: "/l/", referral: "/r/", report: "/report" } as const;
+
+const SIGN_IN_VERIFY = `${PREFIX.api}auth/verify`;
+
 export const ROUTES = {
   home: "/",
   login: "/login",
   /** After a sign-in link that expired. */
-  loginExpired: "/login?expired=1",
+  loginExpired: `/login?${new URLSearchParams({ [LOGIN_PARAMS.expired]: FLAG_ON })}`,
   onboarding: "/onboarding",
   edit: "/edit",
   settings: "/settings",
@@ -22,10 +39,19 @@ export const ROUTES = {
   legal: "/legal",
   terms: "/terms",
   privacy: "/privacy",
-  report: (handle: string) => `/report?${new URLSearchParams({ handle })}`,
+  report: (handle: string) => `${PREFIX.report}?${new URLSearchParams({ handle })}`,
   wall: (handle: string) => `/@${handle}`,
-  referral: (handle: string) => `/r/${segment(handle)}`,
-  lockscreen: (wallId: string, key: string) => `/l/${segment(wallId)}/${segment(key)}`,
+  referral: (handle: string) => `${PREFIX.referral}${segment(handle)}`,
+  lockscreen: (wallId: string, key: string) => `${PREFIX.lockscreen}${segment(wallId)}/${segment(key)}`,
+  /** Settings after a paid checkout: says Pro is on its way. */
+  settingsUpgraded: `/settings?${new URLSearchParams({ [SETTINGS_PARAMS.upgraded]: FLAG_ON })}`,
+  legalFr: "/fr/mentions-legales",
+  termsFr: "/fr/cgv",
+  privacyFr: "/fr/confidentialite",
+  /** The square app icon Next generates from app/apple-icon.tsx. */
+  appleIcon: "/apple-icon",
+  /** The vector app icon, app/icon.svg. */
+  icon: "/icon.svg",
 } as const;
 
 export const API = {
@@ -40,4 +66,10 @@ export const API = {
   billingCheckout: "/api/billing/checkout",
   billingPortal: "/api/billing/portal",
   report: "/api/report",
+  signInVerify: SIGN_IN_VERIFY,
+  /** The link mailed to sign in. */
+  signInLink: (token: string) => `${SIGN_IN_VERIFY}?${new URLSearchParams({ [SIGN_IN_PARAMS.token]: token })}`,
 } as const;
+
+/** Path prefixes of screens and links that must stay out of search engines. */
+export const PRIVATE_PATH_PREFIXES = [PREFIX.api, ROUTES.edit, ROUTES.settings, ROUTES.onboarding, PREFIX.lockscreen, PREFIX.referral, PREFIX.report] as const;

@@ -4,7 +4,7 @@ import { DomainError, notFound } from "@/domain/errors";
 import { Handle } from "@/domain/handle";
 import { entitlementsOf, paidPlanOf, type Entitlements, type Plan, type User } from "@/domain/user";
 import { applyDraft, publicTiles, type Wall, type WallDraft } from "@/domain/wall";
-import type { Clock, ConnectionRepository, IdGenerator, TokenService, UserRepository, WallRepository } from "../ports";
+import type { AppLinks, Clock, ConnectionRepository, IdGenerator, TokenService, UserRepository, WallRepository } from "../ports";
 
 export interface OwnerWall {
   /** The plan paid for, ignoring referral rewards: whether upgrading still makes sense. */
@@ -31,7 +31,7 @@ async function ownerContext(
 /** Everything the editor loads. */
 export class GetOwnerWall {
   constructor(
-    private readonly deps: { users: UserRepository; walls: WallRepository; connections: ConnectionRepository; tokens: TokenService; clock: Clock }
+    private readonly deps: { users: UserRepository; walls: WallRepository; connections: ConnectionRepository; tokens: TokenService; links: AppLinks; clock: Clock }
   ) {}
 
   async execute(input: { userId: string }): Promise<OwnerWall> {
@@ -42,7 +42,7 @@ export class GetOwnerWall {
       entitlements: entitlementsOf(user, this.deps.clock.now()),
       paidPlan: paidPlanOf(user, this.deps.clock.now()),
       connections: connections.map(viewOf),
-      lockscreenPath: `/l/${wall.id}/${this.deps.tokens.lockKey(wall.id, wall.lockNonce)}`,
+      lockscreenPath: this.deps.links.lockscreen(wall.id, this.deps.tokens.lockKey(wall.id, wall.lockNonce)),
     };
   }
 }
@@ -64,7 +64,7 @@ export class SaveWall {
 /** Kills the current lock screen link and returns the new one. */
 export class RotateLockscreenLink {
   constructor(
-    private readonly deps: { walls: WallRepository; ids: IdGenerator; tokens: TokenService; clock: Clock }
+    private readonly deps: { walls: WallRepository; ids: IdGenerator; tokens: TokenService; links: AppLinks; clock: Clock }
   ) {}
 
   async execute(input: { userId: string }): Promise<{ lockscreenPath: string }> {
@@ -72,7 +72,7 @@ export class RotateLockscreenLink {
     if (!wall) throw notFound("Your wall");
     const next = { ...wall, lockNonce: this.deps.ids.next(), updatedAt: this.deps.clock.now() };
     await this.deps.walls.save(next);
-    return { lockscreenPath: `/l/${next.id}/${this.deps.tokens.lockKey(next.id, next.lockNonce)}` };
+    return { lockscreenPath: this.deps.links.lockscreen(next.id, this.deps.tokens.lockKey(next.id, next.lockNonce)) };
   }
 }
 

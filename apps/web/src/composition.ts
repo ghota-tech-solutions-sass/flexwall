@@ -8,7 +8,7 @@ import { ResolveWall } from "@/application/use-cases/resolve-wall";
 import { GetReferralProgram } from "@/application/use-cases/referrals";
 import { GetOwnerWall, GetPublicWall, RotateLockscreenLink, SaveWall } from "@/application/use-cases/walls";
 import { StripeGateway } from "@/infrastructure/billing/stripe-gateway";
-import { optionalEnv } from "@/infrastructure/env";
+import { isProduction, optionalEnv } from "@/infrastructure/env";
 import { ConsoleMailer, GmailMailer } from "@/infrastructure/mail/mailers";
 import { db } from "@/infrastructure/persistence/db";
 import { DbConnections, DbEventLog, DbHandles, DbReferrals, DbSnapshots, DbUsers, DbValueCache, DbWalls } from "@/infrastructure/persistence/repositories";
@@ -16,6 +16,11 @@ import { AesSecretBox } from "@/infrastructure/security/secret-box";
 import { HmacTokenService } from "@/infrastructure/security/tokens";
 import { GuardedRuntime, RandomIds, SystemClock } from "@/infrastructure/system";
 import { catalog } from "@/plugins/registry";
+import { RouteLinks } from "@/presentation/links";
+import { LOCAL_APP_URL } from "@/site";
+
+/** Where wall reports go when MODERATION_INBOX isn't set. */
+const DEFAULT_MODERATION_INBOX = "report@flexwall.lol";
 
 /**
  * The composition root: the one place that picks implementations for ports
@@ -23,8 +28,9 @@ import { catalog } from "@/plugins/registry";
  * Built once per server process.
  */
 function build() {
-  const production = process.env.NODE_ENV === "production";
-  const appUrl = optionalEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000").replace(/\/+$/, "");
+  const production = isProduction();
+  const appUrl = optionalEnv("NEXT_PUBLIC_APP_URL", LOCAL_APP_URL).replace(/\/+$/, "");
+  const links = new RouteLinks(appUrl);
 
   const store = db();
   const clock = new SystemClock();
@@ -65,23 +71,23 @@ function build() {
     tokens,
     appUrl,
     mailerIsConsole: !mailbox,
-    requestSignInLink: new RequestSignInLink({ tokens, mailer, appUrl }),
+    requestSignInLink: new RequestSignInLink({ tokens, mailer, links }),
     signIn: new SignIn({ tokens, users, handles, referrals, ids, clock }),
     claimHandle: new ClaimHandle({ users, handles, walls, ids, clock }),
-    getOwnerWall: new GetOwnerWall({ users, walls, connections, tokens, clock }),
+    getOwnerWall: new GetOwnerWall({ users, walls, connections, tokens, links, clock }),
     saveWall: new SaveWall({ users, walls, connections, catalog, clock }),
-    rotateLockscreenLink: new RotateLockscreenLink({ walls, ids, tokens, clock }),
+    rotateLockscreenLink: new RotateLockscreenLink({ walls, ids, tokens, links, clock }),
     getPublicWall: new GetPublicWall({ walls, users, clock }),
     connectAccount: new ConnectAccount({ users, connections, catalog, runtime, secrets, ids, clock }),
     removeConnection: new RemoveConnection({ connections }),
     resolveWall,
     getLockscreen: new GetLockscreen({ walls, users, tokens }),
     listExplore: new ListExplore({ walls, users, resolve: resolveWall, catalog, clock }),
-    reportWall: new ReportWall({ walls, mailer, moderationInbox: optionalEnv("MODERATION_INBOX", "report@flexwall.lol") }),
-    startCheckout: new StartCheckout({ users, referrals, payments, clock, appUrl }),
-    openBillingPortal: new OpenBillingPortal({ users, payments, appUrl }),
+    reportWall: new ReportWall({ walls, mailer, moderationInbox: optionalEnv("MODERATION_INBOX", DEFAULT_MODERATION_INBOX) }),
+    startCheckout: new StartCheckout({ users, referrals, payments, clock, links }),
+    openBillingPortal: new OpenBillingPortal({ users, payments, links }),
     applyBillingEvent: new ApplyBillingEvent({ users, events, referrals, clock }),
-    getReferralProgram: new GetReferralProgram({ users, referrals, clock, appUrl }),
+    getReferralProgram: new GetReferralProgram({ users, referrals, clock, links }),
     payments,
     users,
   };

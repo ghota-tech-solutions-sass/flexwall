@@ -6,7 +6,7 @@ import type { BillingEvent } from "@/application/ports";
 import { REFERRAL_REWARD_CAP } from "@/domain/referral";
 import type { Subscription } from "@/domain/user";
 import { aReferral, aSubscription, aUser, NOW } from "../builders";
-import { FakePayments, FakeTokens, FixedClock, InMemoryEventLog, InMemoryHandles, InMemoryReferrals, InMemoryUsers, SequentialIds } from "../fakes";
+import { FakeLinks, FakePayments, FakeTokens, FixedClock, InMemoryEventLog, InMemoryHandles, InMemoryReferrals, InMemoryUsers, SequentialIds } from "../fakes";
 
 const DAY = 86_400_000;
 
@@ -23,9 +23,9 @@ function world() {
     clock,
     payments,
     signIn: new SignIn({ tokens: new FakeTokens(), users, handles, referrals, ids: new SequentialIds(), clock }),
-    checkout: new StartCheckout({ users, referrals, payments, clock, appUrl: "https://flexwall.test" }),
+    checkout: new StartCheckout({ users, referrals, payments, clock, links: new FakeLinks() }),
     apply: new ApplyBillingEvent({ users, events: new InMemoryEventLog(), referrals, clock }),
-    program: new GetReferralProgram({ users, referrals, clock, appUrl: "https://flexwall.test" }),
+    program: new GetReferralProgram({ users, referrals, clock, links: new FakeLinks() }),
   };
 }
 

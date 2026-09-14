@@ -3,20 +3,20 @@ import { Handle } from "@/domain/handle";
 import { canRefer, newReferral } from "@/domain/referral";
 import { newUser, type User } from "@/domain/user";
 import { isTimeZone } from "@/domain/time";
-import type { Clock, HandleRegistry, IdGenerator, Mailer, ReferralRepository, TokenService, UserRepository } from "../ports";
+import type { AppLinks, Clock, HandleRegistry, IdGenerator, Mailer, ReferralRepository, TokenService, UserRepository } from "../ports";
 
 const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/;
 
 /** Emails a sign-in link. Same answer whether or not the address has an account. */
 export class RequestSignInLink {
   constructor(
-    private readonly deps: { tokens: TokenService; mailer: Mailer; appUrl: string }
+    private readonly deps: { tokens: TokenService; mailer: Mailer; links: AppLinks }
   ) {}
 
   async execute(input: { email: string }): Promise<{ link: string }> {
     const email = input.email.trim().toLowerCase();
     if (!EMAIL.test(email)) throw invalid("That doesn't look like an email address.");
-    const link = `${this.deps.appUrl}/api/auth/verify?token=${encodeURIComponent(this.deps.tokens.magic(email))}`;
+    const link = this.deps.links.signIn(this.deps.tokens.magic(email));
     await this.deps.mailer.send({
       to: email,
       subject: "Your Flexwall sign-in link",

@@ -2,11 +2,11 @@ import { DomainError } from "@/domain/errors";
 import { TERMS_VERSION } from "@/domain/publisher";
 import { convert, grantMonth, refundable, takeMonthBack } from "@/domain/referral";
 import { paidPlanOf } from "@/domain/user";
-import type { BillingEvent, BillingPlan, Clock, EventLog, PaymentGateway, ReferralRepository, UserRepository } from "../ports";
+import type { AppLinks, BillingEvent, BillingPlan, Clock, EventLog, PaymentGateway, ReferralRepository, UserRepository } from "../ports";
 
 export class StartCheckout {
   constructor(
-    private readonly deps: { users: UserRepository; referrals: ReferralRepository; payments: PaymentGateway; clock: Clock; appUrl: string }
+    private readonly deps: { users: UserRepository; referrals: ReferralRepository; payments: PaymentGateway; clock: Clock; links: AppLinks }
   ) {}
 
   async execute(input: { userId: string; plan: BillingPlan; acceptedTerms: boolean }): Promise<{ url: string }> {
@@ -24,8 +24,8 @@ export class StartCheckout {
       plan: input.plan,
       consent: { termsVersion: TERMS_VERSION, acceptedAt: this.deps.clock.now() },
       referralDiscount: await this.inviteeDiscount(user.id, user.referredBy),
-      successUrl: `${this.deps.appUrl}/settings?upgraded=1`,
-      cancelUrl: `${this.deps.appUrl}/pricing`,
+      successUrl: this.deps.links.checkoutSucceeded(),
+      cancelUrl: this.deps.links.checkoutCancelled(),
     });
     if (customerId !== user.stripeCustomerId) await this.deps.users.save({ ...user, stripeCustomerId: customerId });
     return { url };
@@ -39,12 +39,12 @@ export class StartCheckout {
 }
 
 export class OpenBillingPortal {
-  constructor(private readonly deps: { users: UserRepository; payments: PaymentGateway; appUrl: string }) {}
+  constructor(private readonly deps: { users: UserRepository; payments: PaymentGateway; links: AppLinks }) {}
 
   async execute(input: { userId: string }): Promise<{ url: string }> {
     const user = await this.deps.users.byId(input.userId);
     if (!user?.stripeCustomerId) throw new DomainError("invalid_input", "There's no billing history on this account yet.");
-    return { url: await this.deps.payments.portalUrl({ customerId: user.stripeCustomerId, returnUrl: `${this.deps.appUrl}/settings` }) };
+    return { url: await this.deps.payments.portalUrl({ customerId: user.stripeCustomerId, returnUrl: this.deps.links.billingReturn() }) };
   }
 }
 

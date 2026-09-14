@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import { RequestSignInLink, SignIn } from "@/application/use-cases/auth";
 import { aUser } from "../builders";
-import { FakeTokens, FixedClock, InMemoryHandles, InMemoryReferrals, InMemoryUsers, RecordingMailer, SequentialIds } from "../fakes";
+import { FakeLinks, FakeTokens, FixedClock, InMemoryHandles, InMemoryReferrals, InMemoryUsers, RecordingMailer, SequentialIds } from "../fakes";
 
 describe("RequestSignInLink", () => {
   test("given an email address, when a link is requested, then a sign-in link is mailed to it", async () => {
     // Given
     const mailer = new RecordingMailer();
-    const requestLink = new RequestSignInLink({ tokens: new FakeTokens(), mailer, appUrl: "https://flexwall.test" });
+    const requestLink = new RequestSignInLink({ tokens: new FakeTokens(), mailer, links: new FakeLinks() });
 
     // When
     await requestLink.execute({ email: "  Ada@Example.com " });
@@ -21,7 +21,7 @@ describe("RequestSignInLink", () => {
   test("given something that isn't an email, when a link is requested, then nothing is sent", async () => {
     // Given
     const mailer = new RecordingMailer();
-    const requestLink = new RequestSignInLink({ tokens: new FakeTokens(), mailer, appUrl: "https://flexwall.test" });
+    const requestLink = new RequestSignInLink({ tokens: new FakeTokens(), mailer, links: new FakeLinks() });
 
     // When
     const attempt = requestLink.execute({ email: "ada" });

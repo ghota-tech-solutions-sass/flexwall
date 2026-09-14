@@ -3,6 +3,7 @@ import { money, number } from "@flexwall/sdk";
 import { ListExplore, ReportWall } from "@/application/use-cases/explore";
 import { GetLockscreen } from "@/application/use-cases/lockscreen";
 import { ResolveWall } from "@/application/use-cases/resolve-wall";
+import { REPORT_CONTACT_MAX } from "@/domain/report";
 import { aConnection, aTile, aUser, aWall, NOW } from "../builders";
 import {
   FakeRuntime,
@@ -129,5 +130,21 @@ describe("ReportWall", () => {
     // Then
     expect(mailer.sent[0]).toMatchObject({ to: "mod@flexwall.test", subject: "Report: @ada" });
     expect(mailer.sent[0].html).toContain("&lt;b&gt;me&lt;/b&gt;");
+  });
+
+  test("given a contact longer than the cap, when the report is sent from any client, then moderation gets it cut to the cap", async () => {
+    // Given
+    const walls = new InMemoryWalls();
+    const mailer = new RecordingMailer();
+    await walls.save(aWall().build());
+    const report = new ReportWall({ walls, mailer, moderationInbox: "mod@flexwall.test" });
+    const contact = "a".repeat(REPORT_CONTACT_MAX) + "@overflow.example";
+
+    // When
+    await report.execute({ handle: "ada", reason: "Fake revenue numbers", contact });
+
+    // Then
+    expect(mailer.sent[0].text).toContain(`Contact: ${"a".repeat(REPORT_CONTACT_MAX)}\n`);
+    expect(mailer.sent[0].text).not.toContain("overflow");
   });
 });

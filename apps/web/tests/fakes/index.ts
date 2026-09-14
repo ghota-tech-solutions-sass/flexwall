@@ -1,27 +1,6 @@
 import type { ConnectorContext, SeriesPoint } from "@flexwall/sdk";
 import { fakeContext } from "@flexwall/sdk/testing";
-import type {
-  BillingEvent,
-  BillingPlan,
-  CachedValues,
-  CheckoutConsent,
-  Clock,
-  ConnectionRepository,
-  ConnectorRuntime,
-  EventLog,
-  HandleRegistry,
-  IdGenerator,
-  Mail,
-  Mailer,
-  PaymentGateway,
-  ReferralRepository,
-  SecretBox,
-  SnapshotStore,
-  TokenService,
-  UserRepository,
-  ValueCache,
-  WallRepository,
-} from "@/application/ports";
+import type { AppLinks, BillingEvent, BillingPlan, CachedValues, CheckoutConsent, Clock, ConnectionRepository, ConnectorRuntime, EventLog, HandleRegistry, IdGenerator, Mail, Mailer, PaymentGateway, ReferralRepository, SecretBox, SnapshotStore, TokenService, UserRepository, ValueCache, WallRepository } from "@/application/ports";
 import type { Connection } from "@/domain/connection";
 import type { Handle } from "@/domain/handle";
 import type { Referral } from "@/domain/referral";
@@ -174,6 +153,17 @@ export class FakeTokens implements TokenService {
   verifyMagic = (token: string | undefined) => (token?.startsWith("magic:") ? token.slice(6) : null);
   lockKey = (wallId: string, nonce: string) => `lock:${wallId}:${nonce}`;
   verifyLockKey = (wallId: string, nonce: string, key: string) => key === `lock:${wallId}:${nonce}`;
+}
+
+/** Addresses on a test origin, shaped like the real ones but without depending on the app's routes. */
+export class FakeLinks implements AppLinks {
+  constructor(private readonly origin = "https://flexwall.test") {}
+  signIn = (token: string) => `${this.origin}/api/auth/verify?token=${encodeURIComponent(token)}`;
+  lockscreen = (wallId: string, key: string) => `/l/${wallId}/${key}`;
+  checkoutSucceeded = () => `${this.origin}/settings?upgraded=1`;
+  checkoutCancelled = () => `${this.origin}/pricing`;
+  billingReturn = () => `${this.origin}/settings`;
+  referral = (handle: string) => `${this.origin}/r/${handle}`;
 }
 
 export class RecordingMailer implements Mailer {
