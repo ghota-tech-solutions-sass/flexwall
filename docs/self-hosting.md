@@ -22,6 +22,7 @@ docker run -p 3000:3000 --env-file .env flexwall
 | `EMAIL_IMPERSONATE`, `EMAIL_FROM` | for email | Gmail API through domain-wide delegation. Without them, sign-in links are printed in the server log. |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | for payments | Flexwall's own billing. Without them, upgrades say payments are off. |
 | `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY`, `STRIPE_PRICE_LIFETIME` | no | Stripe price ids. Without them, inline prices ($6, $48, $99) are used. |
+| `STRIPE_PORTAL_CONFIGURATION` | no | Customer portal configuration id. Without it Stripe uses the account's default portal, which must then be saved once in the dashboard. |
 | `GITHUB_TOKEN` | no | A token with no scopes. Raises GitHub's API limit from 60 to 5000 calls an hour for stars and followers. |
 | `YOUTUBE_API_KEY` | for YouTube tiles | A YouTube Data API v3 key. Without it, YouTube tiles say the server has no key. |
 | `MODERATION_INBOX` | no | Where wall reports are sent. |

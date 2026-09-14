@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Footer, TopBar } from "@/components/site/Chrome";
 import { sessionUserId } from "@/presentation/http";
+import { SOURCE_URL } from "@/site";
 
 export const metadata: Metadata = { title: "Terms & privacy", alternates: { canonical: "/legal" } };
 
@@ -24,8 +25,14 @@ export default async function LegalPage() {
         <p>We only accept read-only credentials where a provider offers them. Removing a connection deletes its credentials. Nothing is sold or shared.</p>
         <h2>Verified numbers</h2>
         <p>The verified badge means a value was read from the owner&apos;s own connected account at the time shown. Faking verification, impersonating someone or posting harmful content gets a wall removed. Report walls from the link at their bottom.</p>
-        <h2>Open source</h2>
-        <p>The code that stores your credentials is public: the app is AGPL-3.0, the SDK and plugins are MIT.</p>
+        {SOURCE_URL ? (
+          <>
+            <h2>Open source</h2>
+            <p>
+              The <a href={SOURCE_URL}>code that stores your credentials</a> is public: the app is AGPL-3.0, the SDK and plugins are MIT.
+            </p>
+          </>
+        ) : null}
       </main>
       <Footer />
     </div>

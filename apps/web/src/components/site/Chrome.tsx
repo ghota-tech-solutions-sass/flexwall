@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SOURCE_URL } from "@/site";
 
 export function TopBar({ signedIn }: { signedIn: boolean }) {
   return (
@@ -11,9 +12,11 @@ export function TopBar({ signedIn }: { signedIn: boolean }) {
         <Link href="/pricing" className="hide-sm">
           Pricing
         </Link>
-        <a href="https://github.com/ghota-tech-solutions-sass/flexwall" className="hide-sm">
-          GitHub
-        </a>
+        {SOURCE_URL ? (
+          <a href={SOURCE_URL} className="hide-sm">
+            GitHub
+          </a>
+        ) : null}
         {signedIn ? (
           <Link href="/edit" className="btn btn-signal btn-small">
             Edit my wall
@@ -31,11 +34,11 @@ export function TopBar({ signedIn }: { signedIn: boolean }) {
 export function Footer() {
   return (
     <footer className="footer">
-      <span>Flexwall is open source (AGPL-3.0). Plugins and SDK are MIT.</span>
+      <span>{SOURCE_URL ? "Flexwall is open source (AGPL-3.0). Plugins and SDK are MIT." : "Flexwall: your numbers, live, on one page."}</span>
       <nav aria-label="Footer">
         <Link href="/explore">The Wall</Link>
         <Link href="/pricing">Pricing</Link>
-        <a href="https://github.com/ghota-tech-solutions-sass/flexwall/tree/main/docs">Docs</a>
+        {SOURCE_URL ? <a href={`${SOURCE_URL}/tree/main/docs`}>Docs</a> : null}
         <Link href="/legal">Terms &amp; privacy</Link>
       </nav>
     </footer>

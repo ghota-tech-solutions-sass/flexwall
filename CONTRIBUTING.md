@@ -28,6 +28,7 @@ under the license of the folder you change.
 ## Pull requests
 
 - One topic per pull request.
+- The title follows [Conventional Commits](https://www.conventionalcommits.org): `feat(plugin-npm): weekly downloads`, `fix(editor): …`. Pull requests are squash-merged, so the title becomes the commit Release Please reads to version and write the changelog.
 - `bun run check` passes.
 - New behaviour has tests; bug fixes have a test that failed before.
 - User-facing text is short and plain, in sentence case.

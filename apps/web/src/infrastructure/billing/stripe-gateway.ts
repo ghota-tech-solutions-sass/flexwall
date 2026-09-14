@@ -26,7 +26,13 @@ export class StripeGateway implements PaymentGateway {
   private client: Stripe | null = null;
 
   constructor(
-    private readonly config: { secretKey: string | undefined; webhookSecret: string | undefined; prices: StripePrices }
+    private readonly config: {
+      secretKey: string | undefined;
+      webhookSecret: string | undefined;
+      prices: StripePrices;
+      /** A portal configuration id. Without one Stripe uses the account's default, which live mode may not have. */
+      portalConfiguration?: string | null;
+    }
   ) {}
 
   enabled() {
@@ -73,7 +79,11 @@ export class StripeGateway implements PaymentGateway {
   }
 
   async portalUrl(input: { customerId: string; returnUrl: string }) {
-    const portal = await this.stripe().billingPortal.sessions.create({ customer: input.customerId, return_url: input.returnUrl });
+    const portal = await this.stripe().billingPortal.sessions.create({
+      customer: input.customerId,
+      return_url: input.returnUrl,
+      ...(this.config.portalConfiguration ? { configuration: this.config.portalConfiguration } : {}),
+    });
     return portal.url;
   }
 
