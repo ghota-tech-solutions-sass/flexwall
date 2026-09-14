@@ -180,14 +180,16 @@ locals {
 
   plain_env = merge(
     {
-      NODE_ENV                    = "production"
-      NEXT_PUBLIC_APP_URL         = local.app_url
-      GOOGLE_PROJECT_ID           = var.project_id
-      MODERATION_INBOX            = var.moderation_inbox
-      STRIPE_PRICE_MONTHLY        = stripe_price.monthly.id
-      STRIPE_PRICE_YEARLY         = stripe_price.yearly.id
-      STRIPE_PRICE_LIFETIME       = stripe_price.lifetime.id
-      STRIPE_PORTAL_CONFIGURATION = stripe_portal_configuration.billing.id
+      NODE_ENV                     = "production"
+      NEXT_PUBLIC_APP_URL          = local.app_url
+      GOOGLE_PROJECT_ID            = var.project_id
+      MODERATION_INBOX             = var.moderation_inbox
+      STRIPE_PRICE_MONTHLY         = stripe_price.monthly.id
+      STRIPE_PRICE_YEARLY          = stripe_price.yearly.id
+      STRIPE_PRICE_LIFETIME        = stripe_price.lifetime.id
+      STRIPE_PORTAL_CONFIGURATION  = stripe_portal_configuration.billing.id
+      STRIPE_AUTOMATIC_TAX         = tostring(var.stripe_automatic_tax)
+      STRIPE_COLLECT_TERMS_CONSENT = tostring(var.stripe_collect_terms_consent)
     },
     local.email_env,
   )

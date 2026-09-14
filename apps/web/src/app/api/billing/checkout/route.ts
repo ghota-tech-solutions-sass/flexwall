@@ -8,7 +8,7 @@ const PLANS: BillingPlan[] = ["monthly", "yearly", "lifetime"];
 export const POST = (req: Request) =>
   handle(async () => {
     const userId = await requireUserId();
-    const { plan } = await readJson<{ plan?: string }>(req);
+    const { plan, acceptedTerms } = await readJson<{ plan?: string; acceptedTerms?: unknown }>(req);
     const chosen = PLANS.find((p) => p === plan) ?? "monthly";
-    return NextResponse.json(await container().startCheckout.execute({ userId, plan: chosen }));
+    return NextResponse.json(await container().startCheckout.execute({ userId, plan: chosen, acceptedTerms: acceptedTerms === true }));
   });

@@ -90,6 +90,18 @@ variable "moderation_inbox" {
 # STRIPE
 # =============================================================================
 
+variable "stripe_automatic_tax" {
+  description = "Compute VAT with Stripe Tax at checkout. Turn on only once Stripe Tax is active on the account with its registrations (dashboard > Tax): before that, Stripe refuses every checkout session."
+  type        = bool
+  default     = false
+}
+
+variable "stripe_collect_terms_consent" {
+  description = "Show Stripe's terms checkbox at checkout, on top of the one on the pricing page. Turn on only once a terms URL is set in the account's public details (dashboard > Settings > Public details): before that, Stripe refuses every checkout session."
+  type        = bool
+  default     = false
+}
+
 variable "price_monthly_cents" {
   description = "Pro, monthly, in US cents."
   type        = number

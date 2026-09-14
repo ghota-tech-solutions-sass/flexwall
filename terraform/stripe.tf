@@ -8,6 +8,9 @@
 #   Pro       $6 a month or $48 a year   subscription
 #   Lifetime  $99 once                   payment
 #
+# Prices include taxes (tax_behavior inclusive): with Stripe Tax on, the VAT of
+# the buyer's country comes out of the price instead of being added to it.
+#
 # Price ids reach the app as STRIPE_PRICE_*. Changing an amount creates a new
 # price (Stripe prices are immutable); existing subscribers keep theirs.
 #
@@ -48,9 +51,15 @@ provider "stripe" {
   api_key = data.google_secret_manager_secret_version.stripe_secret_key.secret_data
 }
 
+locals {
+  # Electronically supplied services: the EU VAT category of a SaaS sold to consumers.
+  stripe_tax_code = "txcd_10000000"
+}
+
 resource "stripe_product" "pro" {
   name        = "Flexwall Pro"
   description = "Unlimited tiles, every connector, no watermark, your lock screen and share card."
+  tax_code    = local.stripe_tax_code
 
   metadata = {
     app     = "flexwall"
@@ -62,6 +71,7 @@ resource "stripe_product" "pro" {
 resource "stripe_product" "lifetime" {
   name        = "Flexwall Lifetime"
   description = "Everything in Pro, paid once."
+  tax_code    = local.stripe_tax_code
 
   metadata = {
     app     = "flexwall"
@@ -71,10 +81,11 @@ resource "stripe_product" "lifetime" {
 }
 
 resource "stripe_price" "monthly" {
-  product     = stripe_product.pro.id
-  currency    = "usd"
-  unit_amount = var.price_monthly_cents
-  nickname    = "Pro monthly"
+  product      = stripe_product.pro.id
+  currency     = "usd"
+  unit_amount  = var.price_monthly_cents
+  nickname     = "Pro monthly"
+  tax_behavior = "inclusive"
 
   recurring {
     interval       = "month"
@@ -89,10 +100,11 @@ resource "stripe_price" "monthly" {
 }
 
 resource "stripe_price" "yearly" {
-  product     = stripe_product.pro.id
-  currency    = "usd"
-  unit_amount = var.price_yearly_cents
-  nickname    = "Pro yearly"
+  product      = stripe_product.pro.id
+  currency     = "usd"
+  unit_amount  = var.price_yearly_cents
+  nickname     = "Pro yearly"
+  tax_behavior = "inclusive"
 
   recurring {
     interval       = "year"
@@ -107,10 +119,11 @@ resource "stripe_price" "yearly" {
 }
 
 resource "stripe_price" "lifetime" {
-  product     = stripe_product.lifetime.id
-  currency    = "usd"
-  unit_amount = var.price_lifetime_cents
-  nickname    = "Lifetime"
+  product      = stripe_product.lifetime.id
+  currency     = "usd"
+  unit_amount  = var.price_lifetime_cents
+  nickname     = "Lifetime"
+  tax_behavior = "inclusive"
 
   metadata = {
     app     = "flexwall"
@@ -130,8 +143,8 @@ resource "stripe_portal_configuration" "billing" {
 
   business_profile {
     headline             = "Flexwall billing"
-    privacy_policy_url   = "${local.app_url}/legal"
-    terms_of_service_url = "${local.app_url}/legal"
+    privacy_policy_url   = "${local.app_url}/privacy"
+    terms_of_service_url = "${local.app_url}/terms"
   }
 
   features {

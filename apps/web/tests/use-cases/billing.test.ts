@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { ApplyBillingEvent, OpenBillingPortal, StartCheckout } from "@/application/use-cases/billing";
 import type { BillingEvent } from "@/application/ports";
+import { TERMS_VERSION } from "@/domain/publisher";
 import { planOf } from "@/domain/user";
 import { aSubscription, aUser, NOW } from "../builders";
 import { FakePayments, FixedClock, InMemoryEventLog, InMemoryUsers } from "../fakes";
@@ -14,12 +15,27 @@ describe("StartCheckout", () => {
     const checkout = new StartCheckout({ users, payments, clock: new FixedClock(), appUrl: "https://flexwall.test" });
 
     // When
-    const { url } = await checkout.execute({ userId: "u1", plan: "yearly" });
+    const { url } = await checkout.execute({ userId: "u1", plan: "yearly", acceptedTerms: true });
 
     // Then
     expect(url).toBe("https://pay.test/yearly");
-    expect(payments.checkouts).toEqual([{ userId: "u1", plan: "yearly" }]);
+    expect(payments.checkouts).toEqual([{ userId: "u1", plan: "yearly", consent: { termsVersion: TERMS_VERSION, acceptedAt: NOW } }]);
     expect((await users.byId("u1"))!.stripeCustomerId).toBe("cus_u1");
+  });
+
+  test("given a buyer who hasn't accepted the terms, when they upgrade, then checkout doesn't open", async () => {
+    // Given
+    const users = new InMemoryUsers();
+    const payments = new FakePayments();
+    await users.save(aUser().withId("u1").build());
+    const checkout = new StartCheckout({ users, payments, clock: new FixedClock(), appUrl: "https://flexwall.test" });
+
+    // When
+    const attempt = checkout.execute({ userId: "u1", plan: "monthly", acceptedTerms: false });
+
+    // Then
+    await expect(attempt).rejects.toMatchObject({ code: "invalid_input" });
+    expect(payments.checkouts).toEqual([]);
   });
 
   test("given a Pro subscriber, when they try to subscribe again, then they're sent to billing instead", async () => {
@@ -29,7 +45,7 @@ describe("StartCheckout", () => {
     const checkout = new StartCheckout({ users, payments: new FakePayments(), clock: new FixedClock(), appUrl: "https://flexwall.test" });
 
     // When
-    const attempt = checkout.execute({ userId: "u1", plan: "monthly" });
+    const attempt = checkout.execute({ userId: "u1", plan: "monthly", acceptedTerms: true });
 
     // Then
     await expect(attempt).rejects.toThrow("You're already Pro.");
@@ -42,7 +58,7 @@ describe("StartCheckout", () => {
     const checkout = new StartCheckout({ users, payments: new FakePayments(false), clock: new FixedClock(), appUrl: "https://flexwall.test" });
 
     // When
-    const attempt = checkout.execute({ userId: "u1", plan: "lifetime" });
+    const attempt = checkout.execute({ userId: "u1", plan: "lifetime", acceptedTerms: true });
 
     // Then
     await expect(attempt).rejects.toMatchObject({ code: "payments_unavailable" });

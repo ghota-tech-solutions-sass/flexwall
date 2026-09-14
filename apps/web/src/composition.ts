@@ -48,6 +48,10 @@ function build() {
       lifetime: optionalEnv("STRIPE_PRICE_LIFETIME") || null,
     },
     portalConfiguration: optionalEnv("STRIPE_PORTAL_CONFIGURATION") || null,
+    checkout: {
+      automaticTax: optionalEnv("STRIPE_AUTOMATIC_TAX") === "true",
+      collectTermsConsent: optionalEnv("STRIPE_COLLECT_TERMS_CONSENT") === "true",
+    },
   });
   const runtime = new GuardedRuntime(["GITHUB_TOKEN", "YOUTUBE_API_KEY"]);
 

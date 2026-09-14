@@ -1,4 +1,5 @@
 import { DomainError } from "@/domain/errors";
+import { TERMS_VERSION } from "@/domain/publisher";
 import { planOf } from "@/domain/user";
 import type { BillingEvent, BillingPlan, Clock, EventLog, PaymentGateway, UserRepository } from "../ports";
 
@@ -7,8 +8,9 @@ export class StartCheckout {
     private readonly deps: { users: UserRepository; payments: PaymentGateway; clock: Clock; appUrl: string }
   ) {}
 
-  async execute(input: { userId: string; plan: BillingPlan }): Promise<{ url: string }> {
+  async execute(input: { userId: string; plan: BillingPlan; acceptedTerms: boolean }): Promise<{ url: string }> {
     if (!this.deps.payments.enabled()) throw new DomainError("payments_unavailable", "Payments aren't switched on yet.");
+    if (input.acceptedTerms !== true) throw new DomainError("invalid_input", "Accept the terms and ask for Pro to start now to continue.");
     const user = await this.deps.users.byId(input.userId);
     if (!user) throw new DomainError("unauthenticated", "Sign in again.");
     const plan = planOf(user, this.deps.clock.now());
@@ -18,6 +20,7 @@ export class StartCheckout {
     const { url, customerId } = await this.deps.payments.checkoutUrl({
       user,
       plan: input.plan,
+      consent: { termsVersion: TERMS_VERSION, acceptedAt: this.deps.clock.now() },
       successUrl: `${this.deps.appUrl}/settings?upgraded=1`,
       cancelUrl: `${this.deps.appUrl}/pricing`,
     });

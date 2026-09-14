@@ -95,6 +95,12 @@ export interface Mailer {
 
 export type BillingPlan = "monthly" | "yearly" | "lifetime";
 
+/** What a buyer agreed to before paying: the terms in force, and to start right away despite the withdrawal period. */
+export interface CheckoutConsent {
+  termsVersion: string;
+  acceptedAt: number;
+}
+
 /** A payment provider event, already verified and translated. */
 export type BillingEvent =
   | { id: string; type: "subscription"; customerId: string; userId: string | null; subscription: Subscription }
@@ -102,7 +108,7 @@ export type BillingEvent =
 
 export interface PaymentGateway {
   enabled(): boolean;
-  checkoutUrl(input: { user: User; plan: BillingPlan; successUrl: string; cancelUrl: string }): Promise<{ url: string; customerId: string }>;
+  checkoutUrl(input: { user: User; plan: BillingPlan; consent: CheckoutConsent; successUrl: string; cancelUrl: string }): Promise<{ url: string; customerId: string }>;
   portalUrl(input: { customerId: string; returnUrl: string }): Promise<string>;
   /** Null for events that don't change entitlements. Throws on a bad signature. */
   parseEvent(rawBody: string, signature: string): Promise<BillingEvent | null>;

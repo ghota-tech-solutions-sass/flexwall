@@ -4,6 +4,7 @@ import type {
   BillingEvent,
   BillingPlan,
   CachedValues,
+  CheckoutConsent,
   Clock,
   ConnectionRepository,
   ConnectorRuntime,
@@ -168,7 +169,7 @@ export class RecordingMailer implements Mailer {
 }
 
 export class FakePayments implements PaymentGateway {
-  readonly checkouts: { userId: string; plan: BillingPlan }[] = [];
+  readonly checkouts: { userId: string; plan: BillingPlan; consent: CheckoutConsent }[] = [];
   constructor(
     private readonly on = true,
     private readonly events: Record<string, BillingEvent | null> = {}
@@ -176,8 +177,8 @@ export class FakePayments implements PaymentGateway {
   enabled() {
     return this.on;
   }
-  async checkoutUrl(input: { user: User; plan: BillingPlan }) {
-    this.checkouts.push({ userId: input.user.id, plan: input.plan });
+  async checkoutUrl(input: { user: User; plan: BillingPlan; consent: CheckoutConsent }) {
+    this.checkouts.push({ userId: input.user.id, plan: input.plan, consent: input.consent });
     return { url: `https://pay.test/${input.plan}`, customerId: input.user.stripeCustomerId ?? `cus_${input.user.id}` };
   }
   async portalUrl(input: { customerId: string }) {

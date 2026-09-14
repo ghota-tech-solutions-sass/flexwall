@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import type { BillingEvent, BillingPlan, PaymentGateway } from "@/application/ports";
+import type { BillingEvent, BillingPlan, CheckoutConsent, PaymentGateway } from "@/application/ports";
 import type { Subscription, SubscriptionStatus, User } from "@/domain/user";
 
 export interface StripePrices {
@@ -8,12 +8,78 @@ export interface StripePrices {
   lifetime: string | null;
 }
 
-/** Inline prices used when no Stripe price ids are configured (test mode, self-hosting). */
+/** Inline prices used when no Stripe price ids are configured (test mode, self-hosting). Taxes included, like the configured ones. */
 const FALLBACK = {
   monthly: { unit_amount: 600, recurring: { interval: "month" as const } },
   yearly: { unit_amount: 4800, recurring: { interval: "year" as const } },
   lifetime: { unit_amount: 9900 },
 };
+
+export interface CheckoutOptions {
+  /** Stripe Tax computes VAT from the buyer's address. Needs Stripe Tax active on the account, or session creation fails. */
+  automaticTax: boolean;
+  /** Stripe's own terms checkbox. Needs a terms URL in the account's public details, or session creation fails. */
+  collectTermsConsent: boolean;
+}
+
+/** The Checkout session for a plan, kept pure so what a buyer sees and agrees to is testable without Stripe. */
+export function checkoutSessionParams(input: {
+  customerId: string;
+  userId: string;
+  plan: BillingPlan;
+  priceId: string | null;
+  consent: CheckoutConsent;
+  successUrl: string;
+  cancelUrl: string;
+  options: CheckoutOptions;
+}): Stripe.Checkout.SessionCreateParams {
+  const lifetime = input.plan === "lifetime";
+  // The consent recorded on our side travels with the payment: proof of the terms version and of the request to start right away.
+  const metadata = {
+    userId: input.userId,
+    plan: input.plan,
+    terms_version: input.consent.termsVersion,
+    terms_accepted_at: new Date(input.consent.acceptedAt).toISOString(),
+    immediate_start: "requested",
+  };
+  const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = input.priceId
+    ? { price: input.priceId, quantity: 1 }
+    : {
+        quantity: 1,
+        price_data: {
+          currency: "usd",
+          product_data: { name: lifetime ? "Flexwall Lifetime" : "Flexwall Pro" },
+          tax_behavior: "inclusive",
+          ...FALLBACK[input.plan],
+        },
+      };
+  return {
+    customer: input.customerId,
+    mode: lifetime ? "payment" : "subscription",
+    line_items: [lineItem],
+    allow_promotion_codes: true,
+    metadata,
+    ...(lifetime ? { payment_intent_data: { metadata }, invoice_creation: { enabled: true } } : { subscription_data: { metadata } }),
+    custom_text: {
+      submit: {
+        message: lifetime
+          ? "Pro starts as soon as you pay, for good. Full refund on request within 14 days."
+          : "Pro starts as soon as you pay and renews until you cancel. Full refund of the first payment on request within 14 days.",
+      },
+    },
+    ...(input.options.automaticTax
+      ? {
+          automatic_tax: { enabled: true },
+          billing_address_collection: "required" as const,
+          customer_update: { address: "auto" as const, name: "auto" as const },
+          tax_id_collection: { enabled: true },
+        }
+      : {}),
+    ...(input.options.collectTermsConsent ? { consent_collection: { terms_of_service: "required" as const } } : {}),
+    success_url: input.successUrl,
+    cancel_url: input.cancelUrl,
+  };
+}
 
 /**
  * Flexwall's own billing (not the Stripe connector): hosted Checkout for the
@@ -32,6 +98,7 @@ export class StripeGateway implements PaymentGateway {
       prices: StripePrices;
       /** A portal configuration id. Without one Stripe uses the account's default, which live mode may not have. */
       portalConfiguration?: string | null;
+      checkout?: CheckoutOptions;
     }
   ) {}
 
@@ -50,30 +117,20 @@ export class StripeGateway implements PaymentGateway {
     return customer.id;
   }
 
-  async checkoutUrl(input: { user: User; plan: BillingPlan; successUrl: string; cancelUrl: string }) {
+  async checkoutUrl(input: { user: User; plan: BillingPlan; consent: CheckoutConsent; successUrl: string; cancelUrl: string }) {
     const customerId = await this.customerFor(input.user);
-    const priceId = this.config.prices[input.plan];
-    const metadata = { userId: input.user.id, plan: input.plan };
-    const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = priceId
-      ? { price: priceId, quantity: 1 }
-      : {
-          quantity: 1,
-          price_data: {
-            currency: "usd",
-            product_data: { name: input.plan === "lifetime" ? "Flexwall Lifetime" : "Flexwall Pro" },
-            ...FALLBACK[input.plan],
-          },
-        };
-    const session = await this.stripe().checkout.sessions.create({
-      customer: customerId,
-      mode: input.plan === "lifetime" ? "payment" : "subscription",
-      line_items: [lineItem],
-      allow_promotion_codes: true,
-      metadata,
-      ...(input.plan === "lifetime" ? { payment_intent_data: { metadata } } : { subscription_data: { metadata } }),
-      success_url: input.successUrl,
-      cancel_url: input.cancelUrl,
-    });
+    const session = await this.stripe().checkout.sessions.create(
+      checkoutSessionParams({
+        customerId,
+        userId: input.user.id,
+        plan: input.plan,
+        priceId: this.config.prices[input.plan],
+        consent: input.consent,
+        successUrl: input.successUrl,
+        cancelUrl: input.cancelUrl,
+        options: this.config.checkout ?? { automaticTax: false, collectTermsConsent: false },
+      })
+    );
     if (!session.url) throw new Error("Stripe returned a checkout session without a URL");
     return { url: session.url, customerId };
   }
