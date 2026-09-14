@@ -4,6 +4,7 @@ import type { TileState } from "@/application/use-cases/resolve-wall";
 import type { Catalog } from "@/domain/catalog";
 import { mobileLayout, type Box } from "@/domain/layout";
 import type { Tile } from "@/domain/wall";
+import { MotionScope } from "@/components/motion/MotionScope";
 import { TileBody } from "@/rendering/tile";
 
 /**
@@ -47,10 +48,10 @@ export function WallGrids(props: WallViewProps) {
   const desktop = props.tiles.map((tile) => ({ tile, box: tile.layout }));
   const mobile = mobileLayout(props.tiles).map(({ item, box }) => ({ tile: item, box }));
   return (
-    <div className="wall-frame">
+    <MotionScope className="wall-frame" tiles>
       <Grid {...props} placed={desktop} variant="desktop" />
       <Grid {...props} placed={mobile} variant="mobile" />
-    </div>
+    </MotionScope>
   );
 }
 

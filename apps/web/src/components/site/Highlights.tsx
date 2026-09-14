@@ -40,7 +40,7 @@ export function Highlights({ label, children }: { label: string; children: React
     <div className="highlights">
       <div ref={track} className="highlights-track" role="region" aria-roledescription="carousel" aria-label={label} tabIndex={0}>
         {cards.map((card, i) => (
-          <div key={i} data-index={i} className="highlight" aria-roledescription="slide" aria-label={`${i + 1} of ${cards.length}`}>
+          <div key={i} data-index={i} className={i === active ? "highlight is-active" : "highlight"} aria-roledescription="slide" aria-label={`${i + 1} of ${cards.length}`}>
             {card}
           </div>
         ))}

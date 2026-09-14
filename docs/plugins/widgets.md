@@ -87,6 +87,20 @@ subset of HTML and CSS:
 - **Avoid `overflow: hidden` on containers with many children.** Satori turns it into a clip path on every descendant; it once made a heatmap 25× slower. Fit content with `area` instead. It's fine on a single text element.
 - **Stick to Latin text and common punctuation in fixed strings.** Other glyphs make the renderer download fonts at render time. People's own text is their business.
 
+## Motion comes for free
+
+On web pages the host animates walls once, when they scroll into view:
+figures count up, lines and areas draw from left to right, bars fill and
+heatmap columns light up. Images are never animated. Your widget gets this
+without any code if it:
+
+- prints its main figure as the only text of an element, at 18 px or more
+  (`$4,820`, `47 days`, `+12.4%`), with labels in their own elements;
+- draws lines inside an `svg`;
+- builds progress with `Bar` from `@flexwall/sdk/ui`.
+
+Nothing moves for visitors who ask their system for reduced motion.
+
 ## Testing
 
 ```tsx

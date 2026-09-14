@@ -8,6 +8,8 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { TopBar, Footer } from "@/components/site/Chrome";
 import { ClaimForm } from "@/components/site/ClaimForm";
 import { Highlights } from "@/components/site/Highlights";
+import { MotionScope } from "@/components/motion/MotionScope";
+import { Tilt } from "@/components/motion/Tilt";
 import { ProfileHeader } from "@/components/wall/ProfileHeader";
 import { WallGrids, wallStyle } from "@/components/wall/WallView";
 import { container } from "@/composition";
@@ -81,18 +83,20 @@ export default async function Home() {
           <p className="hero-lede">Stripe revenue, GitHub streaks and any API, live on flexwall.lol/@you and on your lock screen.</p>
           <ClaimForm />
 
-          <div className="stage">
+          <MotionScope className="stage">
             <div className="float-card float-chip glass" aria-hidden="true">
               <SealCheckIcon size={20} weight="fill" />
               Read from Stripe
             </div>
-            <LockScreen date={date} priority />
+            <Tilt>
+              <LockScreen date={date} priority />
+            </Tilt>
             <div className="float-card float-mrr glass" aria-hidden="true">
               <span className="label">Revenue, 30 days</span>
-              <b>{revenueNow}</b>
+              <b data-count>{revenueNow}</b>
               {revenueChange !== null ? <span className="delta">{formatPercent(revenueChange, true)}</span> : null}
               {trend ? (
-                <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none" data-draw>
                   <polyline points={trend} fill="none" stroke="currentColor" strokeWidth="2.5" vectorEffect="non-scaling-stroke" style={{ color: "var(--accent)" }} />
                 </svg>
               ) : null}
@@ -105,7 +109,7 @@ export default async function Home() {
                 See pricing
               </Link>
             </div>
-          </div>
+          </MotionScope>
 
           <nav className="logos" aria-label="Sources">
             {connectors
@@ -171,38 +175,40 @@ export default async function Home() {
             <article className="hl hl-verified">
               <h3>Read straight from your accounts.</h3>
               <p>A number that comes from your own Stripe, Lemon Squeezy or Polar key carries a mark nobody can type in.</p>
-              <div className="verified-stage">
+              <MotionScope className="verified-stage">
                 <div className="verified-card glass">
                   <span className="label">MRR</span>
-                  <span className="value">$4,820</span>
+                  <span className="value" data-count>
+                    $4,820
+                  </span>
                   <span className="source">
                     <SealCheckIcon size={18} weight="fill" />
                     Read from Stripe
                   </span>
                 </div>
-              </div>
+              </MotionScope>
             </article>
           </Highlights>
         </section>
 
         <section className="band" aria-label="Flexwall in numbers">
-          <div className="page figures">
+          <MotionScope className="page figures">
             <div>
               <span>Up to</span>
-              <b>{PAID_TILE_LIMIT} tiles</b>
+              <b data-count>{`${PAID_TILE_LIMIT} tiles`}</b>
               <span>on a Pro wall</span>
             </div>
             <div>
               <span>Read from</span>
-              <b>{connectors.length} sources</b>
+              <b data-count>{`${connectors.length} sources`}</b>
               <span>and your own API</span>
             </div>
             <div>
               <span>Choose from</span>
-              <b>{themeCount} themes</b>
+              <b data-count>{`${themeCount} themes`}</b>
               <span>for day and night</span>
             </div>
-          </div>
+          </MotionScope>
         </section>
 
         <section className="band band-alt" aria-labelledby="sources">
