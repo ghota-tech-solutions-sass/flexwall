@@ -87,8 +87,12 @@ export function satoriProblems(node: ReactNode, path = "root"): string[] {
 }
 
 /** A connector context whose network answers from a fixture map. Unknown URLs throw, like a real outage. */
+/** A route answers with a fixed body, or a function of the request (to paginate, check headers or bodies). */
+export type FakeBody = Record<string, unknown> | unknown[] | string | number | boolean | null;
+export type FakeRoute = FakeBody | ((init: GuardedFetchInit | undefined, url: string) => unknown);
+
 export function fakeContext(
-  routes: Record<string, unknown | ((init?: GuardedFetchInit) => unknown)>,
+  routes: Record<string, FakeRoute>,
   opts: { today?: string; env?: Record<string, string> } = {}
 ): ConnectorContext & { calls: string[] } {
   const calls: string[] = [];
@@ -100,7 +104,7 @@ export function fakeContext(
       .sort((a, b) => b.length - a.length)[0];
     if (!hit) throw new Error(`fakeContext: no route for ${url}`);
     const r = routes[hit];
-    return typeof r === "function" ? (r as (i?: GuardedFetchInit) => unknown)(init) : r;
+    return typeof r === "function" ? (r as (i: GuardedFetchInit | undefined, u: string) => unknown)(init, url) : r;
   };
   const fetch: GuardedFetch = {
     json: async <T>(url: string, init?: GuardedFetchInit) => answer(url, init) as T,

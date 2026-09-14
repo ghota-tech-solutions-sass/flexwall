@@ -9,14 +9,12 @@ A Flexwall plugin.
 | Connector | `__ID__` | … |
 | Widget | `__ID__-big-number` | … |
 
-## Credentials and permissions
+## Credentials
 
-This connector reads public data and needs no account. If yours needs one, say
-exactly which permissions to grant, and why each is needed.
+Public data, no account needed. If your connector needs credentials, say
+exactly which permissions to grant and why each one is needed, and what to do
+if the provider has no read-only keys.
 
-## Develop
+## Limits
 
-```bash
-bun test plugins/__ID__
-bun run dev   # the plugin is registered in apps/web/src/plugins/registry.ts
-```
+How often the upstream allows requests, and why the connector's `ttl` is what it is.

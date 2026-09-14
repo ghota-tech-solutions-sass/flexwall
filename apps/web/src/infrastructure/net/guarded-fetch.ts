@@ -80,7 +80,7 @@ function guardedLookup(hostname: string, options: { all?: boolean; family?: numb
     if (err) return callback(err, "");
     const list = addresses as LookupAddress[];
     if (list.length === 0 || list.some((a) => isPrivateAddress(a.address))) {
-      return callback(Object.assign(new BlockedRequestError(`${hostname} resolves to a private address`), { code: "EPRIVATE" }), "");
+      return callback(Object.assign(new BlockedRequestError("resolves to a private address", "private-address"), { code: "EPRIVATE" }), "");
     }
     if (options.all) return callback(null, list);
     callback(null, list[0].address, list[0].family);
@@ -94,13 +94,13 @@ export function validateTarget(raw: string): URL {
   try {
     url = new URL(raw);
   } catch {
-    throw new BlockedRequestError("isn't a valid URL");
+    throw new BlockedRequestError("isn't a valid URL", "invalid-url");
   }
-  if (url.protocol !== "https:") throw new BlockedRequestError("must use https://");
-  if (url.username || url.password) throw new BlockedRequestError("can't contain a username or password");
+  if (url.protocol !== "https:") throw new BlockedRequestError("must use https://", "invalid-url");
+  if (url.username || url.password) throw new BlockedRequestError("can't contain a username or password", "invalid-url");
   const host = url.hostname.replace(/^\[|\]$/g, "");
-  if (isIP(host) && isPrivateAddress(host)) throw new BlockedRequestError("points at a private address");
-  if (/^(localhost|.*\.local|.*\.internal)$/i.test(host)) throw new BlockedRequestError("points at a private host");
+  if (isIP(host) && isPrivateAddress(host)) throw new BlockedRequestError("points at a private address", "private-address");
+  if (/^(localhost|.*\.local|.*\.internal)$/i.test(host)) throw new BlockedRequestError("points at a private host", "private-address");
   return url;
 }
 
@@ -108,7 +108,7 @@ function request(raw: string, init: GuardedFetchInit = {}): Promise<string> {
   const url = validateTarget(raw);
   const headers: Record<string, string> = { "User-Agent": "flexwall.lol (+https://flexwall.lol)" };
   for (const [name, value] of Object.entries(init.headers ?? {})) {
-    if (FORBIDDEN_HEADERS.has(name.toLowerCase())) throw new BlockedRequestError(`header ${name} isn't allowed`);
+    if (FORBIDDEN_HEADERS.has(name.toLowerCase())) throw new BlockedRequestError(`sets header ${name}, which isn't allowed`, "invalid-url");
     headers[name] = value;
   }
   const maxBytes = Math.min(init.maxBytes ?? DEFAULT_MAX_BYTES, HARD_MAX_BYTES);
@@ -122,16 +122,16 @@ function request(raw: string, init: GuardedFetchInit = {}): Promise<string> {
       settled = true;
       clearTimeout(timer);
       req.destroy();
-      reject(e instanceof BlockedRequestError || e instanceof HttpError ? e : new BlockedRequestError(e.message));
+      reject(e instanceof BlockedRequestError || e instanceof HttpError ? e : new BlockedRequestError(`couldn't be reached (${e.message})`, "network"));
     };
     const req = https.request(url, { method, headers, lookup: guardedLookup as never, agent: false }, (res) => {
       const status = res.statusCode ?? 0;
-      if (status >= 300 && status < 400) return fail(new BlockedRequestError(`answered a redirect (${status}); use the final URL`));
+      if (status >= 300 && status < 400) return fail(new BlockedRequestError(`answered a redirect (${status}); use the final URL`, "redirect"));
       const chunks: Buffer[] = [];
       let size = 0;
       res.on("data", (chunk: Buffer) => {
         size += chunk.length;
-        if (size > maxBytes) return fail(new BlockedRequestError(`answered more than ${Math.round(maxBytes / 1000)} KB`));
+        if (size > maxBytes) return fail(new BlockedRequestError(`answered more than ${Math.round(maxBytes / 1000)} KB`, "too-large"));
         chunks.push(chunk);
       });
       res.on("end", () => {
@@ -144,7 +144,7 @@ function request(raw: string, init: GuardedFetchInit = {}): Promise<string> {
       });
       res.on("error", fail);
     });
-    const timer = setTimeout(() => fail(new BlockedRequestError(`took longer than ${timeoutMs / 1000}s`)), timeoutMs);
+    const timer = setTimeout(() => fail(new BlockedRequestError(`took longer than ${timeoutMs / 1000}s`, "timeout")), timeoutMs);
     req.on("error", fail);
     if (init.body) req.write(init.body);
     req.end();
@@ -157,7 +157,7 @@ export const guardedFetch: GuardedFetch = {
     try {
       return JSON.parse(body) as T;
     } catch {
-      throw new BlockedRequestError("didn't answer JSON");
+      throw new BlockedRequestError("didn't answer JSON", "network");
     }
   },
   text: (url, init) => request(url, init),

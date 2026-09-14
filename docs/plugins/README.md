@@ -30,11 +30,21 @@ app's dependencies. Delete the parts you don't need.
 
 ```
 plugins/plausible/
-├── package.json        @flexwall/plugin-plausible, MIT
-├── src/index.tsx       definePlugin({ connectors, widgets, themes })
-├── tests/plugin.test.tsx
-└── README.md           what it adds, which permissions it needs and why
+├── package.json          @flexwall/plugin-plausible, MIT, exports src/index.ts
+├── tsconfig.json
+├── LICENSE               MIT
+├── README.md             what it adds, which credentials and why, limits
+├── src/index.ts          definePlugin({ connectors, widgets, themes })
+├── src/widget.tsx        only if the plugin ships a widget
+└── tests/
+    ├── connector.test.ts
+    ├── widget.test.tsx
+    └── fixtures/         small real (or documented) responses
 ```
+
+`bun install` must run after creating a plugin: it links `@flexwall/sdk` into
+the folder. To add one without the script, see "Getting started" in
+[connectors.md](connectors.md).
 
 ## How plugins run
 
@@ -54,7 +64,7 @@ SDK gives connectors everything they need through `ctx`.
 ## Checklist for a pull request
 
 - [ ] `bun test plugins/<id>` passes, tests are Given / When / Then.
-- [ ] `checkPlugins` reports nothing (the template's first test does this).
+- [ ] `checkPlugins` reports nothing (the template's first test does this), and `bun run test` passes: the app's registry catches id clashes.
 - [ ] Every network call goes through `ctx.fetch`.
 - [ ] Credentials are the least privilege the provider offers, and the README says which.
 - [ ] `sample` values are plausible and cover every metric.
