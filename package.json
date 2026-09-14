@@ -1,0 +1,32 @@
+{
+  "name": "flexwall",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "bun test tests/unit",
+    "test:functional": "bun test tests/functional",
+    "check": "bunx tsc --noEmit -p tsconfig.json && bun test tests/unit && next build && bun test tests/functional"
+  },
+  "dependencies": {
+    "@google-cloud/firestore": "^9.0.0",
+    "next": "16.3.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "stripe": "^22.5.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.0",
+    "@types/node": "^26.2.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.2.5",
+    "typescript": "^5.9.0"
+  },
+  "trustedDependencies": [
+    "protobufjs"
+  ]
+}
