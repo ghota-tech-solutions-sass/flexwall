@@ -1,0 +1,21 @@
+{
+  "name": "@flexwall/plugin-binance",
+  "version": "0.1.0",
+  "description": "Verified portfolio value and assets held on Binance, for Flexwall walls.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}
