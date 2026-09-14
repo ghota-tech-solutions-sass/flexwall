@@ -39,7 +39,9 @@ export function Footer() {
         <Link href="/explore">The Wall</Link>
         <Link href="/pricing">Pricing</Link>
         {SOURCE_URL ? <a href={`${SOURCE_URL}/tree/main/docs`}>Docs</a> : null}
-        <Link href="/legal">Terms &amp; privacy</Link>
+        <Link href="/terms">Terms</Link>
+        <Link href="/privacy">Privacy</Link>
+        <Link href="/legal">Legal notice</Link>
       </nav>
     </footer>
   );

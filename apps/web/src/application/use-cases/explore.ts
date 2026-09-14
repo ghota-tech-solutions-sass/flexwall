@@ -1,3 +1,4 @@
+import { Handle } from "@/domain/handle";
 import { formatValue, type Leaderboard } from "@flexwall/sdk";
 import type { Catalog } from "@/domain/catalog";
 import { DomainError } from "@/domain/errors";
@@ -91,7 +92,8 @@ export class ReportWall {
   async execute(input: { handle: string; reason: string; contact?: string }): Promise<void> {
     const reason = input.reason.trim();
     if (reason.length < 5 || reason.length > 1000) throw new DomainError("invalid_input", "Tell us what's wrong in a few words (up to 1000 characters).");
-    const wall = await this.deps.walls.byHandle(input.handle.toLowerCase() as Wall["handle"]);
+    if (!Handle.isValid(input.handle)) return;
+    const wall = await this.deps.walls.byHandle(Handle.parse(input.handle));
     if (!wall) return;
     await this.deps.mailer.send({
       to: this.deps.moderationInbox,

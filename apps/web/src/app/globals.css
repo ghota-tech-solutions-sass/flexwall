@@ -224,6 +224,18 @@ input[type="checkbox"] { width: 18px; min-height: 18px; accent-color: var(--sign
 .prose h1 { font-size: clamp(34px, 5vw, 52px); letter-spacing: -0.03em; line-height: 1.02; }
 .prose h2 { margin-top: 32px; }
 .prose p, .prose li { color: var(--muted); }
+.legal { padding-bottom: 24px; }
+.legal h1 { font-size: clamp(30px, 4.5vw, 44px); margin-block: 8px; }
+.legal li strong, .legal td:first-child { color: var(--text); }
+.legal blockquote { margin: 12px 0; padding: 12px 16px; border-left: 3px solid var(--line); color: var(--muted); font-size: 15px; }
+.legal-nav { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-block: 20px 8px; padding-block: 12px; border-block: 1px solid var(--line); font-size: 14px; }
+.legal-nav [aria-current="page"] { color: var(--text); font-weight: 600; }
+.table-scroll { overflow-x: auto; margin-block: 12px; }
+.table-scroll table { border-collapse: collapse; min-width: 640px; font-size: 14px; }
+.table-scroll th, .table-scroll td { text-align: left; vertical-align: top; padding: 8px 12px 8px 0; border-bottom: 1px solid var(--line); color: var(--muted); }
+.table-scroll th { color: var(--text); font-weight: 600; }
+.consent { display: flex; gap: 10px; align-items: flex-start; max-width: 68ch; margin-block: 20px 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.consent input { margin-top: 3px; width: 18px; height: 18px; flex: none; accent-color: var(--signal); }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 .react-grid-item.react-grid-placeholder { background: var(--signal); opacity: 0.18; border-radius: 12px; }
