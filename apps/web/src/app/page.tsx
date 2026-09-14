@@ -7,10 +7,12 @@ import { BrandMark, hasMark } from "@/components/brand/Logos";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { TopBar, Footer } from "@/components/site/Chrome";
 import { ClaimForm } from "@/components/site/ClaimForm";
+import { Highlights } from "@/components/site/Highlights";
 import { ProfileHeader } from "@/components/wall/ProfileHeader";
 import { WallGrids, wallStyle } from "@/components/wall/WallView";
 import { container } from "@/composition";
 import { todayIn } from "@/domain/time";
+import { PAID_TILE_LIMIT } from "@/domain/user";
 import { demoWall, sampleStates } from "@/rendering/samples";
 import { sessionUserId } from "@/presentation/http";
 import { pageMetadata } from "@/presentation/seo/metadata";
@@ -23,6 +25,29 @@ export const metadata: Metadata = pageMetadata({ title: "Flexwall: your numbers,
 
 export const dynamic = "force-dynamic";
 
+/** The phone screen, with the clock the lock screen image leaves room for. */
+function LockScreen({ date, priority = false }: { date: string; priority?: boolean }) {
+  return (
+    <div className="device" role="img" aria-label="An iPhone lock screen showing live Flexwall widgets">
+      <div className="device-screen">
+        <span className="device-island" />
+        <picture>
+          <source srcSet="/demo/lockscreen-dark.png?v=2" media="(prefers-color-scheme: dark)" />
+          <img src="/demo/lockscreen.png?v=2" alt="" width={603} height={1311} {...(priority ? { fetchPriority: "high" as const } : { loading: "lazy" as const })} />
+        </picture>
+        <div className="device-clock only-light">
+          <div>{date}</div>
+          <div>9:41</div>
+        </div>
+        <div className="device-clock only-dark" style={{ ["--clock" as string]: "#f5f5f7" }}>
+          <div>{date}</div>
+          <div>9:41</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default async function Home() {
   const c = container();
   const now = Date.now();
@@ -33,139 +58,165 @@ export default async function Home() {
   const states = sampleStates(wall.tiles, c.catalog);
   const signedIn = Boolean(await sessionUserId());
   const connectors = c.catalog.connectors();
+  const themeCount = c.catalog.themes().length;
   const revenueState = states.revenue;
   const revenue = revenueState?.status === "ready" ? asType(revenueState.inputs.series?.value, "series") : null;
   const trend = revenue ? sparkPoints(revenue.points.map((p) => p.v)) : "";
   const revenueNow = revenue ? currencySymbol(revenue.currency) + formatNumber(revenue.points.at(-1)?.v ?? 0) : null;
   const revenueChange = revenue ? seriesChange(revenue) : null;
   const date = new Date(now).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
+  const claimHref = signedIn ? "/edit" : "/login";
 
   return (
     <>
       <JsonLd data={[organizationLd(siteOrigin()), websiteLd(siteOrigin())]} />
       <div className="page">
         <TopBar signedIn={signedIn} />
+      </div>
 
-        <main id="main">
-          <section className="hero">
-            <div className="hero-copy">
-              <h1 className="display">Flex your real numbers.</h1>
-              <p>Stripe revenue, GitHub streaks and any API, live on flexwall.lol/@you and on your lock screen.</p>
-              <ClaimForm />
+      <main id="main">
+        <section className="hero page">
+          <p className="kicker">Flexwall</p>
+          <h1 className="display">Flex your real numbers.</h1>
+          <p className="hero-lede">Stripe revenue, GitHub streaks and any API, live on flexwall.lol/@you and on your lock screen.</p>
+          <ClaimForm />
+
+          <div className="stage">
+            <div className="float-card float-chip glass" aria-hidden="true">
+              <SealCheckIcon size={20} weight="fill" />
+              Read from Stripe
             </div>
-
-            <div className="phone-stage">
-              <div className="float-card float-chip glass" aria-hidden="true">
-                <SealCheckIcon size={20} weight="fill" />
-                Read from Stripe
-              </div>
-              <div className="float-card float-mrr glass" aria-hidden="true">
-                <span className="label">Revenue, 30 days</span>
-                <b>{revenueNow}</b>
-                {revenueChange !== null ? <span className="delta">{formatPercent(revenueChange, true)}</span> : null}
-                {trend ? (
-                  <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-                    <polyline points={trend} fill="none" stroke="currentColor" strokeWidth="2.5" vectorEffect="non-scaling-stroke" style={{ color: "var(--accent)" }} />
-                  </svg>
-                ) : null}
-              </div>
-              <div className="device" role="img" aria-label="An iPhone lock screen showing live Flexwall widgets">
-                <div className="device-screen">
-                  <span className="device-island" />
-                  <picture>
-                    <source srcSet="/demo/lockscreen-dark.png?v=2" media="(prefers-color-scheme: dark)" />
-                    <img src="/demo/lockscreen.png?v=2" alt="" width={603} height={1311} fetchPriority="high" />
-                  </picture>
-                  <div className="device-clock only-light">
-                    <div>{date}</div>
-                    <div>9:41</div>
-                  </div>
-                  <div className="device-clock only-dark" style={{ ["--clock" as string]: "#f5f5f7" }}>
-                    <div>{date}</div>
-                    <div>9:41</div>
-                  </div>
-                </div>
-              </div>
+            <LockScreen date={date} priority />
+            <div className="float-card float-mrr glass" aria-hidden="true">
+              <span className="label">Revenue, 30 days</span>
+              <b>{revenueNow}</b>
+              {revenueChange !== null ? <span className="delta">{formatPercent(revenueChange, true)}</span> : null}
+              {trend ? (
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <polyline points={trend} fill="none" stroke="currentColor" strokeWidth="2.5" vectorEffect="non-scaling-stroke" style={{ color: "var(--accent)" }} />
+                </svg>
+              ) : null}
             </div>
-          </section>
+            <div className="price-pill glass">
+              <span>
+                <strong>Free to start.</strong> Pro from $6 a month, taxes included.
+              </span>
+              <Link href="/pricing" className="btn btn-signal btn-small">
+                See pricing
+              </Link>
+            </div>
+          </div>
 
-          <nav className="logos reveal" aria-label="Sources">
+          <nav className="logos" aria-label="Sources">
             {connectors
               .filter((conn) => hasMark(conn.id))
               .map((conn) => (
                 <Link key={conn.id} href={integrationPath(conn.id)} aria-label={conn.name} title={conn.name}>
-                  <BrandMark id={conn.id} size={30} />
+                  <BrandMark id={conn.id} size={28} />
                 </Link>
               ))}
           </nav>
+        </section>
 
-          <section className="section reveal" aria-labelledby="everywhere">
-            <h2 id="everywhere" className="display">
-              One wall. Every place people look.
-            </h2>
-            <p className="section-lede">Build it once. The same tiles make your page, your share card and your lock screen.</p>
-
-            <div className="bento">
-              <article className="cell cell-page">
-                <div className="cell-core">
-                  <h3>A page that keeps itself current</h3>
-                  <p>Tiles redraw from the source, so the numbers on flexwall.lol/@you are never an old screenshot.</p>
-                  <div className="mini-wall board only-light" style={wallStyle(light)}>
-                    <ProfileHeader as="h4" title={wall.title} handle={wall.handle} bio={wall.bio} theme={light} stats={[{ value: "3", label: "verified numbers" }]} />
-                    <WallGrids tiles={wall.tiles} states={states} theme={light} today={today} catalog={c.catalog} />
-                  </div>
-                  <div className="mini-wall board only-dark" style={wallStyle(dark)}>
-                    <ProfileHeader as="h4" title={wall.title} handle={wall.handle} bio={wall.bio} theme={dark} stats={[{ value: "3", label: "verified numbers" }]} />
-                    <WallGrids tiles={wall.tiles} states={states} theme={dark} today={today} catalog={c.catalog} />
-                  </div>
-                </div>
-              </article>
-
-              <article className="cell cell-chat">
-                <div className="cell-core">
-                  <h3>A card that unfolds in any chat</h3>
-                  <p>Post the link and it opens on today&apos;s numbers.</p>
-                  <div className="chat" aria-label="A message thread sharing a wall">
-                    <span className="bubble them">so how is the launch going?</span>
-                    <span className="bubble me">flexwall.lol/@{wall.handle}</span>
-                    <span className="unfurl">
-                      <picture>
-                        <source srcSet="/demo/card-dark.png?v=2" media="(prefers-color-scheme: dark)" />
-                        <img src="/demo/card.png?v=2" alt="The share card of the example wall" width={1200} height={630} loading="lazy" />
-                      </picture>
-                      <span style={{ display: "block", padding: "8px 12px 10px" }}>
-                        <strong>{wall.title} on Flexwall</strong>
-                        flexwall.lol
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              </article>
-
-              <article className="cell cell-verified">
-                <div className="cell-core">
-                  <h3>Verified at the source</h3>
-                  <p>Revenue read with your own restricted Stripe key carries a mark nobody can type in.</p>
-                  <div className="verified-tile">
-                    <span className="value">$4,820</span>
-                    <span className="source">
-                      <SealCheckIcon size={18} weight="fill" />
-                      Read from Stripe
-                    </span>
-                  </div>
-                </div>
-              </article>
+        <section className="band band-alt" aria-labelledby="highlights">
+          <div className="page">
+            <div className="band-head">
+              <h2 id="highlights" className="display">
+                Get the highlights.
+              </h2>
+              <Link href="/explore" className="text-link">
+                See live walls
+                <ArrowUpRightIcon size={16} weight="bold" />
+              </Link>
             </div>
-          </section>
+          </div>
+          <Highlights label="Flexwall highlights">
+            <article className="hl hl-page">
+              <h3>Your numbers, redrawn from the source.</h3>
+              <div className="mini-wall board only-light" style={wallStyle(light)}>
+                <ProfileHeader as="h4" title={wall.title} handle={wall.handle} bio={wall.bio} theme={light} stats={[{ value: "3", label: "verified numbers" }]} />
+                <WallGrids tiles={wall.tiles} states={states} theme={light} today={today} catalog={c.catalog} />
+              </div>
+              <div className="mini-wall board only-dark" style={wallStyle(dark)}>
+                <ProfileHeader as="h4" title={wall.title} handle={wall.handle} bio={wall.bio} theme={dark} stats={[{ value: "3", label: "verified numbers" }]} />
+                <WallGrids tiles={wall.tiles} states={states} theme={dark} today={today} catalog={c.catalog} />
+              </div>
+            </article>
 
-          <section className="section reveal" aria-labelledby="sources">
-            <h2 id="sources" className="display">
-              Plug in what you already use.
-            </h2>
-            <p className="section-lede">
-              Keys are encrypted and read-only where the service allows it.
-              {SOURCE_URL ? " Missing one? Connectors are open source." : ""}
-            </p>
+            <article className="hl hl-phone">
+              <h3>On your lock screen, every morning.</h3>
+              <p>One Shortcuts automation sets a fresh wallpaper at 7:00. No app to install.</p>
+              <LockScreen date={date} />
+            </article>
+
+            <article className="hl hl-chat">
+              <h3>A card that unfolds in every chat.</h3>
+              <p>Post your link anywhere and it opens on today&apos;s numbers.</p>
+              <div className="chat" aria-label="A message thread sharing a wall">
+                <span className="bubble them">so how is the launch going?</span>
+                <span className="bubble me">flexwall.lol/@{wall.handle}</span>
+                <span className="unfurl">
+                  <picture>
+                    <source srcSet="/demo/card-dark.png?v=2" media="(prefers-color-scheme: dark)" />
+                    <img src="/demo/card.png?v=2" alt="The share card of the example wall" width={1200} height={630} loading="lazy" />
+                  </picture>
+                  <span style={{ display: "block", padding: "8px 12px 10px" }}>
+                    <strong>{wall.title} on Flexwall</strong>
+                    flexwall.lol
+                  </span>
+                </span>
+              </div>
+            </article>
+
+            <article className="hl hl-verified">
+              <h3>Read straight from your accounts.</h3>
+              <p>A number that comes from your own Stripe, Lemon Squeezy or Polar key carries a mark nobody can type in.</p>
+              <div className="verified-stage">
+                <div className="verified-card glass">
+                  <span className="label">MRR</span>
+                  <span className="value">$4,820</span>
+                  <span className="source">
+                    <SealCheckIcon size={18} weight="fill" />
+                    Read from Stripe
+                  </span>
+                </div>
+              </div>
+            </article>
+          </Highlights>
+        </section>
+
+        <section className="band" aria-label="Flexwall in numbers">
+          <div className="page figures">
+            <div>
+              <span>Up to</span>
+              <b>{PAID_TILE_LIMIT} tiles</b>
+              <span>on a Pro wall</span>
+            </div>
+            <div>
+              <span>Read from</span>
+              <b>{connectors.length} sources</b>
+              <span>and your own API</span>
+            </div>
+            <div>
+              <span>Choose from</span>
+              <b>{themeCount} themes</b>
+              <span>for day and night</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="band band-alt" aria-labelledby="sources">
+          <div className="page">
+            <div className="centered-head">
+              <p className="kicker">Integrations</p>
+              <h2 id="sources" className="display">
+                Plug in what you already use.
+              </h2>
+              <p className="lede">
+                Connect an account once and every tile can read from it. <strong>Keys are encrypted and read-only</strong> where the service allows it,
+                and <strong>never shown again</strong>.{SOURCE_URL ? " Missing one? Connectors are open source." : ""}
+              </p>
+            </div>
             <ul className="connector-list">
               {connectors.map((conn) => (
                 <li key={conn.id}>
@@ -182,29 +233,33 @@ export default async function Home() {
               ))}
             </ul>
             <p className="more">
-              <Link href="/integrations">Every integration, and what it measures</Link>
+              <Link href="/integrations" className="text-link">
+                Every integration, and what it measures
+                <ArrowUpRightIcon size={16} weight="bold" />
+              </Link>
             </p>
-          </section>
+          </div>
+        </section>
 
-          <section className="closing reveal" aria-labelledby="closing">
+        <section className="band closing" aria-labelledby="closing">
+          <div className="page">
             <h2 id="closing" className="display">
               Your numbers deserve a wall.
             </h2>
-            <p className="section-lede">Free to start. Pro from $6 a month for verified revenue and history.</p>
+            <p className="lede">Claim your handle in a minute. Free to start, no card needed.</p>
             <div className="row">
-              <Link href={signedIn ? "/edit" : "/login"} className="btn btn-signal">
+              <Link href={claimHref} className="btn btn-signal">
                 {signedIn ? "Edit my wall" : "Claim your wall"}
                 <span className="btn-icon" aria-hidden="true">
                   <ArrowUpRightIcon size={16} weight="bold" />
                 </span>
               </Link>
-              <Link href="/pricing" className="link">
-                See pricing
-              </Link>
             </div>
-          </section>
-        </main>
+          </div>
+        </section>
+      </main>
 
+      <div className="page">
         <Footer />
       </div>
     </>
