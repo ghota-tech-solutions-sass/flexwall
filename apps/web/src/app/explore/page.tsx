@@ -47,7 +47,7 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
       />
       <TopBar signedIn={signedIn} />
       <main>
-        <header className="wall-head">
+        <header className="wall-head dotted">
           <div>
             <h1 className="display">The Wall</h1>
             <p>People who build in public, with the numbers to show for it. Revenue ranks only count what an owner&apos;s own Stripe, Lemon Squeezy or Polar account says.</p>

@@ -33,7 +33,7 @@ export default async function IntegrationsPage() {
       />
       <TopBar signedIn={Boolean(await sessionUserId())} />
       <main>
-        <div className="page-head">
+        <div className="page-head dotted">
           <h1 className="display">Integrations</h1>
           <p>Tiles read their numbers from the services that produce them and redraw on their own. Values from your own accounts carry a verified badge.</p>
         </div>

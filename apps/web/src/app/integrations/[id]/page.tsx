@@ -53,7 +53,7 @@ export default async function IntegrationPage({ params }: Props) {
       />
       <div className="page">
         <TopBar signedIn={Boolean(await sessionUserId())} />
-        <div className="page-head integration-head">
+        <div className="page-head integration-head dotted">
           <p className="hint">
             <Link href="/integrations">Integrations</Link>
           </p>

@@ -26,7 +26,7 @@ export default async function PricingPage() {
       <JsonLd data={softwareApplicationLd(siteOrigin())} />
       <TopBar signedIn={signedIn} />
       <main>
-        <div className="page-head">
+        <div className="page-head dotted">
           <h1 className="display">Pricing</h1>
           <p>Every wall is free and public. Pro is for when the numbers matter: verified revenue, history, a clean lock screen.</p>
           <p className="hint">Prices in US dollars, taxes included. Cancel any time from Settings.</p>
