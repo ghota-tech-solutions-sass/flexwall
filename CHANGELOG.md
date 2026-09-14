@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.4.0...v0.4.1) (2026-09-14)
+
+
+### Bug Fixes
+
+* **time:** today's date no longer depends on locale data ([7326bbd](https://github.com/ghota-tech-solutions-sass/flexwall/commit/7326bbd68d1c2d29a1710a967c1e6ed0d19825d0))
+
 ## [0.4.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.3.0...v0.4.0) (2026-09-14)
 
 
