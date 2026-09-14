@@ -1,0 +1,11 @@
+{
+  "success": true,
+  "gross_cents": 231950,
+  "net_cents": 219000,
+  "units": 101,
+  "refunded_cents": 12950,
+  "refunded_units": 4,
+  "currency": "usd",
+  "from": "2026-08-16",
+  "to": "2026-09-14"
+}
