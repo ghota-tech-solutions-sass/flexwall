@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.6.0...v0.6.1) (2026-09-14)
+
+
+### Performance Improvements
+
+* **web:** prerender demo images and serve them as AVIF/WebP ([20a6d03](https://github.com/ghota-tech-solutions-sass/flexwall/commit/20a6d0349b80aa601cbca240ec7d454f28790016))
+
 ## [0.6.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.5.0...v0.6.0) (2026-09-14)
 
 
