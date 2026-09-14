@@ -1,0 +1,271 @@
+/*
+ * The public wall, /@handle. The page wears the owner's theme, so nothing here
+ * reads the site's tokens: colors come from the --wall-* variables that
+ * wallVars() sets on .wall-page. Every rule is scoped to .wall-page because
+ * this file stays loaded after a client navigation elsewhere.
+ */
+
+.wall-page {
+  --wp-line: color-mix(in srgb, var(--wall-ink) 10%, transparent);
+  --wp-line-strong: color-mix(in srgb, var(--wall-ink) 16%, transparent);
+  --wp-wash: color-mix(in srgb, var(--wall-ink) 6%, transparent);
+  -webkit-font-smoothing: antialiased;
+}
+.wall-page .wall-inner { padding-block: clamp(40px, 7vw, 88px) 40px; }
+.wall-page:has(.wp-owner) .wall-inner { padding-bottom: 112px; }
+
+/* ── Profile ─────────────────────────────────── */
+.wall-page .wp-profile {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  /* Above the tiles, so the share menu opens over them. */
+  position: relative;
+  z-index: 5;
+  column-gap: clamp(16px, 2.2vw, 24px);
+  align-items: center;
+  margin-bottom: clamp(28px, 4vw, 44px);
+  animation: wp-in 0.7s var(--spring) both;
+}
+.wall-page .wp-avatar {
+  --size: clamp(64px, 7vw, 84px);
+  grid-row: 1;
+  display: grid;
+  place-items: center;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: var(--wall-tile);
+  color: var(--wall-ink);
+  box-shadow: inset 0 0 0 1px var(--wall-border), 0 0 0 1px var(--wp-line), 0 1px 2px rgba(0, 0, 0, 0.06);
+  font-size: calc(var(--size) * 0.4);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  user-select: none;
+}
+.wall-page .wp-id { grid-row: 1; grid-column: 2; min-width: 0; }
+.wall-page .wp-id h1 {
+  margin: 0;
+  font-size: clamp(26px, 3.4vw, 36px);
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  overflow-wrap: anywhere;
+}
+.wall-page .wp-facts {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 8px 0 0;
+  padding: 0;
+  color: var(--wall-muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+.wall-page .wp-facts li { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.wall-page .wp-facts svg { flex: none; opacity: 0.85; }
+.wall-page .wp-handle { color: color-mix(in srgb, var(--wall-ink) 72%, transparent); font-weight: 500; }
+.wall-page .wp-verified { color: var(--wall-ink); }
+.wall-page .wp-verified svg { color: var(--wall-positive); opacity: 1; }
+.wall-page .wp-bio {
+  grid-column: 2 / 3;
+  margin: 14px 0 0;
+  max-width: 62ch;
+  color: color-mix(in srgb, var(--wall-ink) 78%, transparent);
+  font-size: 16px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+.wall-page .wp-actions { grid-row: 1; grid-column: 3; display: flex; gap: 8px; align-self: center; }
+
+/* ── Buttons, in the wall's colors ───────────── */
+.wall-page .wp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--wall-tile);
+  color: var(--wall-ink);
+  box-shadow: inset 0 0 0 1px var(--wp-line-strong);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  transition: background-color 0.2s ease-out, transform 0.3s var(--spring);
+}
+.wall-page .wp-btn:hover { background: color-mix(in srgb, var(--wall-ink) 7%, var(--wall-solid)); }
+.wall-page .wp-btn:active { transform: scale(0.97); }
+.wall-page .wp-btn:focus-visible { outline: 2px solid var(--wall-ink); outline-offset: 2px; }
+.wall-page .wp-btn[aria-expanded="true"] { background: color-mix(in srgb, var(--wall-ink) 7%, var(--wall-solid)); }
+.wall-page .wp-btn-ink { background: var(--wall-ink); color: var(--wall-on-ink); box-shadow: none; }
+.wall-page .wp-btn-ink:hover { background: color-mix(in srgb, var(--wall-ink) 84%, var(--wall-on-ink)); }
+.wall-page .wp-btn-small { min-height: 30px; padding: 0 12px; font-size: 13px; }
+
+/* ── Share menu ──────────────────────────────── */
+.wall-page .share { position: relative; display: flex; }
+.wall-page .share-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--wall-solid);
+  color: var(--wall-ink);
+  box-shadow: 0 0 0 1px var(--wp-line), 0 16px 40px -12px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.06);
+  transform-origin: top right;
+  animation: wp-pop 0.22s var(--spring) both;
+}
+.wall-page .share-menu > * {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.wall-page .share-menu > *:hover, .wall-page .share-menu > *:focus-visible { background: var(--wp-wash); outline: none; }
+.wall-page .share-menu svg { flex: none; color: var(--wall-muted); }
+
+/* ── Tiles: the verified seal stays in view ──── */
+.wall-page .wall-tile .verified {
+  --seal: clamp(18px, calc(var(--u) * 9.5), 22px);
+  top: calc(var(--u) * 3.5);
+  right: calc(var(--u) * 3.5);
+  bottom: auto;
+  justify-content: center;
+  gap: 0;
+  min-width: var(--seal);
+  height: var(--seal);
+  padding: 0;
+  border-radius: 999px;
+  font: 500 11px/1 inherit;
+  opacity: 1;
+  cursor: default;
+  transition: padding 0.35s var(--spring), gap 0.35s var(--spring);
+}
+.wall-page .wall-tile .verified svg { flex: none; width: calc(var(--seal) - 6px); height: calc(var(--seal) - 6px); color: var(--wall-positive); }
+.wall-page .wall-tile .verified > span { max-width: 0; overflow: hidden; white-space: nowrap; opacity: 0; transition: max-width 0.35s var(--spring), opacity 0.2s ease-out; }
+.wall-page .wall-tile:hover .verified, .wall-page .wall-tile .verified:focus-visible { gap: 4px; padding: 0 8px 0 3px; }
+.wall-page .wall-tile:hover .verified > span { max-width: 96px; opacity: 1; }
+
+/* ── Preview bar, before publishing ──────────── */
+.wall-page .wp-preview {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 14px;
+  padding: 10px var(--gutter);
+  background: color-mix(in srgb, var(--wall-solid) 88%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  box-shadow: 0 1px 0 var(--wp-line);
+  color: var(--wall-muted);
+  font-size: 14px;
+}
+.wall-page .wp-preview p { margin: 0; }
+.wall-page .wp-preview strong { color: var(--wall-ink); font-weight: 600; }
+.wall-page .wp-preview-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #f5a524; box-shadow: 0 0 0 3px color-mix(in srgb, #f5a524 24%, transparent); }
+
+/* ── Footer ──────────────────────────────────── */
+.wall-page .wp-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: clamp(40px, 6vw, 64px);
+  padding-top: 20px;
+  border-top: 1px solid var(--wp-line);
+  font-size: 13px;
+}
+.wall-page .wp-made {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 6px;
+  border-radius: 999px;
+  background: var(--wall-tile);
+  box-shadow: inset 0 0 0 1px var(--wp-line);
+  color: var(--wall-ink);
+  font-weight: 500;
+  text-decoration: none;
+  transition: box-shadow 0.2s ease-out;
+}
+.wall-page .wp-made:hover { box-shadow: inset 0 0 0 1px var(--wp-line-strong); }
+.wall-page .wp-made svg { border-radius: 5px; }
+.wall-page .wp-report { display: inline-flex; align-items: center; gap: 6px; color: var(--wall-muted); text-decoration: none; }
+.wall-page .wp-report:hover { color: var(--wall-ink); }
+
+/* ── The owner's way back to the editor ──────── */
+.wall-page .wp-owner {
+  position: fixed;
+  left: 50%;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px 0 16px;
+  border-radius: 999px;
+  background: var(--wall-ink);
+  color: var(--wall-on-ink);
+  box-shadow: 0 12px 32px -10px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--wp-line);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transform: translateX(-50%);
+  animation: wp-rise 0.6s var(--spring) 0.3s both;
+  transition: background-color 0.2s ease-out;
+}
+.wall-page .wp-owner:hover { background: color-mix(in srgb, var(--wall-ink) 86%, var(--wall-on-ink)); }
+
+@keyframes wp-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes wp-pop { from { opacity: 0; transform: translateY(-4px) scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes wp-rise { from { opacity: 0; transform: translate(-50%, 16px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .wall-page .wp-profile, .wall-page .share-menu, .wall-page .wp-owner { animation: none; }
+}
+
+/* ── Phones ──────────────────────────────────── */
+@media (max-width: 640px) {
+  .wall-page .wp-profile { grid-template-columns: auto minmax(0, 1fr); }
+  .wall-page .wp-avatar { --size: 60px; }
+  .wall-page .wp-id h1 { font-size: 26px; }
+  .wall-page .wp-facts { gap: 4px 14px; font-size: 13px; }
+  .wall-page .wp-bio { grid-column: 1 / -1; margin-top: 16px; font-size: 15px; }
+  .wall-page .wp-actions { grid-row: auto; grid-column: 1 / -1; margin-top: 18px; }
+  .wall-page .wp-actions > * { flex: 1; }
+  .wall-page .wp-actions .wp-btn { width: 100%; }
+  .wall-page .share-menu { right: auto; left: 0; transform-origin: top left; }
+  .wall-page .wp-preview { justify-content: space-between; text-align: left; }
+  .wall-page .wp-preview { flex-wrap: nowrap; font-size: 13px; }
+  .wall-page .wp-preview p { flex: 1; min-width: 0; }
+  .wall-page .wp-wide { display: none; }
+}

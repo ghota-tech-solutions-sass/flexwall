@@ -3,8 +3,12 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { cache } from "react";
 import { wallNumbers } from "@/application/wall-numbers";
+import { FlagIcon, PencilSimpleIcon } from "@phosphor-icons/react/ssr";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { WallGrids, wallStyle } from "@/components/wall/WallView";
+import { Logo } from "@/components/site/Chrome";
+import { WallGrids, wallStyle, wallVars } from "@/components/wall/WallView";
+import { WallProfile } from "@/components/wall/WallProfile";
+import { ShareButton } from "@/components/wall/ShareButton";
 import { container } from "@/composition";
 import { DomainError } from "@/domain/errors";
 import { effectiveTheme } from "@/domain/wall";
@@ -13,8 +17,9 @@ import { wallDescription } from "@/presentation/seo/descriptions";
 import { pageMetadata } from "@/presentation/seo/metadata";
 import { siteOrigin } from "@/presentation/seo/origin";
 import { breadcrumbLd, profilePageLd } from "@/presentation/seo/structured-data";
-import { ProfileHeader } from "@/components/wall/ProfileHeader";
-import { ShareButton } from "@/components/wall/ShareButton";
+import { updatedAgo } from "@/presentation/explore/boards";
+import { joinedLabel, verifiedCount, wallIdentity } from "@/presentation/wall/profile";
+import "./wall-page.css";
 
 type Props = { params: Promise<{ handle: string }> };
 
@@ -22,9 +27,10 @@ type Props = { params: Promise<{ handle: string }> };
 const load = cache(async (handle: string) => {
   const c = container();
   try {
-    const found = await c.getPublicWall.execute({ handle, viewerId: await sessionUserId() });
+    const viewerId = await sessionUserId();
+    const found = await c.getPublicWall.execute({ handle, viewerId });
     const resolved = await c.resolveWall.execute({ tiles: found.wall.tiles, owner: found.owner, surface: "page" });
-    return { ...found, ...resolved };
+    return { ...found, ...resolved, viewerId };
   } catch (error) {
     if (error instanceof DomainError && error.code === "not_found") notFound();
     throw error;
@@ -35,9 +41,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle } = await params;
   const { wall, preview, states } = await load(handle);
   const numbers = wallNumbers(wall.tiles, states, container().catalog);
+  const identity = wallIdentity(wall.title, wall.handle);
   return {
     ...pageMetadata({
-      title: `${wall.title || `@${wall.handle}`} (@${wall.handle})`,
+      title: identity.showHandle ? `${identity.name} (@${wall.handle})` : identity.name,
       description: wallDescription({ handle: wall.handle, title: wall.title, bio: wall.bio, numbers }),
       path: `/@${wall.handle}`,
       type: "profile",
@@ -49,15 +56,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PublicWallPage({ params }: Props) {
   const { handle } = await params;
   const c = container();
-  const { wall, entitlements, preview, states, today } = await load(handle);
+  const { wall, entitlements, preview, states, today, viewerId } = await load(handle);
   // /@Ada_Builds finds @ada-builds: send it to the one address that gets shared and indexed.
   if (decodeURIComponent(handle) !== wall.handle) permanentRedirect(`/@${wall.handle}`);
   const theme = effectiveTheme(wall, c.catalog, entitlements);
-
-  const verifiedCount = Object.values(states).filter((st) => st.status === "ready" && Object.values(st.inputs).some((i) => i.source?.verified)).length;
+  const owner = viewerId === wall.ownerId;
+  const url = `${siteOrigin()}/@${wall.handle}`;
 
   return (
-    <div className="wall-page" style={wallStyle(theme)}>
+    <div className="wall-page" data-mode={theme.mode} style={{ ...wallStyle(theme), ...wallVars(theme) }}>
       {preview ? null : (
         <JsonLd
           data={[
@@ -70,22 +77,32 @@ export default async function PublicWallPage({ params }: Props) {
         />
       )}
       {preview ? (
-        <div className="preview-banner">
-          Only you can see this: your wall isn&apos;t published. <Link href="/edit">Publish it from the editor</Link>.
+        <div className="wp-preview" role="status">
+          <span className="wp-preview-dot" aria-hidden="true" />
+          <p>
+            <strong>Preview.</strong> Only you can see this wall until it&apos;s published.
+          </p>
+          <Link href="/edit" className="wp-btn wp-btn-small">
+            <span>
+              Publish<span className="wp-wide"> in the editor</span>
+            </span>
+          </Link>
         </div>
       ) : null}
       <main className="wall-inner">
-        <ProfileHeader
+        <WallProfile
           title={wall.title}
           handle={wall.handle}
           bio={wall.bio}
           theme={theme}
-          stats={verifiedCount ? [{ value: String(verifiedCount), label: verifiedCount === 1 ? "verified number" : "verified numbers" }] : undefined}
+          verified={verifiedCount(states)}
+          updated={updatedAgo(wall.updatedAt, Date.now())}
+          joined={joinedLabel(wall.createdAt)}
           actions={
             <>
-              <ShareButton url={`${siteOrigin()}/@${wall.handle}`} title={`${wall.title} on Flexwall`} />
-              {entitlements.branding ? (
-                <Link href={`/r/${wall.handle}`} className="btn btn-small btn-signal">
+              <ShareButton url={url} title={`${wallIdentity(wall.title, wall.handle).name} on Flexwall`} className="wp-btn" />
+              {entitlements.branding && !owner ? (
+                <Link href={`/r/${wall.handle}`} className="wp-btn wp-btn-ink">
                   Make your own wall
                 </Link>
               ) : null}
@@ -93,11 +110,27 @@ export default async function PublicWallPage({ params }: Props) {
           }
         />
         <WallGrids tiles={wall.tiles} states={states} theme={theme} today={today} catalog={c.catalog} />
-        <footer className="wall-footer" style={{ color: theme.muted }}>
-          {entitlements.branding ? <Link href={`/r/${wall.handle}`}>Made with Flexwall</Link> : <span />}
-          <Link href={`/report?handle=${wall.handle}`}>Report this wall</Link>
+        <footer className="wp-footer">
+          {entitlements.branding ? (
+            <Link href={`/r/${wall.handle}`} className="wp-made" style={{ ["--bg" as string]: theme.tile, ["--muted" as string]: theme.muted }}>
+              <Logo size={18} />
+              Made with Flexwall
+            </Link>
+          ) : (
+            <span />
+          )}
+          <Link href={`/report?handle=${wall.handle}`} className="wp-report">
+            <FlagIcon size={14} aria-hidden="true" />
+            Report this wall
+          </Link>
         </footer>
       </main>
+      {owner ? (
+        <Link href="/edit" className="wp-owner">
+          <PencilSimpleIcon size={16} weight="bold" aria-hidden="true" />
+          Edit wall
+        </Link>
+      ) : null}
     </div>
   );
 }

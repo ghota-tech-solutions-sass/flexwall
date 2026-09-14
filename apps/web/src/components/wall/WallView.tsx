@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { SealCheckIcon } from "@phosphor-icons/react/ssr";
 import type { Theme } from "@flexwall/sdk";
 import type { TileState } from "@/application/use-cases/resolve-wall";
 import type { Catalog } from "@/domain/catalog";
@@ -33,8 +34,9 @@ function Grid({ placed, variant, ...rest }: WallViewProps & { placed: { tile: Ti
           <div key={tile.id} className="wall-tile" style={{ gridColumn: `${box.x + 1} / span ${box.w}`, gridRow: `${box.y + 1} / span ${box.h}` }}>
             <TileBody tile={tile} state={state} box={{ w: box.w, h: box.h }} theme={rest.theme} surface="page" u={webUnits} today={rest.today} catalog={rest.catalog} />
             {sources.length ? (
-              <span className="verified" style={{ background: rest.theme.tile, color: rest.theme.ink, border: `1px solid ${rest.theme.tileBorder}` }} title={`Read from the owner's ${sources[0]} account`}>
-                ✓ {sources[0]}
+              <span className="verified" role="img" aria-label={`Verified by ${sources[0]}`} style={{ background: rest.theme.tile, color: rest.theme.ink, border: `1px solid ${rest.theme.tileBorder}` }} title={`Read from the owner's ${sources[0]} account`}>
+                <SealCheckIcon size={14} weight="fill" aria-hidden="true" />
+                <span>{sources[0]}</span>
               </span>
             ) : null}
           </div>
@@ -58,4 +60,18 @@ export function WallGrids(props: WallViewProps) {
 /** Colors and fonts for the page around the grid. */
 export function wallStyle(theme: Theme): CSSProperties {
   return { backgroundColor: theme.page, ...(theme.wallpaper ? { backgroundImage: theme.wallpaper } : {}), color: theme.ink, fontFamily: theme.body.family };
+}
+
+/** The theme as CSS variables, for the chrome a page draws around the tiles. */
+export function wallVars(theme: Theme): CSSProperties {
+  return {
+    ["--wall-ink" as string]: theme.ink,
+    ["--wall-muted" as string]: theme.muted,
+    ["--wall-tile" as string]: theme.tile,
+    ["--wall-border" as string]: theme.tileBorder,
+    ["--wall-positive" as string]: theme.positive,
+    ["--wall-on-ink" as string]: theme.mode === "dark" ? "#0c0d10" : "#ffffff",
+    // Menus and bars need a solid ground even when tiles are translucent.
+    ["--wall-solid" as string]: theme.mode === "dark" ? "#17181c" : "#ffffff",
+  };
 }
