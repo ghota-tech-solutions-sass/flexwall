@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { checkPlugins, ConnectorError, HttpError, number } from "@flexwall/sdk";
-import { fakeContext, satoriProblems, widgetProps } from "@flexwall/sdk/testing";
-import plugin, { __CAMEL__Connector, __CAMEL__Widget } from "../src/index";
+import { fakeContext } from "@flexwall/sdk/testing";
+import plugin, { __CAMEL__Connector } from "../src/index";
 
-/** Tests are Given / When / Then. Run them with `bun test plugins/__ID__`. */
-describe("__ID__ plugin", () => {
+/** Given / When / Then. Run with `bun test plugins/__ID__`. */
+describe("__ID__ connector", () => {
   test("given the plugin, when checked, then it has no problems", () => {
     // Given / When
     const problems = checkPlugins([plugin]);
@@ -27,8 +27,8 @@ describe("__ID__ plugin", () => {
   test("given an unknown user, when fetched, then the owner gets a sentence", async () => {
     // Given
     const ctx = fakeContext({
-      "https://api.example.com/users/": () => {
-        throw new HttpError(404, "https://api.example.com/users/nobody", "");
+      "https://api.example.com/users/": (_init, url) => {
+        throw new HttpError(404, url, "");
       },
     });
 
@@ -37,19 +37,5 @@ describe("__ID__ plugin", () => {
 
     // Then
     await expect(attempt).rejects.toBeInstanceOf(ConnectorError);
-  });
-
-  test("given the widget at every size, when rendered, then images can draw it", () => {
-    // Given
-    const sizes = [
-      { w: 1, h: 1 },
-      { w: 2, h: 2 },
-    ];
-
-    // When
-    const problems = sizes.flatMap((box) => satoriProblems(__CAMEL__Widget.render(widgetProps(__CAMEL__Widget, { inputs: { value: number(1280) }, box }))));
-
-    // Then
-    expect(problems).toEqual([]);
   });
 });

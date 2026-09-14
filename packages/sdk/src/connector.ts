@@ -131,9 +131,18 @@ export class HttpError extends Error {
   }
 }
 
-/** Thrown by `ctx.fetch` when the host refuses a request: private address, redirect, too big, too slow. */
+export type BlockedReason = "private-address" | "redirect" | "too-large" | "timeout" | "invalid-url" | "network";
+
+/**
+ * Thrown by `ctx.fetch` when the host refuses or can't complete a request.
+ * `reason` tells cases apart; `message` is a lowercase fragment safe to show
+ * after a subject: `The endpoint ${error.message}.`
+ */
 export class BlockedRequestError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    readonly reason: BlockedReason = "network"
+  ) {
     super(message);
     this.name = "BlockedRequestError";
   }
@@ -159,10 +168,15 @@ export function defineConnector(def: ConnectorDef): ConnectorDef {
   return def;
 }
 
+/**
+ * One group per metric and params, values kept exactly as typed: "JSONStream"
+ * and "jsonstream" are different npm packages. Connectors whose upstream is
+ * case-insensitive normalize in their own `cacheKey`.
+ */
 export function defaultCacheKey(req: { metric: string; params: FieldValues }): string {
   const params = Object.keys(req.params)
     .sort()
-    .map((k) => `${k}=${String(req.params[k]).toLowerCase()}`)
+    .map((k) => `${k}=${encodeURIComponent(String(req.params[k]))}`)
     .join("&");
   return `${req.metric}?${params}`;
 }

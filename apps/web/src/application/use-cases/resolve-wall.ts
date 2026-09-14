@@ -55,7 +55,7 @@ function withDeadline<T>(promise: Promise<T>, ms: number): Promise<T> {
 function stableParams(params: FieldValues): string {
   return Object.keys(params)
     .sort()
-    .map((k) => `${k}=${String(params[k]).toLowerCase()}`)
+    .map((k) => `${k}=${encodeURIComponent(String(params[k]))}`)
     .join("&");
 }
 

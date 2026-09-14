@@ -167,7 +167,8 @@ export function validateFields(fields: readonly Field[], raw: Record<string, unk
       }
       default: {
         const v = String(input).trim();
-        const max = f.maxLength ?? (f.kind === "textarea" ? 2000 : 500);
+        // Secrets default high: many API keys are long JWTs.
+        const max = f.maxLength ?? (f.kind === "textarea" ? 2000 : f.kind === "secret" ? 4000 : 500);
         if (v.length > max) return { values, error: `${f.label} is too long (${max} characters at most).` };
         if ((f.kind === "text" || f.kind === "secret") && f.pattern && !new RegExp(f.pattern).test(v)) {
           return { values, error: `${f.label} ${f.patternMessage ?? "isn't in the expected format"}.` };
