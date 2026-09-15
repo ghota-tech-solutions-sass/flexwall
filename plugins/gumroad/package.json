@@ -1,0 +1,21 @@
+{
+  "name": "@flexwall/plugin-gumroad",
+  "version": "0.1.0",
+  "description": "Verified Gumroad revenue and sales for Flexwall walls.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

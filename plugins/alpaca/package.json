@@ -1,0 +1,21 @@
+{
+  "name": "@flexwall/plugin-alpaca",
+  "version": "0.1.0",
+  "description": "Verified equity, cash and daily change from a live Alpaca brokerage account.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

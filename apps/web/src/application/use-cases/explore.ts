@@ -1,5 +1,5 @@
 import { Handle } from "@/domain/handle";
-import { formatValue, type Leaderboard } from "@flexwall/sdk";
+import { formatBand, formatValue, VERIFIED_LEADERBOARDS, type Leaderboard } from "@flexwall/sdk";
 import type { Catalog } from "@/domain/catalog";
 import { DomainError } from "@/domain/errors";
 import { REPORT_REASON_MAX, REPORT_REASON_MIN, reportContact } from "@/domain/report";
@@ -56,8 +56,8 @@ export class ListExplore {
     const ranks: ExploreEntry["ranks"] = {};
     for (const n of numbers) {
       const board = this.deps.catalog.metric(n.binding.connector, n.binding.metric)?.leaderboard;
-      // Revenue ranks only count what the owner's own account says.
-      if (!board || (board === "revenue" && !n.verified)) continue;
+      // Revenue and wealth ranks only count what the owner's own account says.
+      if (!board || (VERIFIED_LEADERBOARDS.includes(board) && !n.verified)) continue;
       ranks[board] = Math.max(ranks[board] ?? -Infinity, n.value.value);
     }
 
@@ -72,7 +72,7 @@ export class ListExplore {
         .slice(0, 3)
         .map((n) => ({
           label: n.label,
-          value: formatValue(n.value),
+          value: n.range ? formatBand(n.value) : formatValue(n.value),
           connector: this.deps.catalog.connector(n.binding.connector)?.name ?? n.binding.connector,
         })),
       ranks,

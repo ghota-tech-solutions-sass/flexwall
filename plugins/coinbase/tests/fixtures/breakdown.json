@@ -1,0 +1,22 @@
+{
+  "breakdown": {
+    "portfolio": { "name": "Default", "uuid": "6b0a3f2c-8f3e-4a8b-9d6a-1d2e3f4a5b6c", "type": "DEFAULT", "deleted": false },
+    "portfolio_balances": {
+      "total_balance": { "value": "25431.87", "currency": "USD" },
+      "total_futures_balance": { "value": "0", "currency": "USD" },
+      "total_cash_equivalent_balance": { "value": "1204.10", "currency": "USD" },
+      "total_crypto_balance": { "value": "24227.77", "currency": "USD" },
+      "futures_unrealized_pnl": { "value": "0", "currency": "USD" },
+      "perp_unrealized_pnl": { "value": "0", "currency": "USD" },
+      "total_equities_balance": { "value": "0", "currency": "USD" }
+    },
+    "spot_positions": [
+      { "asset": "BTC", "account_uuid": "a1", "total_balance_fiat": 19250.4, "total_balance_crypto": 0.3, "available_to_trade_fiat": 19250.4, "allocation": 0.757, "is_cash": false },
+      { "asset": "ETH", "account_uuid": "a2", "total_balance_fiat": 4977.37, "total_balance_crypto": 1.62, "available_to_trade_fiat": 4977.37, "allocation": 0.196, "is_cash": false },
+      { "asset": "USD", "account_uuid": "a3", "total_balance_fiat": 1204.1, "total_balance_crypto": 1204.1, "available_to_trade_fiat": 1204.1, "allocation": 0.047, "is_cash": true },
+      { "asset": "SOL", "account_uuid": "a4", "total_balance_fiat": 0, "total_balance_crypto": 0, "available_to_trade_fiat": 0, "allocation": 0, "is_cash": false }
+    ],
+    "perp_positions": [],
+    "futures_positions": []
+  }
+}

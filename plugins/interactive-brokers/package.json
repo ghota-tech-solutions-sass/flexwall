@@ -1,0 +1,21 @@
+{
+  "name": "@flexwall/plugin-interactive-brokers",
+  "version": "0.1.0",
+  "description": "Verified net asset value from an Interactive Brokers account, read through a Flex query.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

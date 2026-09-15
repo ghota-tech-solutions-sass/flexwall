@@ -1,0 +1,21 @@
+{
+  "name": "@flexwall/plugin-crypto-wallet",
+  "version": "0.1.0",
+  "description": "Native coin balances of public Bitcoin, Ethereum, Base and Solana addresses for Flexwall walls.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

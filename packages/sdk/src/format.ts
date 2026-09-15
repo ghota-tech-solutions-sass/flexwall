@@ -41,6 +41,43 @@ export function formatValue(v: Pick<NumberValue, "value" | "unit" | "currency">)
   return formatNumber(v.value);
 }
 
+/** The power of ten at or below `n`: 3,480,000 → 1,000,000, 42 → 10. Below `min` the range is 0. */
+export function bandFloor(n: number, min = 1000): number {
+  if (!Number.isFinite(n) || n < min) return 0;
+  return 10 ** Math.floor(Math.log10(n));
+}
+
+/**
+ * A sensitive amount as a range: "$1M+", "€10k+", "under $1k", "10+ BTC"
+ * once a label follows. It says how many figures, never the figures, so a
+ * wall can flex without printing a balance someone could act on. Money starts
+ * at $1k; plain amounts (coins) start at 1.
+ */
+export function formatBand(v: Pick<NumberValue, "value" | "unit" | "currency">): string {
+  const money = v.unit === "currency";
+  const symbol = money ? currencySymbol(v.currency) : "";
+  const floor = bandFloor(v.value, money ? 1000 : 1);
+  if (floor === 0) return money ? `under ${symbol}1k` : "under 1";
+  // formatNumber keeps every digit below 10k; a range reads better as "1k".
+  return `${symbol}${floor === 1000 ? "1k" : formatNumber(floor)}+`;
+}
+
+/** How a number tile prints its value: "auto" gives ranges to sensitive metrics only. */
+export type NumberDisplay = "auto" | "exact" | "range";
+
+export const NUMBER_DISPLAY_OPTIONS: { value: NumberDisplay; label: string }[] = [
+  { value: "auto", label: "Range for balances, exact otherwise" },
+  { value: "exact", label: "Exact number" },
+  { value: "range", label: "Range, like $1M+" },
+];
+
+/** Whether a tile prints a range instead of the number, from its option and the metric's sensitivity. */
+export function showsRange(display: unknown, sensitive: boolean | undefined): boolean {
+  if (display === "range") return true;
+  if (display === "exact") return false;
+  return Boolean(sensitive);
+}
+
 /** Change between the first and last points of a series, as a ratio (0.12 = +12%). Null when undefined. */
 export function seriesChange(s: SeriesValue): number | null {
   if (s.points.length < 2) return null;

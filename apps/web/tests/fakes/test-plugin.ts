@@ -59,6 +59,35 @@ export function testCatalog(upstream = new ScriptedUpstream()) {
     sample: { mrr: number(1, { unit: "currency", currency: "usd" }) },
   });
 
-  const plugin = definePlugin({ id: "test", name: "Test", description: "Test connectors", author: { name: "tests" }, connectors: [analytics, billing] });
+  const brokerage = defineConnector({
+    id: "brokerage",
+    name: "Brokerage",
+    description: "A verified account holding someone's money.",
+    tier: "pro",
+    verified: true,
+    ttl: 1800,
+    auth: { help: "Paste a key.", fields: [field.secret("key", "Key")] },
+    metrics: [{ id: "equity", name: "Equity", type: "number", unit: "currency", leaderboard: "wealth", sensitive: true }],
+    cacheKey: () => "account",
+    async connect(input) {
+      return { secret: { key: String(input.key) }, public: {}, label: "Brokerage account" };
+    },
+    fetch: async () => ({ equity: number(2_400_000, { unit: "currency", currency: "usd" }) }),
+    sample: { equity: number(1, { unit: "currency", currency: "usd" }) },
+  });
+
+  const wallet = defineConnector({
+    id: "wallet",
+    name: "Wallet",
+    description: "A public address anyone can paste.",
+    tier: "free",
+    verified: false,
+    ttl: 1800,
+    metrics: [{ id: "balance", name: "Balance", type: "number", unit: "currency", leaderboard: "wealth", sensitive: true, params: [field.text("address", "Address")] }],
+    fetch: async () => ({ balance: number(90_000_000, { unit: "currency", currency: "usd" }) }),
+    sample: { balance: number(1, { unit: "currency", currency: "usd" }) },
+  });
+
+  const plugin = definePlugin({ id: "test", name: "Test", description: "Test connectors", author: { name: "tests" }, connectors: [analytics, billing, brokerage, wallet] });
   return { catalog: createCatalog([core, plugin], "night"), upstream };
 }

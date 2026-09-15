@@ -1,0 +1,21 @@
+{
+  "name": "@flexwall/plugin-coinbase",
+  "version": "0.1.0",
+  "description": "Verified portfolio value and assets held on Coinbase, for Flexwall walls.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

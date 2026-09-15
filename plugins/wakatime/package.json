@@ -1,0 +1,21 @@
+{
+  "name": "@flexwall/plugin-wakatime",
+  "version": "0.1.0",
+  "description": "WakaTime coding time, streak and activity for Flexwall walls.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}
