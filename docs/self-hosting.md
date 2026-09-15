@@ -26,7 +26,17 @@ docker run -p 3000:3000 --env-file .env flexwall
 | `STRIPE_REFERRAL_COUPON` | no | Stripe coupon id for invitees (20% off, once). Without it, invitees pay full price; referrers still earn Pro months. |
 | `GITHUB_TOKEN` | no | A token with no scopes. Raises GitHub's API limit from 60 to 5000 calls an hour for stars and followers. |
 | `YOUTUBE_API_KEY` | for YouTube tiles | A YouTube Data API v3 key. Without it, YouTube tiles say the server has no key. |
+| `STEAM_API_KEY` | for Steam tiles | A free Steam Web API key (steamcommunity.com/dev/apikey). |
+| `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET` | for Twitch | A Twitch application. See `plugins/twitch/README.md`. |
+| `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | for TikTok | A TikTok for Developers app with Login Kit. See `plugins/tiktok/README.md`. |
+| `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET` | for Instagram | A Meta app with Instagram API with Instagram Login. See `plugins/instagram/README.md`. |
+| `ENABLE_BANKING_APP_ID`, `ENABLE_BANKING_PRIVATE_KEY` | for bank accounts | An Enable Banking application and its RSA private key (PEM). See `plugins/enable-banking/README.md`. |
 | `MODERATION_INBOX` | no | Where wall reports are sent. |
+
+Connectors that sign in at a provider (Twitch, TikTok, Instagram, bank
+accounts) send owners back to `https://<your host>/api/connections/oauth/callback`:
+register exactly that address with each provider. Without its variables, a
+connector still shows in the editor and says the server isn't set up for it.
 
 Stripe webhook endpoint: `https://<your host>/api/webhooks/stripe`, with
 `checkout.session.completed`, `customer.subscription.created`, `.updated`,

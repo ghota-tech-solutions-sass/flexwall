@@ -13,6 +13,8 @@ permissions:
 env:
   TF_IN_AUTOMATION: "true"
   TF_VAR_github_token: ${{ secrets.TF_VAR_GITHUB_TOKEN }}
+  # JSON object by env name, e.g. {"STEAM_API_KEY":"…","TWITCH_CLIENT_ID":"…"}; empty keeps connectors off.
+  TF_VAR_connector_secrets: ${{ secrets.TF_VAR_CONNECTOR_SECRETS || '{}' }}
 
 jobs:
   plan:

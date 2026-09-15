@@ -135,6 +135,29 @@ resource "google_secret_manager_secret_version" "github_token" {
 }
 
 locals {
+  # Names are not secret, values are: for_each needs plain keys.
+  connector_secret_names = toset(nonsensitive([for name, value in var.connector_secrets : name if value != ""]))
+}
+
+resource "google_secret_manager_secret" "connector" {
+  for_each  = local.connector_secret_names
+  secret_id = "flexwall-connector-${lower(replace(each.key, "_", "-"))}"
+  project   = var.project_id
+
+  replication {
+    auto {}
+  }
+
+  depends_on = [google_project_service.apis]
+}
+
+resource "google_secret_manager_secret_version" "connector" {
+  for_each    = local.connector_secret_names
+  secret      = google_secret_manager_secret.connector[each.key].id
+  secret_data = var.connector_secrets[each.key]
+}
+
+locals {
   # Every secret the service reads, by env name. Access is granted from this
   # list so a new secret can't be wired without its IAM binding.
   secret_env = merge(
@@ -145,7 +168,8 @@ locals {
       STRIPE_WEBHOOK_SECRET   = google_secret_manager_secret.stripe_webhook_secret.secret_id
       YOUTUBE_API_KEY         = google_secret_manager_secret.youtube_api_key.secret_id
     },
-    local.github_token_set ? { GITHUB_TOKEN = google_secret_manager_secret.github_token[0].secret_id } : {}
+    local.github_token_set ? { GITHUB_TOKEN = google_secret_manager_secret.github_token[0].secret_id } : {},
+    { for name in local.connector_secret_names : name => google_secret_manager_secret.connector[name].secret_id },
   )
 
   # Cloud Run reads "latest" at revision start: a new version must roll a new
@@ -158,6 +182,7 @@ locals {
       google_secret_manager_secret_version.youtube_api_key.version,
     ],
     google_secret_manager_secret_version.github_token[*].version,
+    [for name in sort(tolist(local.connector_secret_names)) : google_secret_manager_secret_version.connector[name].version],
   )))
 }
 
