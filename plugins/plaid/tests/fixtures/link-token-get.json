@@ -1,0 +1,32 @@
+{
+  "created_at": "2024-07-29T21:22:13Z",
+  "expiration": "2024-07-29T21:52:13Z",
+  "link_sessions": [
+    {
+      "finished_at": "2024-07-29T21:23:03.326860787Z",
+      "link_session_id": "f3c3b8fe-16c6-4670-8f2b-e8d797aa6e9f",
+      "on_success": {
+        "metadata": {
+          "accounts": [{ "class_type": null, "id": "d1rVJdbe1jCE9jE81wlduPlQQejKXeCJnDzyw", "mask": "3333", "name": "Plaid Credit Card", "subtype": "credit card", "type": "credit", "verification_status": null }],
+          "institution": { "institution_id": "ins_10", "name": "American Express" },
+          "link_session_id": "f3c3b8fe-16c6-4670-8f2b-e8d797aa6e9f",
+          "transfer_status": null
+        },
+        "public_token": "public-sandbox-d1e64436-f033-4302-a469-b90656edf8c7"
+      },
+      "results": {
+        "item_add_results": [
+          {
+            "accounts": [{ "class_type": null, "id": "d1rVJdbe1jCE9jE81wlduPlQQejKXeCJnDzyw", "mask": "3333", "name": "Plaid Credit Card", "subtype": "credit card", "type": "credit", "verification_status": null }],
+            "institution": { "institution_id": "ins_10", "name": "American Express" },
+            "public_token": "public-sandbox-d1e64436-f033-4302-a469-b90656edf8c7"
+          }
+        ]
+      },
+      "started_at": "2024-07-29T21:22:17.0951134Z"
+    }
+  ],
+  "link_token": "link-sandbox-9b48eb4c-7e1b-44e1-b80d-faa1d71cdf5e",
+  "metadata": { "client_name": "Wonderwallet", "country_codes": ["US"], "initial_products": ["auth"], "language": "en", "redirect_uri": null, "webhook": null },
+  "request_id": "jBBxxNC842EJNqW"
+}

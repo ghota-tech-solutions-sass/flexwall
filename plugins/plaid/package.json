@@ -1,0 +1,21 @@
+{
+  "name": "@flexwall/plugin-plaid",
+  "version": "0.1.0",
+  "description": "Verified cash, investments and net worth from US and Canadian banks through Plaid Hosted Link, for Flexwall walls.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}
