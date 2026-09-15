@@ -4,14 +4,14 @@ import ReactGridLayout, { useContainerWidth, verticalCompactor, type Layout } fr
 import "react-grid-layout/css/styles.css";
 import { CELL_UNITS, GAP_UNITS, gridUnits, themeBackground, type Size, type Theme } from "@flexwall/sdk";
 import type { TileState } from "@/application/use-cases/resolve-wall";
-import { dropCell, tileName } from "@/application/editor/draft";
+import { dropCell, tileConnections, tileName } from "@/application/editor/draft";
 import { editorTheme } from "@/application/editor/state";
 import { WALL_COLUMNS } from "@/domain/layout";
 import { BIO_MAX, TITLE_MAX, type Tile } from "@/domain/wall";
 import { catalog } from "@/plugins/registry";
 import { BrandMark, hasMark } from "@/components/brand/Logos";
 import { TileBody } from "@/rendering/tile";
-import { useEditor, useEditorActions } from "./EditorContext";
+import { useConnectionNames, useEditor, useEditorActions } from "./EditorContext";
 import { CopyIcon, EyeIcon, EyeOffIcon, KeyIcon, PlusIcon, TrashIcon } from "./icons";
 
 /** Controls drawn on a tile. Pointer events on them never start a drag. */
@@ -172,9 +172,25 @@ function EmptyWall({ theme }: { theme: Theme }) {
 /** Hover toolbar, the way Bento and Framer do it: the most common actions without opening anything. */
 function TileTools({ tile }: { tile: Tile }) {
   const actions = useEditorActions();
+  const connections = useEditor((s) => s.connections);
+  const names = useConnectionNames();
   const hidden = tile.visibility === "private";
+  const feeding = tileConnections(tile).flatMap((id) => {
+    const connection = connections.find((c) => c.id === id);
+    return connection ? [{ connection, name: names[id] ?? connection.label }] : [];
+  });
+  const shown = feeding[0];
   return (
     <div className="tile-tools" role="toolbar" aria-label="Tile actions">
+      {shown ? (
+        <>
+          <small title={`From ${feeding.map((f) => f.name).join(", ")}`}>
+            {hasMark(shown.connection.connector) ? <BrandMark id={shown.connection.connector} size={12} /> : <KeyIcon size={12} />}
+            <b>{feeding.length > 1 ? `${shown.name} +${feeding.length - 1}` : shown.name}</b>
+          </small>
+          <span aria-hidden="true" />
+        </>
+      ) : null}
       <button type="button" aria-label={hidden ? "Show on the public page" : "Hide from the public page"} title={hidden ? "Show to everyone" : "Only me"} onClick={() => actions.setVisibility(tile.id, hidden ? "public" : "private")}>
         {hidden ? <EyeOffIcon size={15} /> : <EyeIcon size={15} />}
       </button>

@@ -1,21 +1,23 @@
 // Rendered inside the Editor client boundary.
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { parseTypedNumber, themeBackground, type ConnectorDef, type WidgetInputDef } from "@flexwall/sdk";
-import { sourcesFor, type SourceOption } from "@/application/editor/draft";
+import { sourcesFor, tilesUsing, type SourceOption } from "@/application/editor/draft";
 import { editorTheme } from "@/application/editor/state";
 import type { InputTarget } from "@/application/editor/store";
-import type { ConnectionView } from "@/domain/connection";
+import { connectionDetail, type ConnectionView } from "@/domain/connection";
 import { connectorOfSource, sameSource, sourceOfBinding, type SourceRef } from "@/domain/source";
 import { canUseTheme, effectiveTheme, STATIC_TEXT_MAX, VISIBILITIES, type Tile, type Visibility } from "@/domain/wall";
 import { catalog } from "@/plugins/registry";
 import { BrandMark, hasMark } from "@/components/brand/Logos";
 import { ConnectForm } from "@/components/connections/ConnectForm";
+import { RenameField } from "@/components/connections/RenameField";
 import { FieldInput } from "@/components/forms/FieldInput";
+import { removalWarning, usageLine } from "@/presentation/connections";
 import { SHORTCUTS } from "@/presentation/editor/shortcuts";
 import { tileStatus } from "@/presentation/editor/tile-status";
 import { ROUTES } from "@/presentation/routes";
-import { useEditor, useEditorActions } from "./EditorContext";
-import { CategoryIcon, CheckIcon, ChevronIcon, CloseIcon, CopyIcon, KeyIcon, PlusIcon, SearchIcon, TrashIcon, TypeIcon } from "./icons";
+import { useConnectionNames, useEditor, useEditorActions } from "./EditorContext";
+import { CategoryIcon, CheckIcon, ChevronIcon, CloseIcon, CopyIcon, KeyIcon, PencilIcon, PlusIcon, SearchIcon, TrashIcon, TypeIcon } from "./icons";
 
 const VISIBILITY_LABELS: Record<Visibility, string> = { public: "Everyone", private: "Only me" };
 
@@ -290,6 +292,7 @@ function ConnectorMark({ id }: { id: string }) {
 /** Which account feeds the input, and the form to add one without leaving the tile. */
 function AccountPicker({ connector, target, current, own, focusKey }: { connector: ConnectorDef; target: InputTarget; current: string | null; own: ConnectionView[]; focusKey: number | undefined }) {
   const actions = useEditorActions();
+  const names = useConnectionNames();
   const [adding, setAdding] = useState(false);
   const showForm = adding || own.length === 0;
 
@@ -303,8 +306,8 @@ function AccountPicker({ connector, target, current, own, focusKey }: { connecto
               <button type="button" role="radio" aria-checked={current === c.id} onClick={() => actions.chooseAccount(target, c.id)}>
                 <ConnectorMark id={connector.id} />
                 <span>
-                  <strong>{c.label}</strong>
-                  {c.public.hint ? <small className="mono">{c.public.hint}</small> : null}
+                  <strong>{names[c.id] ?? c.label}</strong>
+                  {connectionDetail(c) ? <small>{connectionDetail(c)}</small> : null}
                 </span>
                 {current === c.id ? <CheckIcon size={14} /> : null}
               </button>
@@ -439,56 +442,83 @@ function WallPanel() {
 /** Adding an account: closed, choosing a connector, or filling one's form. */
 type AddAccount = { step: "closed" } | { step: "choose" } | { step: "form"; connectorId: string };
 
-/** Every connected account, removable, and a way to add one before any tile needs it. */
+/** What the owner is doing to one account in the list. */
+type AccountEdit = { kind: "rename" | "remove"; connectionId: string } | null;
+
+/** Every connected account with the tiles it feeds, renamable and removable, and a way to add one before any tile needs it. */
 function Accounts() {
   const connections = useEditor((s) => s.connections);
+  const tiles = useEditor((s) => s.draft.tiles);
   const paid = useEditor((s) => s.entitlements.paid);
   const actions = useEditorActions();
+  const names = useConnectionNames();
   const [adding, setAdding] = useState<AddAccount>({ step: "closed" });
-  const [confirming, setConfirming] = useState<string | null>(null);
+  const [editing, setEditing] = useState<AccountEdit>(null);
   const [error, setError] = useState<string | null>(null);
   const authConnectors = catalog.connectors().filter((c) => c.auth);
 
   const remove = async (connection: ConnectionView) => {
     setError(null);
     const outcome = await actions.removeAccount(connection);
-    if (outcome.ok) setConfirming(null);
+    if (outcome.ok) setEditing(null);
     else setError(outcome.message);
+  };
+  const edit = (next: AccountEdit) => {
+    setError(null);
+    setEditing(next);
   };
 
   return (
     <div className="ed-accounts">
       {connections.length ? (
         <ul className="ed-options static">
-          {connections.map((c) => (
-            <li key={c.id}>
-              <div>
-                <ConnectorMark id={c.connector} />
-                <span>
-                  <strong>{c.label}</strong>
-                  <small>
-                    {catalog.connector(c.connector)?.name ?? c.connector}
-                    {c.public.hint ? <span className="mono"> {c.public.hint}</span> : null}
-                  </small>
-                </span>
-                {confirming === c.id ? (
-                  <span className="ed-confirm">
-                    <button type="button" className="danger" onClick={() => void remove(c)}>
-                      Remove
-                    </button>
-                    <button type="button" onClick={() => setConfirming(null)}>
-                      Keep
-                    </button>
+          {connections.map((c) => {
+            const name = names[c.id] ?? c.label;
+            const detail = connectionDetail(c);
+            const used = tilesUsing(c.id, tiles, catalog);
+            const confirming = editing?.kind === "remove" && editing.connectionId === c.id;
+            const renaming = editing?.kind === "rename" && editing.connectionId === c.id;
+            return (
+              <li key={c.id}>
+                <div>
+                  <ConnectorMark id={c.connector} />
+                  <span>
+                    <strong>{name}</strong>
+                    <small>{[catalog.connector(c.connector)?.name ?? c.connector, detail].filter(Boolean).join(" · ")}</small>
                   </span>
-                ) : (
-                  <button type="button" className="ed-icon-btn" aria-label={`Remove ${c.label}`} title="Remove" onClick={() => setConfirming(c.id)}>
-                    <TrashIcon size={14} />
-                  </button>
-                )}
-              </div>
-              {confirming === c.id ? <p className="ed-note">Tiles using this account will wait for another one.</p> : null}
-            </li>
-          ))}
+                  {confirming ? (
+                    <span className="ed-confirm">
+                      <button type="button" className="danger" onClick={() => void remove(c)}>
+                        Remove
+                      </button>
+                      <button type="button" onClick={() => edit(null)}>
+                        Keep
+                      </button>
+                    </span>
+                  ) : (
+                    <span className="ed-row-actions">
+                      <button type="button" className="ed-icon-btn" aria-label={`Rename ${name}`} aria-expanded={renaming} title="Rename" onClick={() => edit(renaming ? null : { kind: "rename", connectionId: c.id })}>
+                        <PencilIcon size={14} />
+                      </button>
+                      <button type="button" className="ed-icon-btn" aria-label={`Remove ${name}`} title="Remove" onClick={() => edit({ kind: "remove", connectionId: c.id })}>
+                        <TrashIcon size={14} />
+                      </button>
+                    </span>
+                  )}
+                </div>
+                {renaming ? <RenameField nickname={c.nickname} label={c.label} save={(nickname) => actions.renameAccount(c.id, nickname)} onDone={() => edit(null)} /> : null}
+                <p className="ed-usage">
+                  <span>{usageLine(used)}</span>
+                  {used.map((t) => (
+                    <button key={t.id} type="button" title="Select this tile" onClick={() => actions.select(t.id)}>
+                      {t.name}
+                    </button>
+                  ))}
+                </p>
+                {confirming ? <p className="ed-note">{removalWarning(used)}</p> : null}
+              </li>
+            );
+          })}
         </ul>
       ) : (
         <p className="ed-note">No accounts yet. Connect one here or from any tile that needs it.</p>
