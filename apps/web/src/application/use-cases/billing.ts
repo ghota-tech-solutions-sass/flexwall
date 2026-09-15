@@ -89,6 +89,11 @@ export class ApplyBillingEvent {
       if (user.stripeCustomerId !== event.customerId) await this.deps.users.save({ ...user, stripeCustomerId: event.customerId });
       return "applied";
     }
+    if (event.type === "credits_refund") {
+      // What was already spent stays spent: the balance stops at zero.
+      await this.deps.credits.adjust({ userId: user.id, entryId: event.id, amount: -CREDIT_PACK_DETAILS[event.pack].credits, reason: "refund", detail: `${event.pack} refunded` });
+      return "applied";
+    }
     if (event.type === "refund") {
       await this.refund(user.id);
       return "applied";

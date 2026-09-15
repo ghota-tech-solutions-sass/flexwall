@@ -157,6 +157,19 @@ describe("ApplyBillingEvent", () => {
     expect((await credits.history("u1", 5)).map((e) => [e.reason, e.amount, e.detail])).toEqual([["purchase", 400, "regular"]]);
   });
 
+  test("given a pack partly spent, when its payment is refunded in full, then its credits leave the balance down to zero", async () => {
+    // Given
+    const { credits, apply } = await setup();
+    await apply.execute({ id: "evt_c", type: "credits", customerId: "cus_1", userId: "u1", pack: "starter", credits: 100 });
+    await credits.spend({ userId: "u1", key: "conn-1", day: "2026-09-14", amount: 1, detail: "@ada" });
+
+    // When
+    await apply.execute({ id: "evt_r", type: "credits_refund", customerId: "cus_1", userId: "u1", pack: "starter" });
+
+    // Then
+    expect(await credits.balance("u1")).toBe(0);
+  });
+
   test("given a credit pack bought on a Pro account, when applied, then the plan is left alone", async () => {
     // Given
     const { users, apply } = await setup();

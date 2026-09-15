@@ -160,7 +160,9 @@ export type BillingEvent =
   /** A credit pack paid for. */
   | { id: string; type: "credits"; customerId: string; userId: string; pack: CreditPack; credits: number }
   /** A charge refunded in full. */
-  | { id: string; type: "refund"; customerId: string };
+  | { id: string; type: "refund"; customerId: string }
+  /** A credit pack refunded in full: its credits leave the balance, down to zero. */
+  | { id: string; type: "credits_refund"; customerId: string; userId: string; pack: CreditPack };
 
 export interface PaymentGateway {
   enabled(): boolean;

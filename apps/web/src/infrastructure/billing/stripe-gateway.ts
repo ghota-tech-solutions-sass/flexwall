@@ -259,6 +259,14 @@ export class StripeGateway implements PaymentGateway {
         const customerId = typeof charge.customer === "string" ? charge.customer : charge.customer?.id;
         // Partial refunds keep the purchase, and the referral with it.
         if (!charge.refunded || !customerId) return null;
+        const intentId = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
+        if (intentId) {
+          // Pack payments carry their metadata on the payment intent, not on the charge.
+          const metadata = charge.metadata?.kind ? charge.metadata : (await this.stripe().paymentIntents.retrieve(intentId)).metadata;
+          if (metadata?.kind === CREDITS_METADATA_KIND) {
+            return isCreditPack(metadata.pack) && metadata.userId ? { id: event.id, type: "credits_refund", customerId, userId: metadata.userId, pack: metadata.pack } : null;
+          }
+        }
         return { id: event.id, type: "refund", customerId };
       }
       case "customer.subscription.created":
