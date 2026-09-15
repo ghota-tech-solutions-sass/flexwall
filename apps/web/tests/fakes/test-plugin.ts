@@ -138,6 +138,29 @@ export function testCatalog(upstream = new ScriptedUpstream()) {
     sample: { followers: number(1, { unit: "count" }) },
   });
 
-  const plugin = definePlugin({ id: "test", name: "Test", description: "Test connectors", author: { name: "tests" }, connectors: [analytics, billing, brokerage, wallet, social] });
+  const metered = defineConnector({
+    id: "metered",
+    name: "Metered",
+    description: "Reads with the server's paid key: owners pay a credit a day per account.",
+    tier: "free",
+    verified: false,
+    ttl: 600,
+    creditsPerDay: 1,
+    auth: { help: "Type a handle.", fields: [field.text("handle", "Handle")] },
+    metrics: [
+      { id: "followers", name: "Followers", type: "number", unit: "count" },
+      { id: "posts", name: "Posts", type: "number", unit: "count" },
+    ],
+    async connect(input) {
+      return { secret: {}, public: { handle: String(input.handle) }, label: `@${String(input.handle)}` };
+    },
+    fetch: async ({ metrics }) => {
+      const out = await upstream.respond();
+      return Object.fromEntries(metrics.map((m) => [m, out[m] ?? number(m === "followers" ? 900 : 40, { unit: "count" })]));
+    },
+    sample: { followers: number(1, { unit: "count" }), posts: number(1, { unit: "count" }) },
+  });
+
+  const plugin = definePlugin({ id: "test", name: "Test", description: "Test connectors", author: { name: "tests" }, connectors: [analytics, billing, brokerage, wallet, social, metered] });
   return { catalog: createCatalog([core, plugin], "night"), upstream };
 }

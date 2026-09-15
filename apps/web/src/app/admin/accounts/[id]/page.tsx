@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AccountActions } from "@/components/admin/AccountActions";
+import { CreditActions } from "@/components/admin/CreditActions";
 import { TopBar } from "@/components/site/Chrome";
 import { container } from "@/composition";
 import { DomainError } from "@/domain/errors";
@@ -20,6 +21,7 @@ export default async function AdminAccountPage({ params }: { params: Promise<{ i
     throw e;
   });
   const s = account.subscription;
+  const credits = await c.getCredits.execute({ userId: account.id });
 
   return (
     <div className="page">
@@ -68,6 +70,29 @@ export default async function AdminAccountPage({ params }: { params: Promise<{ i
             </dd>
           </dl>
           <AccountActions accountId={account.id} hasOffer={Boolean(account.complimentary)} offerHasNoEnd={account.complimentary?.until === null} wall={account.wall ? { published: account.wall.published, listed: account.wall.listed } : null} section="plan" />
+        </section>
+
+        <section className="panel" aria-labelledby="credits">
+          <h2 id="credits">Credits</h2>
+          <dl className="admin-facts">
+            <dt>Balance</dt>
+            <dd>
+              {credits.balance.toLocaleString()}
+              {credits.daysLeft !== null ? ` · about ${credits.daysLeft} days at ${credits.perDay} a day` : ""}
+            </dd>
+            <dt>Spending</dt>
+            <dd>{credits.metered.length ? credits.metered.map((m) => m.label).join(", ") : "Nothing"}</dd>
+            <dt>Latest</dt>
+            <dd>
+              {credits.recent.length
+                ? credits.recent
+                    .slice(0, 4)
+                    .map((e) => `${e.amount > 0 ? "+" : ""}${e.amount} ${e.reason} ${adminDate(e.at)}${e.detail ? ` (${e.detail})` : ""}`)
+                    .join(" · ")
+                : "No activity"}
+            </dd>
+          </dl>
+          <CreditActions accountId={account.id} />
         </section>
 
         <section className="panel" aria-labelledby="wall">

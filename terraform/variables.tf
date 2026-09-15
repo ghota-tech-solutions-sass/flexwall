@@ -130,6 +130,24 @@ variable "admin_emails" {
   default     = ["villers@ghotatechsolutions.com"]
 }
 
+variable "credits_starter_cents" {
+  description = "Price of the 100-credit pack in US cents, taxes included. Must match CREDIT_PACK_DETAILS in apps/web/src/domain/credits.ts."
+  type        = number
+  default     = 399
+}
+
+variable "credits_regular_cents" {
+  description = "Price of the 400-credit pack in US cents, taxes included."
+  type        = number
+  default     = 1199
+}
+
+variable "credits_large_cents" {
+  description = "Price of the 1200-credit pack in US cents, taxes included."
+  type        = number
+  default     = 2999
+}
+
 variable "connector_secrets" {
   description = "Server keys and app credentials for connectors, by env name (STEAM_API_KEY, TWITCH_CLIENT_ID, …). Each non-empty value becomes a Secret Manager secret read by the service. Empty or missing names leave that connector saying the server isn't set up."
   type        = map(string)
@@ -155,6 +173,7 @@ variable "connector_secrets" {
       "POWENS_DOMAIN",
       "POWENS_CLIENT_ID",
       "POWENS_CLIENT_SECRET",
+      "X_BEARER_TOKEN",
     ], name)])
     error_message = "connector_secrets only takes the names in CONNECTOR_ENV (apps/web/src/composition.ts) that Terraform doesn't already manage."
   }

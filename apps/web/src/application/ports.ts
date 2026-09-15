@@ -4,6 +4,7 @@ import type { Handle } from "@/domain/handle";
 import type { Referral } from "@/domain/referral";
 import type { Subscription, User } from "@/domain/user";
 import type { BillingPlan } from "@/domain/pricing";
+import type { CreditEntry, CreditPack, SpendOutcome } from "@/domain/credits";
 import type { Wall } from "@/domain/wall";
 
 /**
@@ -65,6 +66,22 @@ export interface SnapshotStore {
   range(series: string, fromDay: string, toDay: string): Promise<SeriesPoint[]>;
 }
 
+/**
+ * Balances of credits and the entries behind them. Every change is atomic with
+ * its entry, and entry ids make each change happen once.
+ */
+export interface CreditAccounts {
+  balance(userId: string): Promise<number>;
+  /** Spends `amount` for `key` on `day`, unless that day is paid for already or the balance is short. */
+  spend(input: { userId: string; key: string; day: string; amount: number; detail: string }): Promise<SpendOutcome>;
+  /** Gives a spend back, when the read it paid for didn't happen. */
+  release(input: { userId: string; key: string; day: string }): Promise<void>;
+  /** Adds (or, negative, removes down to zero) credits once per `entryId`. False when that entry exists already. */
+  adjust(input: { userId: string; entryId: string; amount: number; reason: Exclude<CreditEntry["reason"], "spend">; detail: string }): Promise<boolean>;
+  /** The latest entries, newest first. */
+  history(userId: string, limit: number): Promise<CreditEntry[]>;
+}
+
 /** Remembers processed webhook events. */
 export interface EventLog {
   /** True the first time an id is seen. */
@@ -120,6 +137,8 @@ export interface AppLinks {
   checkoutSucceeded(): string;
   /** Absolute: where the payment provider sends a buyer who gave up. */
   checkoutCancelled(): string;
+  /** Absolute: where the payment provider sends a buyer after paying for credits. */
+  creditsPurchased(): string;
   /** Absolute: where the billing portal returns to. */
   billingReturn(): string;
   /** Absolute and shareable: an invite from `handle`. */
@@ -138,6 +157,8 @@ export interface CheckoutConsent {
 export type BillingEvent =
   | { id: string; type: "subscription"; customerId: string; userId: string | null; subscription: Subscription }
   | { id: string; type: "lifetime"; customerId: string; userId: string }
+  /** A credit pack paid for. */
+  | { id: string; type: "credits"; customerId: string; userId: string; pack: CreditPack; credits: number }
   /** A charge refunded in full. */
   | { id: string; type: "refund"; customerId: string };
 
@@ -152,6 +173,8 @@ export interface PaymentGateway {
     successUrl: string;
     cancelUrl: string;
   }): Promise<{ url: string; customerId: string }>;
+  /** A one-off payment for a credit pack. */
+  creditsCheckoutUrl(input: { user: User; pack: CreditPack; consent: CheckoutConsent; successUrl: string; cancelUrl: string }): Promise<{ url: string; customerId: string }>;
   portalUrl(input: { customerId: string; returnUrl: string }): Promise<string>;
   /** Null for events that don't change entitlements. Throws on a bad signature. */
   parseEvent(rawBody: string, signature: string): Promise<BillingEvent | null>;

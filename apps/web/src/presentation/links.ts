@@ -21,6 +21,10 @@ export class RouteLinks implements AppLinks {
     return this.origin + ROUTES.settingsUpgraded;
   }
 
+  creditsPurchased() {
+    return this.origin + ROUTES.settingsCreditsBought;
+  }
+
   checkoutCancelled() {
     return this.origin + ROUTES.pricing;
   }

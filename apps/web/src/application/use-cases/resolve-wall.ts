@@ -1,10 +1,11 @@
 import { ConnectorError, defaultCacheKey, ExpiredCredentialsError, isValue, series, type ConnectorDef, type FieldValues, type InputValue, type Surface, type Value } from "@flexwall/sdk";
 import type { Catalog } from "@/domain/catalog";
 import { needsRenewal, type Connection } from "@/domain/connection";
+import { creditDay } from "@/domain/credits";
 import { entitlementsOf, type Entitlements, type User } from "@/domain/user";
 import { shiftDay, todayIn } from "@/domain/time";
 import { HISTORY_DAYS, type Binding, type Tile } from "@/domain/wall";
-import type { CachedValues, Clock, ConnectionRepository, ConnectorRuntime, SecretBox, SnapshotStore, ValueCache } from "../ports";
+import type { CachedValues, Clock, ConnectionRepository, ConnectorRuntime, CreditAccounts, SecretBox, SnapshotStore, ValueCache } from "../ports";
 
 /** What a tile can draw: its inputs, or the reason it can't yet. */
 export type TileState =
@@ -41,6 +42,11 @@ interface Group {
 }
 
 class Deadline extends Error {}
+
+/** What an owner reads when a metered connector can't refresh for lack of credits. */
+export function outOfCreditsMessage(connectorName: string): string {
+  return `Out of credits: ${connectorName} tiles refresh again once you add credits in settings.`;
+}
 
 /** How long a group's values stay fresh: the connector's ttl, or longer when the connection asks for it (an owner paying per call). */
 export function freshnessSeconds(connector: ConnectorDef, connection: Connection | null): number {
@@ -79,7 +85,10 @@ export function seriesKey(binding: Extract<Binding, { kind: "metric" }>): string
  *     call answers every tile that can share it.
  *  5. Fresh cache wins. Otherwise one fetch per group (single flight), at most
  *     RENDER_DEADLINE_MS, falling back to the last known values marked stale.
- *  6. Surfaces other than the editor persist what they fetch and record today's
+ *  6. Connectors read with a paid server key spend the owner's credits, once per
+ *     connection per UTC day, just before the upstream call; a call that fails
+ *     gives the credit back. Without credits, the last values stay, marked stale.
+ *  7. Surfaces other than the editor persist what they fetch and record today's
  *     snapshot of every number, which is what history is made of.
  */
 export class ResolveWall {
@@ -97,6 +106,7 @@ export class ResolveWall {
       snapshots: SnapshotStore;
       secrets: SecretBox;
       runtime: ConnectorRuntime;
+      credits: CreditAccounts;
       clock: Clock;
     }
   ) {}
@@ -221,16 +231,23 @@ export class ResolveWall {
       }
       if (needsRenewal(connection, this.deps.clock.now())) ({ connection, secret } = await this.renew(group.connector, connection, secret, today));
     }
+    const charge = await this.charge(group.connector, connection);
     const run = () =>
       group.connector.fetch({ metrics: [...group.metrics], params: group.params, secret, public: connection?.public ?? null }, this.deps.runtime.context(today));
     let values;
     try {
-      values = await run();
+      try {
+        values = await run();
+      } catch (error) {
+        // The provider says the token lapsed before we thought: renew once and try again.
+        if (!(error instanceof ExpiredCredentialsError) || !connection || !secret) throw error;
+        ({ connection, secret } = await this.renew(group.connector, connection, secret, today));
+        values = await run();
+      }
     } catch (error) {
-      // The provider says the token lapsed before we thought: renew once and try again.
-      if (!(error instanceof ExpiredCredentialsError) || !connection || !secret) throw error;
-      ({ connection, secret } = await this.renew(group.connector, connection, secret, today));
-      values = await run();
+      // A read that didn't happen isn't paid for.
+      if (charge) await this.deps.credits.release(charge).catch(() => undefined);
+      throw error;
     }
     const clean: Record<string, Value | null> = {};
     for (const m of group.metrics) {
@@ -276,6 +293,16 @@ export class ResolveWall {
       }
     }
     return { status: "ready", inputs };
+  }
+
+  /** Spends the day's credits of a metered connection. Returns what to give back if the read fails, or null when nothing was spent now. */
+  private async charge(connector: ConnectorDef, connection: Connection | null): Promise<{ userId: string; key: string; day: string } | null> {
+    const amount = connector.creditsPerDay;
+    if (!amount || !connection) return null;
+    const spend = { userId: connection.ownerId, key: connection.id, day: creditDay(this.deps.clock.now()) };
+    const outcome = await this.deps.credits.spend({ ...spend, amount, detail: connection.label });
+    if (outcome === "insufficient") throw new ConnectorError(outOfCreditsMessage(connector.name));
+    return outcome === "charged" ? spend : null;
   }
 
   /**

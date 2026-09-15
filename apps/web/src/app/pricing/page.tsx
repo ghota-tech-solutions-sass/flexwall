@@ -4,6 +4,7 @@ import { CheckoutConsentScope } from "@/components/site/CheckoutConsent";
 import { UpgradeButton } from "@/components/site/UpgradeButton";
 import { FREE_TILE_LIMIT } from "@/domain/user";
 import { container } from "@/composition";
+import { CREDIT_PACK_DETAILS, CREDIT_PACKS } from "@/domain/credits";
 import { PLAN_PRICES_USD } from "@/domain/pricing";
 import { REFERRAL_DISCOUNT_PERCENT } from "@/domain/referral";
 import { sessionUserId } from "@/presentation/http";
@@ -81,6 +82,14 @@ export default async function PricingPage() {
             </div>
           </div>
         </CheckoutConsentScope>
+        <section className="panel credits-note" aria-labelledby="credits">
+          <h2 id="credits">Credits, for X without a developer account</h2>
+          <p>
+            X charges for every read of its API. Bring your own X key for free, or let Flexwall read it: one credit per X account per day it refreshes, on any
+            plan. Packs: {CREDIT_PACKS.map((p) => `${CREDIT_PACK_DETAILS[p].credits} for $${CREDIT_PACK_DETAILS[p].priceUsd}`).join(" · ")}. Credits don&apos;t
+            expire; buy them in settings.
+          </p>
+        </section>
       </main>
       <Footer />
     </div>

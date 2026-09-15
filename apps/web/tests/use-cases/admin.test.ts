@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { GetAccount, IsAdministrator, ListAccounts, ModerateWall, OfferPro, WithdrawPro } from "@/application/use-cases/admin";
+import { AdjustCredits, GetAccount, IsAdministrator, ListAccounts, ModerateWall, OfferPro, WithdrawPro } from "@/application/use-cases/admin";
 import { aConnection, aUser, aWall, NOW } from "../builders";
-import { FixedClock, InMemoryConnections, InMemoryUsers, InMemoryWalls } from "../fakes";
+import { FixedClock, InMemoryConnections, InMemoryCredits, InMemoryUsers, InMemoryWalls, SequentialIds } from "../fakes";
 
 async function setup() {
   const users = new InMemoryUsers();
@@ -14,9 +14,12 @@ async function setup() {
   for (const u of [boss, ada, eve]) await users.save(u);
   await walls.save(aWall().withId("w-ada").ownedBy(ada).listed().build());
   await connections.save(aConnection().withId("c-ada").ownedBy(ada).forConnector("stripe").build());
+  const credits = new InMemoryCredits();
   return {
     users,
     walls,
+    credits,
+    adjust: new AdjustCredits({ ...deps, credits, ids: new SequentialIds() }),
     list: new ListAccounts(deps),
     get: new GetAccount(deps),
     offer: new OfferPro(deps),
@@ -98,5 +101,46 @@ describe("The back office", () => {
     // Then
     expect(state).toEqual({ published: false, listed: false });
     expect((await walls.byOwner("ada"))!).toMatchObject({ published: false, listed: false });
+  });
+});
+
+describe("Credits in the back office", () => {
+  test("given an administrator, when they add credits then take more back than are left, then the balance stops at zero and both are on record", async () => {
+    // Given
+    const { adjust, credits } = await setup();
+    await adjust.execute({ userId: "boss", accountId: "ada", amount: 50, note: "Beta tester" });
+
+    // When
+    const { balance } = await adjust.execute({ userId: "boss", accountId: "ada", amount: -80, note: "Refunded in Stripe" });
+
+    // Then
+    expect(balance).toBe(0);
+    expect((await credits.history("ada", 5)).map((e) => [e.reason, e.amount, e.detail]).sort()).toEqual([
+      ["grant", 50, "boss@flexwall.lol: Beta tester"],
+      ["refund", -50, "boss@flexwall.lol: Refunded in Stripe"],
+    ]);
+  });
+
+  test("given someone who isn't an administrator, when they add credits, then nothing is added", async () => {
+    // Given
+    const { adjust, credits } = await setup();
+
+    // When
+    const attempt = adjust.execute({ userId: "eve", accountId: "eve", amount: 1000, note: "" });
+
+    // Then
+    await expect(attempt).rejects.toMatchObject({ code: "not_found" });
+    expect(await credits.balance("eve")).toBe(0);
+  });
+
+  test("given an amount that isn't a sensible whole number, when an administrator adjusts credits, then it's refused", async () => {
+    // Given
+    const { adjust } = await setup();
+
+    // When
+    const attempts = [0, 2.5, Number.NaN, 1_000_000].map((amount) => () => adjust.execute({ userId: "boss", accountId: "ada", amount, note: "" }));
+
+    // Then
+    for (const attempt of attempts) await expect(attempt()).rejects.toMatchObject({ code: "invalid_input" });
   });
 });

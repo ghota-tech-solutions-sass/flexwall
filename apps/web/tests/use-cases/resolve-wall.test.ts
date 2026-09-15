@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { money, number } from "@flexwall/sdk";
-import { freshnessSeconds, RENDER_DEADLINE_MS, ResolveWall, seriesKey } from "@/application/use-cases/resolve-wall";
+import { freshnessSeconds, outOfCreditsMessage, RENDER_DEADLINE_MS, ResolveWall, seriesKey } from "@/application/use-cases/resolve-wall";
 import { aConnection, aTile, aUser } from "../builders";
-import { FakeRuntime, FixedClock, InMemoryConnections, InMemorySnapshots, InMemoryValueCache, TransparentSecretBox } from "../fakes";
+import { FakeRuntime, FixedClock, InMemoryConnections, InMemoryCredits, InMemorySnapshots, InMemoryValueCache, TransparentSecretBox } from "../fakes";
 import { SOCIAL_TOKEN_EXPIRY, testCatalog } from "../fakes/test-plugin";
 
 function setup() {
@@ -11,8 +11,9 @@ function setup() {
   const cache = new InMemoryValueCache();
   const snapshots = new InMemorySnapshots();
   const clock = new FixedClock();
-  const resolve = new ResolveWall({ catalog, connections, cache, snapshots, secrets: new TransparentSecretBox(), runtime: new FakeRuntime(), clock });
-  return { upstream, connections, cache, snapshots, clock, resolve, catalog };
+  const credits = new InMemoryCredits(clock);
+  const resolve = new ResolveWall({ catalog, connections, cache, snapshots, secrets: new TransparentSecretBox(), runtime: new FakeRuntime(), credits, clock });
+  return { upstream, connections, cache, snapshots, clock, resolve, catalog, credits };
 }
 
 const followers = () => aTile().withId("f").stat({ label: "Followers" }).metric("social", "followers", { connection: "soc-1" });
@@ -237,5 +238,106 @@ describe("ResolveWall", () => {
     expect(freshnessSeconds(social, { ...socialConnection("a1"), public: { refreshHours: "0" } })).toBe(600);
     expect(freshnessSeconds(social, { ...socialConnection("a1"), public: {} })).toBe(600);
     expect(freshnessSeconds(social, null)).toBe(600);
+  });
+});
+
+describe("ResolveWall with credits", () => {
+  const meteredConnection = () => aConnection().withId("met-1").ownedBy({ id: "user-1" }).forConnector("metered").withPublic({ handle: "ada" }).sealed("sealed:{}").build();
+  // Different metrics without a shared cache key: two upstream groups on one connection.
+  const followersTile = () => aTile().withId("mf").stat({ label: "Followers" }).metric("metered", "followers", { connection: "met-1" }).build();
+  const postsTile = () => aTile().withId("mp").stat({ label: "Posts" }).metric("metered", "posts", { connection: "met-1" }).build();
+
+  test("given a metered connection read by two groups and two renders, when the wall refreshes the same day, then one credit is spent", async () => {
+    // Given
+    const { resolve, connections, credits, clock, upstream } = setup();
+    const owner = aUser().withId("user-1").build();
+    await connections.save(meteredConnection());
+    credits.balances.set("user-1", 10);
+
+    // When
+    await resolve.execute({ tiles: [followersTile(), postsTile()], owner, surface: "page" });
+    clock.advance(3600_000);
+    const { states } = await resolve.execute({ tiles: [followersTile(), postsTile()], owner, surface: "page" });
+
+    // Then
+    expect(upstream.calls).toBe(4);
+    expect(await credits.balance("user-1")).toBe(9);
+    expect(states.mf).toMatchObject({ status: "ready", inputs: { value: { value: number(900, { unit: "count" }), stale: false } } });
+  });
+
+  test("given a metered connection read yesterday, when the wall refreshes after midnight UTC, then another credit is spent", async () => {
+    // Given
+    const { resolve, connections, credits, clock } = setup();
+    const owner = aUser().withId("user-1").build();
+    await connections.save(meteredConnection());
+    credits.balances.set("user-1", 10);
+    await resolve.execute({ tiles: [followersTile()], owner, surface: "page" });
+
+    // When
+    clock.advance(24 * 3600_000);
+    await resolve.execute({ tiles: [followersTile()], owner, surface: "page" });
+
+    // Then
+    expect(await credits.balance("user-1")).toBe(8);
+  });
+
+  test("given an owner out of credits with a value from before, when the cache expires, then the upstream isn't called and the last value shows as stale", async () => {
+    // Given
+    const { resolve, connections, credits, clock, upstream } = setup();
+    const owner = aUser().withId("user-1").build();
+    await connections.save(meteredConnection());
+    credits.balances.set("user-1", 1);
+    await resolve.execute({ tiles: [followersTile()], owner, surface: "page" });
+    clock.advance(24 * 3600_000);
+
+    // When
+    const { states } = await resolve.execute({ tiles: [followersTile()], owner, surface: "page" });
+
+    // Then
+    expect(upstream.calls).toBe(1);
+    expect(states.mf).toMatchObject({ status: "ready", inputs: { value: { value: number(900, { unit: "count" }), stale: true } } });
+  });
+
+  test("given an owner who never had credits, when they preview the tile, then the editor says to add credits", async () => {
+    // Given
+    const { resolve, connections, upstream } = setup();
+    const owner = aUser().withId("user-1").build();
+    await connections.save(meteredConnection());
+
+    // When
+    const { states } = await resolve.execute({ tiles: [followersTile()], owner, surface: "editor" });
+
+    // Then
+    expect(upstream.calls).toBe(0);
+    expect(states.mf).toEqual({ status: "placeholder", reason: "unavailable", message: outOfCreditsMessage("Metered") });
+  });
+
+  test("given an upstream that fails, when a metered connection refreshes, then its credit is given back", async () => {
+    // Given
+    const { resolve, connections, credits, upstream } = setup();
+    const owner = aUser().withId("user-1").build();
+    await connections.save(meteredConnection());
+    credits.balances.set("user-1", 5);
+    upstream.mode = "owner-error";
+
+    // When
+    await resolve.execute({ tiles: [followersTile()], owner, surface: "page" });
+
+    // Then
+    expect(upstream.calls).toBe(1);
+    expect(await credits.balance("user-1")).toBe(5);
+    expect(credits.entries.size).toBe(0);
+  });
+
+  test("given a connector that isn't metered, when it refreshes, then no credit is asked for", async () => {
+    // Given
+    const { resolve, credits } = setup();
+
+    // When
+    const { states } = await resolve.execute({ tiles: [visitors().build()], owner: aUser().build(), surface: "page" });
+
+    // Then
+    expect(states.v).toMatchObject({ status: "ready" });
+    expect(credits.entries.size).toBe(0);
   });
 });

@@ -1,14 +1,19 @@
 # X
 
 A Flexwall plugin that reads the public numbers of one X account through the
-X API v2, with **the owner's own X developer app**. X bills every read to the
-owner's developer account; Flexwall pays nothing and holds no X key.
+X API v2, two ways:
+
+- `x`: with **the owner's own X developer app**. X bills every read to the
+  owner's developer account; Flexwall pays nothing.
+- `x-credits`: with **Flexwall's X app**. The owner types a handle and spends
+  one Flexwall credit per account per UTC day it refreshes.
 
 ## What it adds
 
 | Kind | Id | What |
 |---|---|---|
 | Connector | `x` | Free tier, unverified. Bring your own Bearer Token. |
+| Connector | `x-credits` | Free tier, unverified, `creditsPerDay: 1`. Flexwall's `X_BEARER_TOKEN`. |
 
 | Metric | Type | Where it comes from |
 |---|---|---|
@@ -30,8 +35,18 @@ connection shares one cache group and one read.
 
 ## Operator note
 
-Nothing to configure on the server: no environment variable, no Flexwall X
-app. Each owner brings their own.
+`x` needs nothing on the server. `x-credits` needs `X_BEARER_TOKEN`: the
+app-only Bearer Token of Flexwall's X app, in a project, on a developer account
+with prepaid credits (set it through `connector_secrets`).
+
+What a credit costs: X bills a profile read $0.010 and counts the same profile
+once per UTC day, so at most one cent per credit, less when several owners
+track the same account. `x-credits` refreshes every 6 hours; if X ever bills
+repeated reads, the worst case is four cents a credit-day. The host charges the
+credit just before the first read of the day and gives it back if the read
+fails, including when Flexwall's own X account is out of credits (the owner
+sees "X is unavailable on Flexwall right now"). Connecting reads nothing: an
+unknown handle shows on the first refresh, which costs nothing.
 
 ## Owner setup
 

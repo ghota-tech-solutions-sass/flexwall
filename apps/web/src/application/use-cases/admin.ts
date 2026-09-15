@@ -1,7 +1,8 @@
 import { isAdministrator, offerPro, withdrawPro, type ComplimentaryTerm } from "@/domain/admin";
+import { CREDIT_NOTE_MAX, MAX_CREDIT_ADJUSTMENT } from "@/domain/credits";
 import { DomainError, notFound } from "@/domain/errors";
 import { entitlementsOf, planSourceOf, type Complimentary, type Plan, type PlanSource, type Subscription, type User } from "@/domain/user";
-import type { Clock, ConnectionRepository, UserRepository, WallRepository } from "../ports";
+import type { Clock, ConnectionRepository, CreditAccounts, IdGenerator, UserRepository, WallRepository } from "../ports";
 
 /** Accounts the administration reads at most: enough for Flexwall's size, and a bound on a slow page. */
 export const ADMIN_LIST_LIMIT = 2000;
@@ -140,6 +141,34 @@ export class WithdrawPro {
     const next = withdrawPro(user);
     await this.deps.users.save(next);
     return rowOf(next, this.deps.clock.now());
+  }
+}
+
+/**
+ * Adds credits to an account, or takes some back (down to zero), with a note
+ * for the record. Nothing goes through Stripe: refunds are made there by hand.
+ */
+export class AdjustCredits {
+  constructor(private readonly deps: Pick<AdminDeps, "users" | "administrators"> & { credits: CreditAccounts; ids: IdGenerator }) {}
+
+  async execute(input: { userId: string | null; accountId: string; amount: number; note: string }): Promise<{ balance: number }> {
+    const admin = await administrator(this.deps, input.userId);
+    const user = await this.deps.users.byId(input.accountId);
+    if (!user) throw notFound("This account");
+    const amount = Number(input.amount);
+    if (!Number.isInteger(amount) || amount === 0 || Math.abs(amount) > MAX_CREDIT_ADJUSTMENT) {
+      throw new DomainError("invalid_input", `Give a whole number of credits between -${MAX_CREDIT_ADJUSTMENT} and ${MAX_CREDIT_ADJUSTMENT}, other than 0.`);
+    }
+    const note = String(input.note ?? "").trim();
+    if (note.length > CREDIT_NOTE_MAX) throw new DomainError("invalid_input", `Keep the note under ${CREDIT_NOTE_MAX} characters.`);
+    await this.deps.credits.adjust({
+      userId: user.id,
+      entryId: this.deps.ids.next(),
+      amount,
+      reason: amount > 0 ? "grant" : "refund",
+      detail: [admin.email, note].filter(Boolean).join(": "),
+    });
+    return { balance: await this.deps.credits.balance(user.id) };
   }
 }
 

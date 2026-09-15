@@ -10,6 +10,7 @@ import {
   FakeTokens,
   FixedClock,
   InMemoryConnections,
+  InMemoryCredits,
   InMemorySnapshots,
   InMemoryUsers,
   InMemoryValueCache,
@@ -58,7 +59,7 @@ describe("ListExplore", () => {
     const connections = new InMemoryConnections();
     const cache = new InMemoryValueCache();
     const clock = new FixedClock();
-    const resolve = new ResolveWall({ catalog, connections, cache, snapshots: new InMemorySnapshots(), secrets: new TransparentSecretBox(), runtime: new FakeRuntime(), clock });
+    const resolve = new ResolveWall({ catalog, connections, cache, snapshots: new InMemorySnapshots(), secrets: new TransparentSecretBox(), runtime: new FakeRuntime(), credits: new InMemoryCredits(), clock });
     const listExplore = new ListExplore({ walls, users, resolve, catalog, clock });
 
     const listedWithRevenue = async (id: string, amount: number) => {

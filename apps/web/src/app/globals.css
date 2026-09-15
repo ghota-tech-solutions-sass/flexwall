@@ -576,6 +576,13 @@ main ~ .footer { margin-top: 120px; }
 .table-scroll th { color: var(--ink); font-weight: 600; background: var(--surface-2); }
 .consent { display: flex; gap: 12px; align-items: flex-start; max-width: 66ch; margin-block: 22px 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
 .consent input { margin-top: 1px; flex: none; }
+.credits-balance { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; color: var(--muted); }
+.credits-count { font-size: 40px; font-weight: 600; letter-spacing: -0.04em; color: var(--ink, inherit); line-height: 1; }
+.credit-packs { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.credit-pack { display: flex; flex-direction: column; gap: 6px; }
+.credit-history summary { cursor: pointer; color: var(--muted); font-size: 14px; margin-bottom: 8px; }
+section[id] { scroll-margin-top: 80px; }
+.credits-note { max-width: 760px; margin: 40px auto 0; }
 .integration-head { max-width: 820px; }
 .integration-head .tags { display: flex; gap: 6px; margin-top: 16px; }
 .integration-body { padding-top: 36px; }

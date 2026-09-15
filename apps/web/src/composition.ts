@@ -1,6 +1,7 @@
 import { RequestSignInLink, SignIn } from "@/application/use-cases/auth";
-import { ApplyBillingEvent, OpenBillingPortal, StartCheckout } from "@/application/use-cases/billing";
-import { GetAccount, IsAdministrator, ListAccounts, ModerateWall, OfferPro, WithdrawPro } from "@/application/use-cases/admin";
+import { ApplyBillingEvent, OpenBillingPortal, StartCheckout, StartCreditsCheckout } from "@/application/use-cases/billing";
+import { GetCredits } from "@/application/use-cases/credits";
+import { AdjustCredits, GetAccount, IsAdministrator, ListAccounts, ModerateWall, OfferPro, WithdrawPro } from "@/application/use-cases/admin";
 import { ClaimHandle } from "@/application/use-cases/claim-handle";
 import { ConnectAccount, FinishConnectionSignIn, RemoveConnection, StartConnectionSignIn } from "@/application/use-cases/connections";
 import { ListExplore, ReportWall } from "@/application/use-cases/explore";
@@ -13,7 +14,7 @@ import { isProduction, optionalEnv } from "@/infrastructure/env";
 import { ConsoleMailer, GmailMailer } from "@/infrastructure/mail/mailers";
 import { db } from "@/infrastructure/persistence/db";
 import { parseAdministrators } from "@/domain/admin";
-import { DbConnections, DbEventLog, DbHandles, DbReferrals, DbSnapshots, DbUsers, DbValueCache, DbWalls } from "@/infrastructure/persistence/repositories";
+import { DbConnections, DbCredits, DbEventLog, DbHandles, DbReferrals, DbSnapshots, DbUsers, DbValueCache, DbWalls } from "@/infrastructure/persistence/repositories";
 import { AesSecretBox } from "@/infrastructure/security/secret-box";
 import { HmacTokenService } from "@/infrastructure/security/tokens";
 import { GuardedRuntime, RandomIds, SystemClock } from "@/infrastructure/system";
@@ -46,6 +47,7 @@ const CONNECTOR_ENV = [
   "POWENS_DOMAIN",
   "POWENS_CLIENT_ID",
   "POWENS_CLIENT_SECRET",
+  "X_BEARER_TOKEN",
 ] as const;
 
 /** Where wall reports go when MODERATION_INBOX isn't set. */
@@ -72,6 +74,7 @@ function build() {
   const snapshots = new DbSnapshots(store);
   const events = new DbEventLog(store);
   const referrals = new DbReferrals(store);
+  const credits = new DbCredits(store);
   const tokens = new HmacTokenService(optionalEnv("FLEXWALL_SECRET") || undefined, production, clock);
   const secrets = new AesSecretBox(optionalEnv("FLEXWALL_ENCRYPTION_KEY") || undefined, production);
   const mailbox = optionalEnv("EMAIL_IMPERSONATE");
@@ -83,6 +86,11 @@ function build() {
       monthly: optionalEnv("STRIPE_PRICE_MONTHLY") || null,
       yearly: optionalEnv("STRIPE_PRICE_YEARLY") || null,
       lifetime: optionalEnv("STRIPE_PRICE_LIFETIME") || null,
+      credits: {
+        starter: optionalEnv("STRIPE_PRICE_CREDITS_STARTER") || null,
+        regular: optionalEnv("STRIPE_PRICE_CREDITS_REGULAR") || null,
+        large: optionalEnv("STRIPE_PRICE_CREDITS_LARGE") || null,
+      },
     },
     portalConfiguration: optionalEnv("STRIPE_PORTAL_CONFIGURATION") || null,
     checkout: {
@@ -96,7 +104,7 @@ function build() {
   const administrators = parseAdministrators(optionalEnv("ADMIN_EMAILS"));
   const admin = { users, walls, connections, clock, administrators };
 
-  const resolveWall = new ResolveWall({ catalog, connections, cache, snapshots, secrets, runtime, clock });
+  const resolveWall = new ResolveWall({ catalog, connections, cache, snapshots, secrets, runtime, credits, clock });
 
   return {
     catalog,
@@ -120,13 +128,16 @@ function build() {
     reportWall: new ReportWall({ walls, mailer, moderationInbox: optionalEnv("MODERATION_INBOX", DEFAULT_MODERATION_INBOX) }),
     startCheckout: new StartCheckout({ users, referrals, payments, clock, links }),
     openBillingPortal: new OpenBillingPortal({ users, payments, links }),
-    applyBillingEvent: new ApplyBillingEvent({ users, events, referrals, clock }),
+    applyBillingEvent: new ApplyBillingEvent({ users, events, referrals, credits, clock }),
+    startCreditsCheckout: new StartCreditsCheckout({ users, payments, clock, links }),
+    getCredits: new GetCredits({ credits, connections, catalog }),
     getReferralProgram: new GetReferralProgram({ users, referrals, clock, links }),
     isAdministrator: new IsAdministrator(admin),
     listAccounts: new ListAccounts(admin),
     getAccount: new GetAccount(admin),
     offerPro: new OfferPro(admin),
     withdrawPro: new WithdrawPro(admin),
+    adjustCredits: new AdjustCredits({ ...admin, credits, ids }),
     moderateWall: new ModerateWall(admin),
     payments,
     users,
