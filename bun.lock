@@ -36,10 +36,13 @@
         "@flexwall/plugin-monkeytype": "workspace:*",
         "@flexwall/plugin-npm": "workspace:*",
         "@flexwall/plugin-paddle": "workspace:*",
+        "@flexwall/plugin-plaid": "workspace:*",
         "@flexwall/plugin-plausible": "workspace:*",
         "@flexwall/plugin-polar": "workspace:*",
+        "@flexwall/plugin-powens": "workspace:*",
         "@flexwall/plugin-pypi": "workspace:*",
         "@flexwall/plugin-revenuecat": "workspace:*",
+        "@flexwall/plugin-snaptrade": "workspace:*",
         "@flexwall/plugin-steam": "workspace:*",
         "@flexwall/plugin-stripe": "workspace:*",
         "@flexwall/plugin-tiktok": "workspace:*",
@@ -293,6 +296,19 @@
         "react",
       ],
     },
+    "plugins/plaid": {
+      "name": "@flexwall/plugin-plaid",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
+    },
     "plugins/plausible": {
       "name": "@flexwall/plugin-plausible",
       "version": "0.1.0",
@@ -307,6 +323,19 @@
         "@flexwall/sdk": "workspace:*",
       },
     },
+    "plugins/powens": {
+      "name": "@flexwall/plugin-powens",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
+    },
     "plugins/pypi": {
       "name": "@flexwall/plugin-pypi",
       "version": "0.1.0",
@@ -316,6 +345,19 @@
     },
     "plugins/revenuecat": {
       "name": "@flexwall/plugin-revenuecat",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
+    },
+    "plugins/snaptrade": {
+      "name": "@flexwall/plugin-snaptrade",
       "version": "0.1.0",
       "dependencies": {
         "@flexwall/sdk": "workspace:*",
@@ -466,13 +508,19 @@
 
     "@flexwall/plugin-paddle": ["@flexwall/plugin-paddle@workspace:plugins/paddle"],
 
+    "@flexwall/plugin-plaid": ["@flexwall/plugin-plaid@workspace:plugins/plaid"],
+
     "@flexwall/plugin-plausible": ["@flexwall/plugin-plausible@workspace:plugins/plausible"],
 
     "@flexwall/plugin-polar": ["@flexwall/plugin-polar@workspace:plugins/polar"],
 
+    "@flexwall/plugin-powens": ["@flexwall/plugin-powens@workspace:plugins/powens"],
+
     "@flexwall/plugin-pypi": ["@flexwall/plugin-pypi@workspace:plugins/pypi"],
 
     "@flexwall/plugin-revenuecat": ["@flexwall/plugin-revenuecat@workspace:plugins/revenuecat"],
+
+    "@flexwall/plugin-snaptrade": ["@flexwall/plugin-snaptrade@workspace:plugins/snaptrade"],
 
     "@flexwall/plugin-steam": ["@flexwall/plugin-steam@workspace:plugins/steam"],
 

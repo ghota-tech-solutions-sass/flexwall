@@ -147,6 +147,14 @@ variable "connector_secrets" {
       "INSTAGRAM_APP_SECRET",
       "ENABLE_BANKING_APP_ID",
       "ENABLE_BANKING_PRIVATE_KEY",
+      "SNAPTRADE_CLIENT_ID",
+      "SNAPTRADE_CONSUMER_KEY",
+      "PLAID_CLIENT_ID",
+      "PLAID_SECRET",
+      "PLAID_ENV",
+      "POWENS_DOMAIN",
+      "POWENS_CLIENT_ID",
+      "POWENS_CLIENT_SECRET",
     ], name)])
     error_message = "connector_secrets only takes the names in CONNECTOR_ENV (apps/web/src/composition.ts) that Terraform doesn't already manage."
   }

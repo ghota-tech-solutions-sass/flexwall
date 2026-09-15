@@ -32,6 +32,9 @@ import instagram from "@flexwall/plugin-instagram";
 import enableBanking from "@flexwall/plugin-enable-banking";
 import steam from "@flexwall/plugin-steam";
 import x from "@flexwall/plugin-x";
+import snaptrade from "@flexwall/plugin-snaptrade";
+import plaid from "@flexwall/plugin-plaid";
+import powens from "@flexwall/plugin-powens";
 import { createCatalog } from "./catalog";
 
 /**
@@ -41,6 +44,6 @@ import { createCatalog } from "./catalog";
  *
  * Adding a plugin: `bun run new-plugin <id>`, then list it here.
  */
-export const PLUGINS: readonly PluginDef[] = [core, github, stripe, http, npm, pypi, bluesky, hackernews, lemonSqueezy, polar, plausible, youtube, alpaca, trading212, interactiveBrokers, kraken, binance, coinbase, cryptoWallet, revenuecat, paddle, gumroad, wakatime, chessCom, lichess, monkeytype, twitch, tiktok, instagram, enableBanking, steam, x];
+export const PLUGINS: readonly PluginDef[] = [core, github, stripe, http, npm, pypi, bluesky, hackernews, lemonSqueezy, polar, plausible, youtube, alpaca, trading212, interactiveBrokers, kraken, binance, coinbase, cryptoWallet, revenuecat, paddle, gumroad, wakatime, chessCom, lichess, monkeytype, twitch, tiktok, instagram, enableBanking, steam, x, snaptrade, plaid, powens];
 
 export const catalog = createCatalog(PLUGINS, DEFAULT_THEME_ID);
