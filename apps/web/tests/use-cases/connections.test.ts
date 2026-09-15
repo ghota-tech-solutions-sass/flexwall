@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { ConnectAccount, FinishConnectionSignIn, RemoveConnection, StartConnectionSignIn } from "@/application/use-cases/connections";
+import { ConnectAccount, FinishConnectionSignIn, RemoveConnection, RenameConnection, StartConnectionSignIn } from "@/application/use-cases/connections";
 import { OAUTH_PENDING_TTL_MS } from "@/domain/connection";
 import { aConnection, aUser } from "../builders";
 import { FakeLinks, FakeRuntime, FixedClock, InMemoryConnections, InMemoryUsers, SequentialIds, TransparentSecretBox } from "../fakes";
@@ -68,6 +68,30 @@ describe("ConnectAccount", () => {
     expect(connections.items.size).toBe(1);
   });
 
+  test("given an account the owner named, when they connect it again with a new key, then the name stays", async () => {
+    // Given
+    const { connections, connect } = await setup();
+    const first = await connect.execute({ userId: "u1", connector: "billing", values: { key: "key_old_11" } });
+    await new RenameConnection({ connections }).execute({ userId: "u1", connectionId: first.id, nickname: "Main shop" });
+
+    // When
+    const second = await connect.execute({ userId: "u1", connector: "billing", values: { key: "key_new_22" } });
+
+    // Then
+    expect(second).toMatchObject({ id: first.id, nickname: "Main shop", public: { hint: "key_…22" } });
+  });
+
+  test("given a brand new account, when connected, then it has no name of its own yet", async () => {
+    // Given
+    const { connect } = await setup();
+
+    // When
+    const view = await connect.execute({ userId: "u1", connector: "billing", values: { key: "key_live_42" } });
+
+    // Then
+    expect(view.nickname).toBeNull();
+  });
+
   test("given a connector that reads public data, when the owner tries to connect it, then they're told no account is needed", async () => {
     // Given
     const { connect } = await setup();
@@ -77,6 +101,78 @@ describe("ConnectAccount", () => {
 
     // Then
     await expect(attempt).rejects.toThrow("Analytics doesn't need an account.");
+  });
+});
+
+describe("RenameConnection", () => {
+  function renameSetup() {
+    const connections = new InMemoryConnections();
+    return { connections, rename: new RenameConnection({ connections }) };
+  }
+
+  test("given the owner's connection, when they name it with spaces around, then the trimmed name is saved and comes back", async () => {
+    // Given
+    const { connections, rename } = renameSetup();
+    await connections.save(aConnection().withId("c1").ownedBy({ id: "u1" }).forConnector("billing").build());
+
+    // When
+    const view = await rename.execute({ userId: "u1", connectionId: "c1", nickname: "  Side project " });
+
+    // Then
+    expect(view).toMatchObject({ id: "c1", nickname: "Side project" });
+    expect((await connections.byId("c1"))!.nickname).toBe("Side project");
+    expect((await connections.byId("c1"))!.sealed).toContain("rk_live");
+  });
+
+  test("given a named connection, when the owner clears the name or sends one too long, then it's cleared or cut at 40 characters", async () => {
+    // Given
+    const { connections, rename } = renameSetup();
+    await connections.save(aConnection().withId("c1").ownedBy({ id: "u1" }).named("Old name").build());
+
+    // When
+    const cleared = await rename.execute({ userId: "u1", connectionId: "c1", nickname: "   " });
+    const long = await rename.execute({ userId: "u1", connectionId: "c1", nickname: "n".repeat(60) });
+
+    // Then
+    expect(cleared.nickname).toBeNull();
+    expect(long.nickname).toBe("n".repeat(40));
+  });
+
+  test("given something that isn't a name, when sent, then it's refused and the connection is unchanged", async () => {
+    // Given
+    const { connections, rename } = renameSetup();
+    await connections.save(aConnection().withId("c1").ownedBy({ id: "u1" }).named("Kept").build());
+
+    // When
+    const attempt = rename.execute({ userId: "u1", connectionId: "c1", nickname: { name: "x" } });
+
+    // Then
+    await expect(attempt).rejects.toMatchObject({ code: "invalid_input" });
+    expect((await connections.byId("c1"))!.nickname).toBe("Kept");
+  });
+
+  test("given someone else's connection, when a user renames it, then it's refused and its name is kept", async () => {
+    // Given
+    const { connections, rename } = renameSetup();
+    await connections.save(aConnection().withId("c1").ownedBy({ id: "u2" }).named("Theirs").build());
+
+    // When
+    const attempt = rename.execute({ userId: "u1", connectionId: "c1", nickname: "Mine now" });
+
+    // Then
+    await expect(attempt).rejects.toMatchObject({ code: "forbidden" });
+    expect((await connections.byId("c1"))!.nickname).toBe("Theirs");
+  });
+
+  test("given a connection that doesn't exist, when renamed, then the owner is told it's not there", async () => {
+    // Given
+    const { rename } = renameSetup();
+
+    // When
+    const attempt = rename.execute({ userId: "u1", connectionId: "missing", nickname: "Anything" });
+
+    // Then
+    await expect(attempt).rejects.toMatchObject({ code: "not_found" });
   });
 });
 
@@ -175,6 +271,24 @@ describe("Connecting by signing in at a provider", () => {
     const stored = (await connections.byId(connection.id))!;
     expect(stored.expiresAt).toBe(SOCIAL_TOKEN_EXPIRY);
     expect(stored.sealed).toContain("a1");
+  });
+
+  test("given an account the owner named, when they sign in at the provider again, then it keeps its name", async () => {
+    // Given
+    const { start, finish, connections } = await signInSetup();
+    const signIn = async () => {
+      const { url, pending } = await start.execute({ userId: "u1", connector: "social", values: {}, returnTo: "/edit", fallbackReturn: "/settings" });
+      return finish.execute({ userId: "u1", pending, query: { code: "good", state: new URL(url).searchParams.get("state")! } });
+    };
+    const first = await signIn();
+    await connections.save({ ...(await connections.byId(first.connection.id))!, nickname: "Personal" });
+
+    // When
+    const again = await signIn();
+
+    // Then
+    expect(again.connection).toMatchObject({ id: first.connection.id, nickname: "Personal" });
+    expect(connections.items.size).toBe(1);
   });
 
   test("given a callback whose state doesn't match, when it finishes, then nothing is stored", async () => {

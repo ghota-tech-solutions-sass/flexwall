@@ -24,6 +24,8 @@ export interface AccountsGateway {
   /** Starts signing in at a provider. Resolves to the address to send the browser to; it comes back to `returnTo`. */
   startSignIn(connector: string, values: FieldValues, returnTo: string): Promise<Outcome<string>>;
   removeAccount(connectionId: string): Promise<Outcome<void>>;
+  /** Names an account; null or an empty name clears it. Resolves to the account as saved. */
+  renameAccount(connectionId: string, nickname: string | null): Promise<Outcome<ConnectionView>>;
 }
 
 export interface EditorGateway extends AccountsGateway {

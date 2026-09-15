@@ -83,6 +83,18 @@ export class FakeEditorGateway implements EditorGateway {
     return this.removeOutcome;
   }
 
+  readonly renamedAccounts: { connectionId: string; nickname: string | null }[] = [];
+  /** Answers a rename; by default the server keeps the trimmed name. */
+  renameOutcome: (connectionId: string, nickname: string | null) => Outcome<ConnectionView> = (connectionId, nickname) => ({
+    ok: true,
+    value: { id: connectionId, connector: "billing", label: "Billing account", public: {}, createdAt: 0, nickname: nickname?.trim() || null },
+  });
+
+  async renameAccount(connectionId: string, nickname: string | null): Promise<Outcome<ConnectionView>> {
+    this.renamedAccounts.push({ connectionId, nickname });
+    return this.renameOutcome(connectionId, nickname);
+  }
+
   async rotateLockscreenLink(): Promise<Outcome<string>> {
     return { ok: true, value: this.lockscreenPath };
   }

@@ -14,6 +14,8 @@ import {
   restoreTile,
   setBinding,
   sourcesFor,
+  tileConnections,
+  tilesUsing,
 } from "@/application/editor/draft";
 import { aTile, aWall } from "../builders";
 import { testCatalog } from "../fakes/test-plugin";
@@ -201,5 +203,26 @@ describe("Editor model", () => {
     expect(moved.tiles[0].layout).toEqual({ x: 2, y: 3, w: 2, h: 1 });
     expect(dataSignature(moved)).toBe(dataSignature(draft));
     expect(applyLayout(moved, [{ i: "a", x: 2, y: 3, w: 2, h: 1 }])).toBe(moved);
+  });
+
+  test("given tiles fed by different accounts, when asking which use one, then only its tiles come back, by name and in wall order", () => {
+    // Given
+    const tiles = aWall()
+      .with(aTile().withId("a").stat({ label: "MRR" }).metric("billing", "mrr", { connection: "c1" }))
+      .with(aTile().withId("b").stat({ label: "Side MRR" }).metric("billing", "mrr", { connection: "c2" }))
+      .with(aTile().withId("c").stat({}).metric("billing", "mrr", { connection: "c1" }).metric("billing", "mrr", { connection: "c1" }, "compare"))
+      .with(aTile().withId("d").note())
+      .build().tiles;
+
+    // When
+    const used = tilesUsing("c1", tiles, catalog);
+
+    // Then
+    expect(used).toEqual([
+      { id: "a", name: "MRR" },
+      { id: "c", name: catalog.widget("stat")!.name },
+    ]);
+    expect(tileConnections(tiles[2]!)).toEqual(["c1"]);
+    expect(tilesUsing("gone", tiles, catalog)).toEqual([]);
   });
 });
