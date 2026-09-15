@@ -3,7 +3,7 @@ import { ApplyBillingEvent, OpenBillingPortal, StartCheckout, StartCreditsChecko
 import { GetCredits } from "@/application/use-cases/credits";
 import { AdjustCredits, GetAccount, IsAdministrator, ListAccounts, ModerateWall, OfferPro, WithdrawPro } from "@/application/use-cases/admin";
 import { ClaimHandle } from "@/application/use-cases/claim-handle";
-import { ConnectAccount, FinishConnectionSignIn, RemoveConnection, StartConnectionSignIn } from "@/application/use-cases/connections";
+import { ConnectAccount, FinishConnectionSignIn, RemoveConnection, RenameConnection, StartConnectionSignIn } from "@/application/use-cases/connections";
 import { ListExplore, ReportWall } from "@/application/use-cases/explore";
 import { GetLockscreen } from "@/application/use-cases/lockscreen";
 import { ResolveWall } from "@/application/use-cases/resolve-wall";
@@ -122,6 +122,7 @@ function build() {
     startConnectionSignIn: new StartConnectionSignIn({ users, connections, catalog, runtime, secrets, ids, clock, links }),
     finishConnectionSignIn: new FinishConnectionSignIn({ users, connections, catalog, runtime, secrets, ids, clock, links }),
     removeConnection: new RemoveConnection({ connections, catalog, secrets, runtime, clock }),
+    renameConnection: new RenameConnection({ connections }),
     resolveWall,
     getLockscreen: new GetLockscreen({ walls, users, tokens }),
     listExplore: new ListExplore({ walls, users, resolve: resolveWall, catalog, clock }),

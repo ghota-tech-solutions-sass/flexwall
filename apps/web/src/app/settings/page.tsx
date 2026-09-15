@@ -6,10 +6,12 @@ import { BillingPanel } from "@/components/settings/BillingPanel";
 import { ConnectionsManager } from "@/components/settings/ConnectionsManager";
 import { CreditsPanel } from "@/components/settings/CreditsPanel";
 import { ReferralPanel } from "@/components/settings/ReferralPanel";
+import { tilesUsing } from "@/application/editor/draft";
 import { container } from "@/composition";
 import { DomainError } from "@/domain/errors";
+import { catalog } from "@/plugins/registry";
 import { sessionUserId } from "@/presentation/http";
-import { API, ROUTES, SETTINGS_PARAMS } from "@/presentation/routes";
+import { API, CREDITS_ANCHOR, ROUTES, SETTINGS_PARAMS } from "@/presentation/routes";
 
 export const metadata: Metadata = { title: "Settings", robots: { index: false } };
 
@@ -27,6 +29,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const administrator = await container().isAdministrator.execute({ userId });
   const now = Date.now();
   const offer = owner.user.complimentary;
+  // From the saved wall: what each account feeds on the public page.
+  const usage = Object.fromEntries(owner.connections.map((c) => [c.id, tilesUsing(c.id, owner.wall.tiles, catalog)]));
 
   return (
     <div className="page">
@@ -44,6 +48,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             ) : null}
           </div>
           <h1 className="display">Settings</h1>
+          <nav className="settings-nav" aria-label="Settings sections">
+            <a href="#billing">Plan</a>
+            <a href={`#${CREDITS_ANCHOR}`}>Credits</a>
+            <a href="#connections">Connections</a>
+            {program ? <a href="#invite">Invite friends</a> : null}
+            <a href="#account">Account</a>
+          </nav>
         </div>
         {upgraded ? <p className="hint">Payment received. Pro turns on as soon as Stripe confirms, usually within a few seconds.</p> : null}
         <BillingPanel
@@ -55,10 +66,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           hasCustomer={Boolean(owner.user.stripeCustomerId)}
         />
         <CreditsPanel view={credits} justBought={Boolean(query[SETTINGS_PARAMS.credits])} />
+        <ConnectionsManager initial={owner.connections} paid={owner.entitlements.paid} usage={usage} now={now} />
         {program ? <ReferralPanel program={program} /> : null}
-        <ConnectionsManager initial={owner.connections} paid={owner.entitlements.paid} />
-        <section className="panel">
-          <h2>Account</h2>
+        <section className="panel" aria-labelledby="account">
+          <h2 id="account">Account</h2>
           <p>
             Signed in as {owner.user.email}. Your wall: <Link href={ROUTES.wall(owner.wall.handle)}>flexwall.lol/@{owner.wall.handle}</Link>
           </p>

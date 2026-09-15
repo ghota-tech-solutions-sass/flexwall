@@ -40,6 +40,19 @@ describe("Editor HTTP gateway", () => {
     expect(calls).toEqual([{ path: API.oauthStart, init: { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ connector: "twitch", values: {}, returnTo: "/edit" }) } }]);
   });
 
+  test("given an account to name, when renamed, then the name is patched onto it and the saved account comes back", async () => {
+    // Given
+    const saved = { id: "c 1", connector: "stripe", label: "Stripe live", public: {}, createdAt: 0, nickname: "Main shop" };
+    const { calls, gateway } = recording(async () => Response.json({ connection: saved }));
+
+    // When
+    const outcome = await gateway.renameAccount("c 1", "Main shop");
+
+    // Then
+    expect(outcome).toEqual({ ok: true, value: saved });
+    expect(calls).toEqual([{ path: API.connection("c 1"), init: { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ nickname: "Main shop" }) } }]);
+  });
+
   test("given the server explains a refusal, when connecting, then the owner gets its message", async () => {
     // Given
     const { gateway } = recording(async () => Response.json({ error: "connection_failed", message: "Stripe refused that key." }, { status: 422 }));

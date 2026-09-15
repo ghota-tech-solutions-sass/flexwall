@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { ConnectionView } from "@/domain/connection";
+import { connectionName, type ConnectionView } from "@/domain/connection";
 import { CONNECT_PARAMS } from "@/presentation/routes";
 
 /**
@@ -28,7 +28,7 @@ export function ConnectNotice({ connections, onConnected }: { connections: reado
     const connection = connections.find((c) => c.id === connected);
     if (!connection) return;
     onConnected?.(connection.id);
-    setNotice({ kind: "connected", text: `${connection.label} is connected.` });
+    setNotice({ kind: "connected", text: `${connectionName(connection)} is connected.` });
     // Runs once, on the address the owner arrived with.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

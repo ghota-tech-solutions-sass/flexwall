@@ -18,6 +18,11 @@ export const TrashIcon = (p: P) => (
     <path d="M3.5 5.5h13M8 5.5V4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1.5M5 5.5l.7 10a1.5 1.5 0 0 0 1.5 1.4h5.6a1.5 1.5 0 0 0 1.5-1.4l.7-10" />
   </Icon>
 );
+export const PencilIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M12.5 4.5l3 3M4 16l.8-3.6 8.9-8.9a1.4 1.4 0 0 1 2 0l.8.8a1.4 1.4 0 0 1 0 2l-8.9 8.9L4 16Z" />
+  </Icon>
+);
 export const CopyIcon = (p: P) => (
   <Icon {...p}>
     <rect x="7" y="7" width="10" height="10" rx="2" />

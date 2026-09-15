@@ -1,6 +1,6 @@
 import { BlockedRequestError, ConnectorError, HttpError, splitSecrets, validateFields, type ConnectorDef, type ConnectResult, type FieldValues } from "@flexwall/sdk";
 import type { Catalog } from "@/domain/catalog";
-import { OAUTH_PENDING_TTL_MS, safeReturnPath, viewOf, type Connection, type ConnectionView } from "@/domain/connection";
+import { normalizeNickname, OAUTH_PENDING_TTL_MS, safeReturnPath, viewOf, type Connection, type ConnectionView } from "@/domain/connection";
 import { DomainError, forbidden, invalid, notFound } from "@/domain/errors";
 import { todayIn } from "@/domain/time";
 import type { User } from "@/domain/user";
@@ -54,6 +54,8 @@ async function store(deps: ConnectionDeps, input: { user: User; connector: Conne
     accountId: result.accountId ?? null,
     createdAt: replaced?.createdAt ?? now,
     expiresAt: result.expiresAt ?? null,
+    // The owner named this account; fresh credentials for it don't change what they call it.
+    nickname: replaced?.nickname ?? null,
   };
   await deps.connections.save(connection);
   return viewOf(connection);
@@ -183,6 +185,24 @@ export class FinishConnectionSignIn {
     } catch {
       return null;
     }
+  }
+}
+
+/**
+ * Names a connection the way its owner tells it apart from their other
+ * accounts. An empty name clears it, so the connector's label shows again.
+ */
+export class RenameConnection {
+  constructor(private readonly deps: { connections: ConnectionRepository }) {}
+
+  async execute(input: { userId: string; connectionId: string; nickname: unknown }): Promise<ConnectionView> {
+    if (input.nickname !== null && input.nickname !== undefined && typeof input.nickname !== "string") throw invalid("Send a name, or an empty one to clear it.");
+    const connection = await this.deps.connections.byId(input.connectionId);
+    if (!connection) throw notFound("This connection");
+    if (connection.ownerId !== input.userId) throw forbidden();
+    const renamed: Connection = { ...connection, nickname: normalizeNickname(input.nickname) };
+    await this.deps.connections.save(renamed);
+    return viewOf(renamed);
   }
 }
 

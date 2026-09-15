@@ -198,6 +198,18 @@ describe("From sign-in to a shared wall", () => {
     expect(((await res.json()) as { message: string }).message).toContain("private");
   });
 
+  test("given a signed-in owner, when a connection they don't have is renamed, then it's not found", async () => {
+    // Given
+    const token = new HmacTokenService(SECRET, true, { now: () => Date.now() }).magic("ada@example.com");
+    cookie = ((await http(`/api/auth/verify?token=${encodeURIComponent(token)}`)).headers.get("set-cookie") ?? "").split(";")[0];
+
+    // When
+    const res = await http("/api/connections/nope", { method: "PATCH", json: { nickname: "Main shop" } });
+
+    // Then
+    expect(res.status).toBe(404);
+  });
+
   test("given an unsigned Stripe webhook, when it arrives, then it's rejected", async () => {
     // Given / When
     const res = await http("/api/webhooks/stripe", { method: "POST", body: "{}" });
