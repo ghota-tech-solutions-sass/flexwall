@@ -172,8 +172,9 @@ describe("coinbase plugin", () => {
     // Breakdowns are fetched in parallel: which one leaves first isn't part of the contract.
     expect(ctx.calls[0]).toBe(`${API}/portfolios`);
     expect([...ctx.calls.slice(1)].sort()).toEqual([`${API}/portfolios/${DEFAULT}?currency=USD`, `${API}/portfolios/${LONG_TERM}?currency=USD`].sort());
-    expect(jwts.map((j) => decode(j.split(".")[0]).nonce)).toEqual(["n1", "n2", "n3"]);
-    expect(decode(jwts[1].split(".")[1]).uri).toBe(`GET api.coinbase.com/api/v3/brokerage/portfolios/${DEFAULT}`);
+    // Signed JWTs leave in whatever order the parallel reads start: a fresh nonce each, one per URI.
+    expect(jwts.map((j) => decode(j.split(".")[0]).nonce).sort()).toEqual(["n1", "n2", "n3"]);
+    expect(jwts.map((j) => decode(j.split(".")[1]).uri)).toContain(`GET api.coinbase.com/api/v3/brokerage/portfolios/${DEFAULT}`);
     for (const jwt of jwts) expect(await verifies(jwt)).toBe(true);
     expect(new Set(["portfolio-value", "assets"].map((metric) => connector.cacheKey!({ metric, params: {} }))).size).toBe(1);
   });
