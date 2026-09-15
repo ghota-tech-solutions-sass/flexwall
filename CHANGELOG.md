@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.9.0...v0.10.0) (2026-09-15)
+
+
+### Features
+
+* SnapTrade, Plaid and Powens wealth connectors ([#28](https://github.com/ghota-tech-solutions-sass/flexwall/issues/28)) ([be87ca4](https://github.com/ghota-tech-solutions-sass/flexwall/commit/be87ca4b63b7ccd346e34adf16404a772e6179b0))
+* **web:** drag a tile from the library to where it goes on the wall ([#27](https://github.com/ghota-tech-solutions-sass/flexwall/issues/27)) ([eb3c89b](https://github.com/ghota-tech-solutions-sass/flexwall/commit/eb3c89b971cbba3972a49fe729cb49411a2bbcb6))
+
 ## [0.9.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.8.0...v0.9.0) (2026-09-15)
 
 
