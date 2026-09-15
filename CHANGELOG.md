@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.8.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.7.0...v0.8.0) (2026-09-15)
+
+
+### Features
+
+* sign-in connectors (Twitch, TikTok, Instagram, banks), Steam, and X with your own key ([#24](https://github.com/ghota-tech-solutions-sass/flexwall/issues/24)) ([f1778c4](https://github.com/ghota-tech-solutions-sass/flexwall/commit/f1778c4c8cb7385d84c775e25c9e4849a8ae791d))
+* wealth, revenue and flex connectors, with ranges for balances ([#23](https://github.com/ghota-tech-solutions-sass/flexwall/issues/23)) ([e533987](https://github.com/ghota-tech-solutions-sass/flexwall/commit/e533987cdb007625e850467a920440b7f49a3c4d))
+* **web:** product-first landing with a professional structure ([8c13451](https://github.com/ghota-tech-solutions-sass/flexwall/commit/8c13451687e90265ec4e4b9ce5f8a1839c831c36))
+* **web:** redesign the public wall page ([892a296](https://github.com/ghota-tech-solutions-sass/flexwall/commit/892a296f2a1758b2970cce094f2e2b359c9f51c9))
+* **web:** rework the editor around the tile ([45832e1](https://github.com/ghota-tech-solutions-sass/flexwall/commit/45832e1a2833da45c93a8c556e8b7fcb9a2d44c9))
+* **web:** The Wall as a gallery of themed wall cards ([fc97f8d](https://github.com/ghota-tech-solutions-sass/flexwall/commit/fc97f8d7bbe4dfd747bc17df661181259ad2648e))
+
+
+### Bug Fixes
+
+* **sdk:** a theme's page is a flat color, gradients go in its wallpaper ([de1c8ad](https://github.com/ghota-tech-solutions-sass/flexwall/commit/de1c8ad9090742aafeb42da095afafc54e37f3b3))
+* **web:** a Pro theme is only tried on without Pro, never saved or shown on the wall ([7230401](https://github.com/ghota-tech-solutions-sass/flexwall/commit/7230401417e2dcb33d9f7eb6ad45f544ea83f62d))
+* **web:** keep the header dot grid inside the page width ([200404a](https://github.com/ghota-tech-solutions-sass/flexwall/commit/200404a1385dfa259fe86afffae62a618407638c))
+
 ## [0.7.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.6.1...v0.7.0) (2026-09-14)
 
 
