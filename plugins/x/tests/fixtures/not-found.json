@@ -1,0 +1,13 @@
+{
+  "errors": [
+    {
+      "value": "nobody_here_42",
+      "detail": "Could not find user with username: [nobody_here_42].",
+      "title": "Not Found Error",
+      "resource_type": "user",
+      "parameter": "username",
+      "resource_id": "nobody_here_42",
+      "type": "https://api.x.com/2/problems/resource-not-found"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@flexwall/plugin-x",
+  "version": "0.1.0",
+  "description": "Followers, following, posts, lists and likes of an X account, read with the owner's own X developer app.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

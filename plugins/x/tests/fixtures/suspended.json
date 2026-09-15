@@ -1,0 +1,13 @@
+{
+  "errors": [
+    {
+      "value": "gone_account",
+      "detail": "User has been suspended: [gone_account].",
+      "title": "Forbidden",
+      "resource_type": "user",
+      "parameter": "username",
+      "resource_id": "gone_account",
+      "type": "https://api.x.com/2/problems/resource-not-found"
+    }
+  ]
+}
