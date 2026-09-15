@@ -93,6 +93,14 @@ reads a day per account at most. Rate limits (429) and outages pass through, so
 tiles keep their last value. Some banks bill each PSD2 call (Enable Banking's
 Finland page mentions Säästöpankki).
 
+## Removing a connection
+
+`disconnect` sends `DELETE /sessions/{session_id}` with the application's JWT
+(read as text), which ends the session and closes the bank consent where the
+bank allows it. A 404 or one of the ended-session codes of the table below
+(`EXPIRED_SESSION`, `REVOKED_SESSION`, `CLOSED_SESSION`, `SESSION_DOES_NOT_EXIST`, …)
+counts as already ended; no application or no stored session means nothing is sent.
+
 ## Errors
 
 Enable Banking asks clients to branch on the `error` code of the body, not the

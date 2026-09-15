@@ -132,6 +132,20 @@ function explain(error: unknown, withUser: boolean): never {
   throw error;
 }
 
+/** A user SnapTrade doesn't know any more: deleted already, or never finished registering. */
+function userAlreadyGone(error: unknown): boolean {
+  if (!(error instanceof HttpError)) return false;
+  return error.status === 404 || errorCode(error) === "1083" || /user (was )?not found|does not exist/i.test(error.body);
+}
+
+/** Why the Connection Portal came back with `status=ERROR`, by its `error_code`. */
+function portalError(code: string): string {
+  if (code === "1066") return "Your brokerage refused those credentials, so nothing was connected. Try again.";
+  if (code === "3000") return "SnapTrade couldn't reach your brokerage, so nothing was connected. Try again later.";
+  if (code === "1006") return "That SnapTrade sign-in expired, so nothing was connected. Connect again.";
+  return "SnapTrade couldn't connect your brokerage, so nothing was connected. Try again.";
+}
+
 /** "Robinhood", "Fidelity and Robinhood", "Fidelity, Questrade and Robinhood". */
 function listNames(names: readonly string[]): string {
   if (names.length <= 1) return names[0] ?? "your brokerage";
@@ -175,25 +189,32 @@ export function makeSnaptradeConnector(deps: { now?: () => number; newUserId?: (
   const now = deps.now ?? Date.now;
   const newUserId = deps.newUserId ?? (() => `flexwall-${globalThis.crypto.randomUUID()}`);
 
-  function serverApp(ctx: ConnectorContext): { clientId: string; consumerKey: string } {
+  function configuredApp(ctx: ConnectorContext): { clientId: string; consumerKey: string } | null {
     const clientId = ctx.env("SNAPTRADE_CLIENT_ID")?.trim();
     const consumerKey = ctx.env("SNAPTRADE_CONSUMER_KEY")?.trim();
-    if (!clientId || !consumerKey) throw new ConnectorError(NO_APP);
-    return { clientId, consumerKey };
+    return clientId && consumerKey ? { clientId, consumerKey } : null;
+  }
+
+  function serverApp(ctx: ConnectorContext): { clientId: string; consumerKey: string } {
+    const app = configuredApp(ctx);
+    if (!app) throw new ConnectorError(NO_APP);
+    return app;
   }
 
   /**
    * One signed call. The query string is built once and used both in the URL
    * and in the signature. SnapTrade only accepts the user id and secret as
-   * query parameters: there is no header for them.
+   * query parameters: there is no header for them. `query` adds parameters
+   * after the timestamp, e.g. the lone `userId` of deleteUser.
    */
   async function call<T>(
     ctx: ConnectorContext,
     app: { clientId: string; consumerKey: string },
     path: string,
-    opts: { method?: "GET" | "POST"; user?: { userId: string; userSecret: string }; body?: Record<string, unknown>; timeoutMs?: number } = {}
+    opts: { method?: "GET" | "POST" | "DELETE"; user?: { userId: string; userSecret: string }; query?: Record<string, string>; body?: Record<string, unknown>; timeoutMs?: number } = {}
   ): Promise<T> {
     const params = new URLSearchParams({ clientId: app.clientId, timestamp: String(Math.floor(now() / 1000)) });
+    for (const [name, value] of Object.entries(opts.query ?? {})) params.set(name, value);
     if (opts.user) {
       params.set("userId", opts.user.userId);
       params.set("userSecret", opts.user.userSecret);
@@ -209,6 +230,30 @@ export function makeSnaptradeConnector(deps: { now?: () => number; newUserId?: (
       ...(content ? { body: canonicalJson(content) } : {}),
       ...(opts.timeoutMs ? { timeoutMs: opts.timeoutMs } : {}),
     });
+  }
+
+  /** `DELETE /snapTrade/deleteUser`: the user id alone, no secret. A user SnapTrade doesn't know is deleted already. */
+  async function deleteUser(ctx: ConnectorContext, app: { clientId: string; consumerKey: string }, userId: string): Promise<void> {
+    try {
+      await call(ctx, app, "/snapTrade/deleteUser", { method: "DELETE", query: { userId } });
+    } catch (error) {
+      if (userAlreadyGone(error)) return;
+      explain(error, false);
+    }
+  }
+
+  /**
+   * A sign-in that connected nothing leaves the user `authorize` registered:
+   * delete it so it isn't billed. Best effort: a failure is logged, without
+   * the user's id or secret, and the owner still gets why nothing connected.
+   */
+  async function forgetUser(ctx: ConnectorContext, app: { clientId: string; consumerKey: string }, userId: string | undefined): Promise<void> {
+    if (!userId) return;
+    try {
+      await deleteUser(ctx, app, userId);
+    } catch (error) {
+      ctx.log(`snaptrade user of an unfinished sign-in not deleted: ${error instanceof HttpError ? `HTTP ${error.status}` : error instanceof Error ? error.name : "unknown error"}`);
+    }
   }
 
   async function signed<T>(...args: Parameters<typeof call>): Promise<T> {
@@ -257,13 +302,10 @@ export function makeSnaptradeConnector(deps: { now?: () => number; newUserId?: (
         async complete({ query, carry }, ctx) {
           const app = serverApp(ctx);
           const status = String(query.status ?? "").toUpperCase();
-          if (status === "ABANDONED") throw new ConnectorError("You left SnapTrade before connecting a brokerage, so nothing was connected.");
-          if (status === "ERROR") {
-            const code = String(query.error_code ?? "");
-            if (code === "1066") throw new ConnectorError("Your brokerage refused those credentials, so nothing was connected. Try again.");
-            if (code === "3000") throw new ConnectorError("SnapTrade couldn't reach your brokerage, so nothing was connected. Try again later.");
-            if (code === "1006") throw new ConnectorError("That SnapTrade sign-in expired, so nothing was connected. Connect again.");
-            throw new ConnectorError("SnapTrade couldn't connect your brokerage, so nothing was connected. Try again.");
+          const failed = status === "ABANDONED" ? "You left SnapTrade before connecting a brokerage, so nothing was connected." : status === "ERROR" ? portalError(String(query.error_code ?? "")) : null;
+          if (failed) {
+            await forgetUser(ctx, app, carry.userId);
+            throw new ConnectorError(failed);
           }
           if (!carry.userId || !carry.userSecret) throw new ConnectorError("That SnapTrade sign-in expired, so nothing was connected. Connect again.");
           const user = { userId: carry.userId, userSecret: carry.userSecret };
@@ -277,7 +319,11 @@ export function makeSnaptradeConnector(deps: { now?: () => number; newUserId?: (
               return [] as Account[];
             }),
           ]);
-          if (!Array.isArray(connections) || connections.length === 0) throw new ConnectorError(`${NOTHING_CONNECTED} Connect again and finish signing in at your brokerage.`);
+          // A cancelled portal comes back with `state` alone, no `status`: it lands here.
+          if (!Array.isArray(connections) || connections.length === 0) {
+            await forgetUser(ctx, app, user.userId);
+            throw new ConnectorError(`${NOTHING_CONNECTED} Connect again and finish signing in at your brokerage.`);
+          }
 
           const names = uniqueNames(connections);
           const counted = countedAccounts(Array.isArray(accounts) ? accounts : []);
@@ -289,6 +335,17 @@ export function makeSnaptradeConnector(deps: { now?: () => number; newUserId?: (
             accountId: user.userId,
           };
         },
+      },
+
+      /**
+       * Deletes the SnapTrade user, which stops its monthly bill and removes
+       * its brokerage connections. SnapTrade queues the deletion and answers
+       * 200. The call takes the user id alone, without its secret.
+       */
+      async disconnect({ secret }, ctx) {
+        const app = configuredApp(ctx);
+        if (!app || !secret.userId) return;
+        await deleteUser(ctx, app, secret.userId);
       },
     },
     metrics: [

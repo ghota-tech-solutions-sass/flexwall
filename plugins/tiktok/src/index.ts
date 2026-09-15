@@ -15,6 +15,7 @@ import { ConnectorError, defineConnector, definePlugin, ExpiredCredentialsError,
 export const AUTHORIZE = "https://www.tiktok.com/v2/auth/authorize/";
 export const TOKEN = "https://open.tiktokapis.com/v2/oauth/token/";
 export const USER_INFO = "https://open.tiktokapis.com/v2/user/info/";
+export const REVOKE = "https://open.tiktokapis.com/v2/oauth/revoke/";
 export const SCOPES = ["user.info.basic", "user.info.stats"];
 export const STATS_FIELDS = "open_id,follower_count,following_count,likes_count,video_count";
 
@@ -89,6 +90,16 @@ async function userInfo(fields: string, accessToken: string, ctx: ConnectorConte
   return user;
 }
 
+/** Answers meaning the token is dead already: nothing left to revoke. */
+const ALREADY_REVOKED = new Set(["access_token_invalid", "invalid_grant", "invalid_token"]);
+
+/** The error code of a TikTok answer: a string on OAuth endpoints, `error.code` on the others. "" when none. */
+function errorCodeOf(body: unknown): string {
+  const error = (body as { error?: unknown } | null)?.error;
+  const code = typeof error === "string" ? error : (error as { code?: unknown } | undefined)?.code;
+  return typeof code === "string" ? code : "";
+}
+
 const expiresAt = (seconds: number | undefined) => Date.now() + Math.max(0, Number(seconds) || 0) * 1000;
 const count = (raw: unknown) => (typeof raw === "number" && Number.isFinite(raw) ? number(raw, { unit: "count" }) : null);
 
@@ -150,6 +161,35 @@ const tiktokConnector = defineConnector({
         // "The returned refresh_token may be different than the one passed": always keep the newest.
         return { secret: { accessToken: renewed.access_token, refreshToken: renewed.refresh_token || secret.refreshToken }, expiresAt: expiresAt(renewed.expires_in) };
       },
+    },
+
+    /**
+     * Revokes the sign-in: `POST /v2/oauth/revoke/` with the app's key and
+     * secret and the owner's access token, which removes Flexwall from their
+     * "Manage app permissions". The answer is empty on success, so it's read
+     * as text; errors can come in a 2xx too. A token TikTok calls invalid is
+     * revoked or expired already.
+     */
+    async disconnect({ secret }, ctx) {
+      const key = ctx.env("TIKTOK_CLIENT_KEY");
+      const clientSecret = ctx.env("TIKTOK_CLIENT_SECRET");
+      if (!key || !clientSecret || !secret.accessToken) return;
+      let raw: string;
+      try {
+        raw = await ctx.fetch.text(REVOKE, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded", "Cache-Control": "no-cache", Accept: "application/json" },
+          body: new URLSearchParams({ client_key: key, client_secret: clientSecret, token: secret.accessToken }).toString(),
+        });
+      } catch (error) {
+        if (!(error instanceof HttpError)) throw error;
+        const code = errorCodeOf(parse(error.body));
+        if (ALREADY_REVOKED.has(code) || error.status === 401) return;
+        throw error;
+      }
+      const code = errorCodeOf(parse(raw));
+      if (!code || code === "ok" || ALREADY_REVOKED.has(code)) return;
+      throw new Error(`TikTok answered ${code.replace(/[^a-z_]/gi, "")} to the revoke.`);
     },
   },
   metrics: [

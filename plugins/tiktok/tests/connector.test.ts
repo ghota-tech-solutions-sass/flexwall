@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { checkPlugins, ConnectorError, ExpiredCredentialsError, HttpError, number, type GuardedFetchInit } from "@flexwall/sdk";
 import { fakeContext } from "@flexwall/sdk/testing";
-import tiktok, { AUTHORIZE, STATS_FIELDS, TOKEN, tiktokConnector, USER_INFO } from "../src/index";
+import tiktok, { AUTHORIZE, REVOKE, STATS_FIELDS, TOKEN, tiktokConnector, USER_INFO } from "../src/index";
 
 /** Responses shaped after the examples in TikTok's User Access Token Management and Get User Info guides. */
 const fixture = (name: string) => JSON.parse(readFileSync(new URL(`./fixtures/${name}.json`, import.meta.url), "utf8"));
@@ -308,5 +308,85 @@ describe("tiktok plugin", () => {
       // Then
       expect(error).toBe(limited);
     });
+  });
+});
+
+describe("disconnect", () => {
+  const disconnect = tiktokConnector.auth!.disconnect!;
+  const shown = { displayName: "Ada Lovelace" };
+  const oauthError = (status: number, error: string) => (_init: GuardedFetchInit | undefined, url: string) => {
+    throw new HttpError(status, url, JSON.stringify({ error, error_description: "…", log_id: "202206221854370101130062072500FFA2" }));
+  };
+
+  test("given a connection, when it is removed, then its access token is revoked with the app's key and secret, form-encoded", async () => {
+    // Given
+    const sent: { url: string; init: GuardedFetchInit | undefined }[] = [];
+    const ctx = fakeContext(
+      {
+        [REVOKE]: (init, url) => {
+          sent.push({ url, init });
+          return "";
+        },
+      },
+      { env }
+    );
+
+    // When
+    await disconnect({ secret, public: shown }, ctx);
+
+    // Then
+    expect(sent).toHaveLength(1);
+    expect(sent[0].url).toBe(REVOKE);
+    expect(sent[0].init?.method).toBe("POST");
+    expect(sent[0].init?.headers?.["Content-Type"]).toBe("application/x-www-form-urlencoded");
+    expect(Object.fromEntries(new URLSearchParams(String(sent[0].init?.body)))).toEqual({ client_key: CLIENT_KEY, client_secret: CLIENT_SECRET, token: ACCESS });
+    expect(sent[0].url).not.toContain(CLIENT_SECRET);
+  });
+
+  test("given a token TikTok calls invalid, in an error status or in a 2xx answer, when the connection is removed, then it resolves", async () => {
+    // Given
+    const contexts = [
+      fakeContext({ [REVOKE]: oauthError(400, "invalid_grant") }, { env }),
+      fakeContext({ [REVOKE]: apiError(401, "access_token_invalid") }, { env }),
+      fakeContext({ [REVOKE]: JSON.stringify({ data: {}, error: { code: "access_token_invalid", message: "", log_id: "x" } }) }, { env }),
+      fakeContext({ [REVOKE]: "{}" }, { env }),
+    ];
+
+    // When
+    const results = await Promise.all(contexts.map((ctx) => disconnect({ secret, public: shown }, ctx)));
+
+    // Then
+    expect(results).toEqual([undefined, undefined, undefined, undefined]);
+  });
+
+  test("given no TikTok app on the server or no stored token, when the connection is removed, then it resolves without a request", async () => {
+    // Given
+    const noApp = fakeContext({}, { env: { TIKTOK_CLIENT_KEY: CLIENT_KEY } });
+    const noToken = fakeContext({}, { env });
+
+    // When
+    await disconnect({ secret, public: shown }, noApp);
+    await disconnect({ secret: { accessToken: "", refreshToken: REFRESH }, public: shown }, noToken);
+
+    // Then
+    expect([...noApp.calls, ...noToken.calls]).toEqual([]);
+  });
+
+  test("given TikTok refuses the app or fails, when the connection is removed, then it throws without the secret or a token", async () => {
+    // Given
+    const contexts = [
+      fakeContext({ [REVOKE]: oauthError(400, "invalid_client") }, { env }),
+      fakeContext({ [REVOKE]: JSON.stringify({ error: "invalid_client", error_description: `bad ${CLIENT_SECRET}` }) }, { env }),
+      fakeContext({ [REVOKE]: apiError(500, "internal_error") }, { env }),
+    ];
+
+    // When
+    const errors = await Promise.all(contexts.map((ctx) => disconnect({ secret, public: shown }, ctx).catch((e: unknown) => e)));
+
+    // Then
+    expect(errors[0]).toBeInstanceOf(HttpError);
+    expect((errors[1] as Error).message).toBe("TikTok answered invalid_client to the revoke.");
+    expect(errors[2]).toBeInstanceOf(HttpError);
+    for (const error of errors) expect([ACCESS, REFRESH, CLIENT_SECRET].filter((s) => (error as Error).message.includes(s))).toEqual([]);
   });
 });

@@ -217,6 +217,38 @@ async function readUser(ctx: ConnectorContext, api: string, token: string, expla
   }
 }
 
+/**
+ * `DELETE /users/me` with the user's own token (204): deletes the user and its
+ * bank connections. Only POWENS_DOMAIN is needed; without it or a token there
+ * is nothing to do. A token Powens refuses (401, 403) or a 404 means the user
+ * is gone already.
+ */
+async function deleteUser(ctx: ConnectorContext, token: string | undefined): Promise<void> {
+  const domain = ctx.env("POWENS_DOMAIN")?.trim();
+  if (!domain || !token) return;
+  const host = powensHost(domain);
+  if (!host) throw new ConnectorError("This Flexwall server's POWENS_DOMAIN isn't a Powens domain.");
+  try {
+    await ctx.fetch.text(`https://${host}/2.0/users/me`, { method: "DELETE", headers: { Authorization: `Bearer ${token}`, Accept: "application/json" } });
+  } catch (error) {
+    if (error instanceof HttpError && [401, 403, 404].includes(error.status)) return;
+    throw error;
+  }
+}
+
+/**
+ * `authorize` made a permanent Powens user; a sign-in that connected nothing
+ * deletes it before telling the owner why. Best effort: a failure is logged,
+ * without the token, and the owner's sentence doesn't change.
+ */
+async function forgetUser(ctx: ConnectorContext, token: string | undefined): Promise<void> {
+  try {
+    await deleteUser(ctx, token);
+  } catch (error) {
+    ctx.log(`powens user of an unfinished sign-in not deleted: ${error instanceof HttpError ? `HTTP ${error.status}` : error instanceof Error ? error.name : "unknown error"}`);
+  }
+}
+
 export const powensConnector = defineConnector({
   id: "powens",
   name: "Powens",
@@ -256,19 +288,29 @@ export const powensConnector = defineConnector({
 
       async complete({ query, carry }, ctx) {
         if (query.error) {
+          await forgetUser(ctx, carry.token);
           if (query.error === "access_denied") throw new ConnectorError("You cancelled in Powens, so nothing was connected.");
           if (query.error === "tos_declined") throw new ConnectorError("You declined Powens' terms, so nothing was connected.");
           const description = (query.error_description ?? "").trim().slice(0, 200);
           throw new ConnectorError(description ? `Powens didn't connect your bank: ${description}` : "Powens didn't connect your bank. Try again.");
         }
-        if (!query.connection_id) throw new ConnectorError("Powens didn't finish connecting your bank. Try again.");
+        if (!query.connection_id) {
+          await forgetUser(ctx, carry.token);
+          throw new ConnectorError("Powens didn't finish connecting your bank. Try again.");
+        }
         const { api } = app(ctx);
         if (!carry.token) throw new ConnectorError("That Powens sign-in expired. Connect again.");
         const { connections, accounts } = await readUser(ctx, api, carry.token, explainFreshToken);
         const connection = connections.find((c) => String(c.id) === query.connection_id);
-        if (!connection) throw new ConnectorError("Powens didn't finish connecting your bank. Try again.");
+        if (!connection) {
+          await forgetUser(ctx, carry.token);
+          throw new ConnectorError("Powens didn't finish connecting your bank. Try again.");
+        }
         const active = accounts.filter(isActive);
-        if (active.length === 0) throw new ConnectorError("You shared no account in Powens. Connect again and pick at least one account.");
+        if (active.length === 0) {
+          await forgetUser(ctx, carry.token);
+          throw new ConnectorError("You shared no account in Powens. Connect again and pick at least one account.");
+        }
         const banks = [...new Set(connections.map((c) => c.connector?.name?.trim()).filter((n): n is string => Boolean(n)))];
         const bankList = banks.join(", ") || "Powens";
         const n = active.length;
@@ -279,6 +321,16 @@ export const powensConnector = defineConnector({
           accountId: carry.user || (connection.id_user ? String(connection.id_user) : String(connection.id)),
         };
       },
+    },
+
+    /**
+     * Deletes the Powens user, which ends its bill and its bank connections:
+     * `DELETE /users/me` with its own token, answered 204. Only the domain is
+     * needed. A token Powens refuses (401, 403) or a 404 means the user is
+     * already gone.
+     */
+    async disconnect({ secret }, ctx) {
+      await deleteUser(ctx, secret.token);
     },
   },
   metrics: [

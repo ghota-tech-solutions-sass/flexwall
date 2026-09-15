@@ -153,6 +153,29 @@ const twitchConnector = defineConnector({
         return { secret: { accessToken: renewed.access_token, refreshToken: renewed.refresh_token || secret.refreshToken }, expiresAt: expiresAt(renewed.expires_in) };
       },
     },
+
+    /**
+     * Revokes the sign-in: `POST /oauth2/revoke` with the client id and each
+     * stored token, in parallel. Twitch documents it for access tokens; the
+     * refresh token is sent too, because the stored access token has often
+     * expired already and the grant would otherwise stay alive. A token
+     * Twitch doesn't know (400 "Invalid token") is revoked already.
+     */
+    async disconnect({ secret }, ctx) {
+      const id = ctx.env("TWITCH_CLIENT_ID");
+      const tokens = [secret.accessToken, secret.refreshToken].filter((t): t is string => Boolean(t));
+      if (!id || tokens.length === 0) return;
+      await Promise.all(
+        tokens.map(async (token) => {
+          try {
+            await ctx.fetch.text(`${ID}/revoke`, { method: "POST", headers: FORM, body: form({ client_id: id, token }) });
+          } catch (error) {
+            if (error instanceof HttpError && error.status === 400 && /invalid token/i.test(messageOf(error))) return;
+            throw error;
+          }
+        })
+      );
+    },
   },
   metrics: [
     { id: "followers", name: "Followers", type: "number", unit: "count", defaults: { label: "followers" }, leaderboard: "audience" },

@@ -62,6 +62,16 @@ not eligible for using third-party login") gets a sentence saying so.
   `invalid_grant`) becomes "Reconnect TikTok: the sign-in was revoked or has
   expired." After 365 days without reconnecting, that's what the owner sees.
 
+## Removing a connection
+
+`disconnect` sends `POST https://open.tiktokapis.com/v2/oauth/revoke/` (form
+`client_key`, `client_secret`, `token` = the access token), read as text. An
+`access_token_invalid`, `invalid_grant` or `invalid_token` error, or a 401,
+counts as already revoked; no app keys or no stored access token means nothing
+is sent. An access token that expired unrefreshed can't revoke the grant: it
+then lapses with its refresh token, or the owner removes Flexwall in TikTok's
+"Manage app permissions".
+
 ## Errors
 
 TikTok puts `error.code` in the JSON of both successful and failed calls;
@@ -115,7 +125,9 @@ Built from TikTok's documentation and examples, without an approved app:
 - that the `scope` in the token response lists only the scopes the owner kept;
 - how long App Review takes and what it asks of an app that only reads
   `user.info.stats`;
-- whether `likes_count` counts likes on videos later deleted or made private.
+- whether `likes_count` counts likes on videos later deleted or made private;
+- the error the revoke endpoint returns for an expired or already revoked token
+  (the codes above are assumed).
 
 ## Develop
 

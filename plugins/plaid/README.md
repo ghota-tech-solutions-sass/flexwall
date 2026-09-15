@@ -145,9 +145,15 @@ mode**, and its early warning is the `PENDING_DISCONNECT` webhook (US/CA;
 `PENDING_EXPIRATION` is the UK/EU one, and both are webhooks, not error codes).
 The Flexwall host has neither update mode nor a webhook receiver, so the owner
 connects again, which makes a new Item (and replaces the old connection when
-they share the same accounts, see `accountId`). The old Item isn't removed at
-Plaid (`/item/remove`): its subscriptions keep billing until an operator
-removes it.
+they share the same accounts, see `accountId`). A connection replaced this way
+isn't removed, so its old Item isn't removed at Plaid (`/item/remove`): its
+subscriptions keep billing until an operator removes it.
+
+## Removing a connection
+
+`disconnect` calls `POST /item/remove` `{ access_token }`, which ends the Item's
+subscriptions. `ITEM_NOT_FOUND` and `INVALID_ACCESS_TOKEN` count as already
+removed; no server keys or no stored token means nothing is sent.
 
 ## Limits
 
@@ -216,8 +222,8 @@ models are documented:
 | `/accounts/balance/get` | Per-call flat fee: **not used** |
 
 So a connection costs about one or two subscriptions a month, whatever the
-`ttl`. Subscriptions end only with `/item/remove`, which Flexwall doesn't call
-when an owner deletes a connection.
+`ttl`. Subscriptions end only with `/item/remove`, which Flexwall calls when an
+owner removes a connection (not when a reconnect replaces one).
 
 ## Not verified against a real account
 

@@ -239,9 +239,19 @@ describe("complete", () => {
     expect([...ctx.calls].sort()).toEqual([`${API}/accounts?${userQuery}`, `${API}/authorizations?${userQuery}`]);
   });
 
-  test("given the owner left the portal or it failed, when completing, then they get a sentence and nothing is requested", async () => {
+  test("given the owner left the portal or it failed, when completing, then the user registered for this sign-in is deleted and they get a sentence", async () => {
     // Given
-    const ctx = fakeContext({}, { env: ENV });
+    const deleted: string[] = [];
+    const ctx = fakeContext(
+      {
+        [`${API}/snapTrade/deleteUser`]: (init, url) => {
+          expect(init?.method).toBe("DELETE");
+          deleted.push(url);
+          return { status: "deleted", detail: "User queued for deletion; please wait for webhook for confirmation.", userId: USER_ID };
+        },
+      },
+      { env: ENV }
+    );
     const carry = { userId: USER_ID, userSecret: USER_SECRET };
 
     // When
@@ -257,12 +267,13 @@ describe("complete", () => {
       "Your brokerage refused those credentials, so nothing was connected. Try again.",
       "SnapTrade couldn't connect your brokerage, so nothing was connected. Try again.",
     ]);
-    expect(ctx.calls).toEqual([]);
+    expect(ctx.calls).toEqual(deleted);
+    expect(deleted).toEqual(Array(3).fill(`${API}/snapTrade/deleteUser?clientId=${CLIENT_ID}&timestamp=${TS}&userId=${USER_ID}`));
   });
 
-  test("given the user has no connection, when completing, then no brokerage was connected", async () => {
+  test("given the owner cancelled the portal, which sends back only the state, when completing, then no brokerage was connected and the user is deleted", async () => {
     // Given
-    const ctx = fakeContext(userRoutes({ connections: [], accounts: [] }), { env: ENV });
+    const ctx = fakeContext({ ...userRoutes({ connections: [], accounts: [] }), [`${API}/snapTrade/deleteUser`]: { status: "deleted", userId: USER_ID } }, { env: ENV });
 
     // When
     const error = await oauth.complete({ fields: {}, query: { state: STATE }, redirectUri: REDIRECT, carry: { userId: USER_ID, userSecret: USER_SECRET } }, ctx).catch((e: unknown) => e);
@@ -270,6 +281,32 @@ describe("complete", () => {
     // Then
     expect(error).toBeInstanceOf(ConnectorError);
     expect((error as Error).message).toStartWith("No brokerage was connected.");
+    expect(ctx.calls.filter((u) => u.includes("/snapTrade/deleteUser"))).toEqual([`${API}/snapTrade/deleteUser?clientId=${CLIENT_ID}&timestamp=${TS}&userId=${USER_ID}`]);
+  });
+
+  test("given deleting the unfinished sign-in's user fails, when completing, then the owner gets the same sentence and the log holds no secret", async () => {
+    // Given
+    const logs: string[] = [];
+    const failing = [refuse(500, { detail: "Internal error", status_code: 500 }), refuse(401, { detail: "Unable to verify signature sent", status_code: 401, code: "1076" })];
+    const contexts = failing.map((answer) => ({ ...fakeContext({ ...userRoutes({ connections: [], accounts: [] }), [`${API}/snapTrade/deleteUser`]: answer }, { env: ENV }), log: (m: string) => logs.push(m) }));
+    const carry = { userId: USER_ID, userSecret: USER_SECRET };
+
+    // When
+    const errors = [
+      await oauth.complete({ fields: {}, query: { state: STATE, status: "ABANDONED" }, redirectUri: REDIRECT, carry }, contexts[0]).catch((e: unknown) => e),
+      await oauth.complete({ fields: {}, query: { state: STATE }, redirectUri: REDIRECT, carry }, contexts[1]).catch((e: unknown) => e),
+    ];
+
+    // Then
+    expect(errors.map((e) => (e instanceof ConnectorError ? e.message : e))).toEqual([
+      "You left SnapTrade before connecting a brokerage, so nothing was connected.",
+      "No brokerage was connected. Connect again and finish signing in at your brokerage.",
+    ]);
+    expect(logs).toEqual(["snaptrade user of an unfinished sign-in not deleted: HTTP 500", "snaptrade user of an unfinished sign-in not deleted: ConnectorError"]);
+    for (const line of logs) {
+      expect(line).not.toContain(USER_SECRET);
+      expect(line).not.toContain(USER_ID);
+    }
   });
 
   test("given a new connection whose accounts aren't listed yet, when completing, then it still connects with zero accounts", async () => {
@@ -486,6 +523,81 @@ describe("fetch", () => {
     for (const error of errors) {
       expect(error).toBeInstanceOf(HttpError);
       expect(error).not.toBeInstanceOf(ConnectorError);
+    }
+  });
+});
+
+describe("disconnect", () => {
+  const disconnect = connector.auth!.disconnect!;
+  const connectionPublic = { brokerages: "Robinhood", accounts: "1" };
+
+  test("given a connection, when it is removed, then its SnapTrade user is deleted with a signed DELETE that carries the user id but not its secret", async () => {
+    // Given
+    const sent: { url: string; init: GuardedFetchInit | undefined }[] = [];
+    const ctx = fakeContext(
+      {
+        [`${API}/snapTrade/deleteUser`]: (init, url) => {
+          sent.push({ url, init });
+          return { status: "deleted", detail: "User queued for deletion; please wait for webhook for confirmation.", userId: USER_ID };
+        },
+      },
+      { env: ENV }
+    );
+
+    // When
+    await disconnect({ secret, public: connectionPublic }, ctx);
+
+    // Then
+    const query = `clientId=${CLIENT_ID}&timestamp=${TS}&userId=${USER_ID}`;
+    expect(sent).toHaveLength(1);
+    expect(sent[0].url).toBe(`${API}/snapTrade/deleteUser?${query}`);
+    expect(sent[0].init?.method).toBe("DELETE");
+    expect(sent[0].init?.body).toBeUndefined();
+    expect(sent[0].init?.headers?.Signature).toBe(hmac(`{"content":null,"path":"/snapTrade/deleteUser","query":"${query}"}`));
+    expect(JSON.stringify(sent)).not.toContain(USER_SECRET);
+    expect(JSON.stringify(sent)).not.toContain(CONSUMER_KEY);
+  });
+
+  test("given SnapTrade no longer knows the user, when the connection is removed, then it resolves", async () => {
+    // Given
+    const answers = [refuse(404, { detail: "User not found", status_code: 404 }), refuse(401, { detail: "Invalid userID or userSecret provided", status_code: 401, code: "1083" })];
+
+    // When
+    const results = await Promise.all(answers.map((answer) => disconnect({ secret, public: connectionPublic }, fakeContext({ [`${API}/snapTrade/deleteUser`]: answer }, { env: ENV }))));
+
+    // Then
+    expect(results).toEqual([undefined, undefined]);
+  });
+
+  test("given no SnapTrade app on the server or no stored user, when the connection is removed, then it resolves without a request", async () => {
+    // Given
+    const noApp = fakeContext({}, { env: { SNAPTRADE_CLIENT_ID: CLIENT_ID } });
+    const noUser = fakeContext({}, { env: ENV });
+
+    // When
+    await disconnect({ secret, public: connectionPublic }, noApp);
+    await disconnect({ secret: {}, public: connectionPublic }, noUser);
+
+    // Then
+    expect([...noApp.calls, ...noUser.calls]).toEqual([]);
+  });
+
+  test("given SnapTrade refuses or fails, when the connection is removed, then it throws without the user secret, the consumer key or the URL", async () => {
+    // Given
+    const refused = fakeContext({ [`${API}/snapTrade/deleteUser`]: refuse(401, { detail: "Unable to verify signature sent", status_code: 401, code: "1076" }) }, { env: ENV });
+    const outage = fakeContext({ [`${API}/snapTrade/deleteUser`]: refuse(500, { detail: "Internal error", status_code: 500 }) }, { env: ENV });
+
+    // When
+    const errors = await Promise.all([refused, outage].map((ctx) => disconnect({ secret, public: connectionPublic }, ctx).catch((e: unknown) => e)));
+
+    // Then
+    expect(errors[0]).toBeInstanceOf(ConnectorError);
+    expect(errors[1]).toBeInstanceOf(HttpError);
+    for (const error of errors) {
+      const message = (error as Error).message;
+      expect(message).not.toContain(USER_SECRET);
+      expect(message).not.toContain(CONSUMER_KEY);
+      expect(message).not.toContain(USER_ID);
     }
   });
 });

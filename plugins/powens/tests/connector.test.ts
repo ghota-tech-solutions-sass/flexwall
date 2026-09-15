@@ -32,6 +32,12 @@ const userRoutes = (connections: unknown = fixture("connections"), accounts: unk
   },
 });
 const request = () => ({ metrics: ["net-worth", "cash", "investments", "accounts"], params: {}, secret: { token: TOKEN }, public: { banks: "Connecteur de test", accounts: "7" } });
+/** Powens deleting a user: 204, no body. */
+const deleteRoute = (init: GuardedFetchInit | undefined) => {
+  expect(init?.method).toBe("DELETE");
+  expect(bearer(init)).toBe(`Bearer ${TOKEN}`);
+  return "";
+};
 const leaks = (text: string) => [TOKEN, ENV.POWENS_CLIENT_SECRET].some((s) => text.includes(s));
 
 describe("powens connector", () => {
@@ -167,16 +173,23 @@ describe("powens connector", () => {
     expect(ctx.calls).toEqual([`${API}/users/me/connections?expand=connector`, `${API}/users/me/accounts`]);
   });
 
-  test("given a connection id this user doesn't have, when completing, then the owner is asked to try again", async () => {
+  test("given a connection id this user doesn't have, or no active account shared, when completing, then the user made for this sign-in is deleted and the owner is told why", async () => {
     // Given
-    const ctx = fakeContext(userRoutes(), { env: ENV });
+    const noAccount = fixture("accounts").accounts.map((a: PowensAccount) => ({ ...a, disabled: "2026-09-15 08:00:00" }));
+    const contexts = [fakeContext({ ...userRoutes(), [`${API}/users/me`]: deleteRoute }, { env: ENV }), fakeContext({ ...userRoutes(undefined, { accounts: noAccount }), [`${API}/users/me`]: deleteRoute }, { env: ENV })];
 
     // When
-    const error = await oauth.complete({ fields: {}, query: { connection_id: "999", state: STATE }, redirectUri: REDIRECT, carry: { token: TOKEN } }, ctx).catch((e: unknown) => e);
+    const errors = [
+      await oauth.complete({ fields: {}, query: { connection_id: "999", state: STATE }, redirectUri: REDIRECT, carry: { token: TOKEN } }, contexts[0]).catch((e: unknown) => e),
+      await oauth.complete({ fields: {}, query: { connection_id: "42", state: STATE }, redirectUri: REDIRECT, carry: { token: TOKEN } }, contexts[1]).catch((e: unknown) => e),
+    ];
 
     // Then
-    expect(error).toBeInstanceOf(ConnectorError);
-    expect((error as Error).message).toBe("Powens didn't finish connecting your bank. Try again.");
+    expect(errors.map((e) => (e instanceof ConnectorError ? e.message : e))).toEqual([
+      "Powens didn't finish connecting your bank. Try again.",
+      "You shared no account in Powens. Connect again and pick at least one account.",
+    ]);
+    for (const ctx of contexts) expect(ctx.calls.filter((u) => u === `${API}/users/me`)).toEqual([`${API}/users/me`]);
   });
 
   test("given Powens refuses the token it just issued, when completing, then the owner isn't sent into a reconnect loop", async () => {
@@ -205,9 +218,9 @@ describe("powens connector", () => {
     expect(result.accountId).toBe("7");
   });
 
-  test("given the owner cancelled, declined the terms or Powens failed, when completing, then each ends with a sentence and no request", async () => {
+  test("given the owner cancelled, declined the terms or Powens failed, when completing, then the user made for this sign-in is deleted and each ends with a sentence", async () => {
     // Given
-    const ctx = fakeContext({}, { env: ENV });
+    const ctx = fakeContext({ [`${API}/users/me`]: deleteRoute }, { env: ENV });
     const complete = (query: Record<string, string>) => oauth.complete({ fields: {}, query, redirectUri: REDIRECT, carry: { token: TOKEN } }, ctx).then(() => new Error("connected"), (e: Error) => e);
 
     // When
@@ -221,12 +234,12 @@ describe("powens connector", () => {
     expect(tos.message).toBe("You declined Powens' terms, so nothing was connected.");
     expect(failed).toBeInstanceOf(ConnectorError);
     expect(failed.message).toBe("Powens didn't connect your bank: Connector unavailable");
-    expect(ctx.calls).toEqual([]);
+    expect(ctx.calls).toEqual([`${API}/users/me`, `${API}/users/me`, `${API}/users/me`]);
   });
 
-  test("given a callback without connection_id, when completing, then the owner is asked to try again before any request", async () => {
+  test("given a callback without connection_id, when completing, then the user made for this sign-in is deleted and the owner is asked to try again", async () => {
     // Given
-    const ctx = fakeContext({}, { env: ENV });
+    const ctx = fakeContext({ [`${API}/users/me`]: deleteRoute }, { env: ENV });
 
     // When
     const error = await oauth.complete({ fields: {}, query: { state: STATE }, redirectUri: REDIRECT, carry: { token: TOKEN } }, ctx).catch((e: unknown) => e);
@@ -234,7 +247,25 @@ describe("powens connector", () => {
     // Then
     expect(error).toBeInstanceOf(ConnectorError);
     expect((error as Error).message).toBe("Powens didn't finish connecting your bank. Try again.");
-    expect(ctx.calls).toEqual([]);
+    expect(ctx.calls).toEqual([`${API}/users/me`]);
+  });
+
+  test("given deleting the unfinished sign-in's user fails, when completing, then the owner's sentence doesn't change and the log holds no token", async () => {
+    // Given
+    const logs: string[] = [];
+    const failing = (_init: GuardedFetchInit | undefined, url: string) => {
+      throw new HttpError(503, url, `upstream down for ${TOKEN}`);
+    };
+    const ctx = { ...fakeContext({ [`${API}/users/me`]: failing }, { env: ENV }), log: (m: string) => logs.push(m) };
+
+    // When
+    const error = await oauth.complete({ fields: {}, query: { error: "access_denied", state: STATE }, redirectUri: REDIRECT, carry: { token: TOKEN } }, ctx).catch((e: unknown) => e);
+
+    // Then
+    expect(error).toBeInstanceOf(ConnectorError);
+    expect((error as Error).message).toBe("You cancelled in Powens, so nothing was connected.");
+    expect(logs).toEqual(["powens user of an unfinished sign-in not deleted: HTTP 503"]);
+    expect(logs.some(leaks)).toBe(false);
   });
 
   test("given the documented accounts, when fetched, then cash, investments and net worth are summed in euros, loans and cards subtracted, and the dollar account left out", async () => {
@@ -370,5 +401,74 @@ describe("powens connector", () => {
       expect(error).not.toBeInstanceOf(ConnectorError);
       expect((error as HttpError).status).toBe(statuses[i]);
     }
+  });
+});
+
+describe("disconnect", () => {
+  const disconnect = powensConnector.auth!.disconnect!;
+  const shown = { banks: "Connecteur de test", accounts: "7" };
+  const refuse = (status: number) => (_init: GuardedFetchInit | undefined, url: string) => {
+    throw new HttpError(status, url, JSON.stringify({ code: "invalidToken", message: "Invalid token" }));
+  };
+
+  test("given a connection, when it is removed, then its Powens user is deleted with a DELETE on users/me carrying the user token", async () => {
+    // Given
+    const sent: { url: string; init: GuardedFetchInit | undefined }[] = [];
+    const ctx = fakeContext(
+      {
+        [`${API}/users/me`]: (init, url) => {
+          sent.push({ url, init });
+          return "";
+        },
+      },
+      { env: ENV }
+    );
+
+    // When
+    await disconnect({ secret: { token: TOKEN }, public: shown }, ctx);
+
+    // Then
+    expect(sent).toHaveLength(1);
+    expect(sent[0].url).toBe(`${API}/users/me`);
+    expect(sent[0].init?.method).toBe("DELETE");
+    expect(bearer(sent[0].init)).toBe(`Bearer ${TOKEN}`);
+    expect(sent[0].init?.body).toBeUndefined();
+    expect(JSON.stringify(sent)).not.toContain(ENV.POWENS_CLIENT_SECRET);
+  });
+
+  test("given a user already deleted or a token Powens refuses, when the connection is removed, then it resolves", async () => {
+    // Given
+    const statuses = [401, 403, 404];
+
+    // When
+    const results = await Promise.all(statuses.map((status) => disconnect({ secret: { token: TOKEN }, public: shown }, fakeContext({ [`${API}/users/me`]: refuse(status) }, { env: ENV }))));
+
+    // Then
+    expect(results).toEqual([undefined, undefined, undefined]);
+  });
+
+  test("given no Powens domain on the server or no stored token, when the connection is removed, then it resolves without a request", async () => {
+    // Given
+    const noDomain = fakeContext({}, { env: { POWENS_CLIENT_ID: ENV.POWENS_CLIENT_ID, POWENS_CLIENT_SECRET: ENV.POWENS_CLIENT_SECRET } });
+    const noToken = fakeContext({}, { env: ENV });
+
+    // When
+    await disconnect({ secret: { token: TOKEN }, public: shown }, noDomain);
+    await disconnect({ secret: {}, public: shown }, noToken);
+
+    // Then
+    expect([...noDomain.calls, ...noToken.calls]).toEqual([]);
+  });
+
+  test("given a Powens outage, when the connection is removed, then it throws without the user token", async () => {
+    // Given
+    const ctx = fakeContext({ [`${API}/users/me`]: refuse(503) }, { env: ENV });
+
+    // When
+    const error = await disconnect({ secret: { token: TOKEN }, public: shown }, ctx).catch((e: unknown) => e);
+
+    // Then
+    expect(error).toBeInstanceOf(HttpError);
+    expect(leaks((error as Error).message)).toBe(false);
   });
 });

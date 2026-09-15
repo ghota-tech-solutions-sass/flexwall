@@ -49,6 +49,11 @@ All four come from the same two requests (one `cacheKey`).
    - `accountId`: the Powens user id (`id_user` from `/auth/init`, else the
      connection's `id_user`, else the connection id).
    - No `expiresAt` and no `refresh`: the user token is permanent.
+   - Whenever `complete` throws because nothing was connected (an `error`, no
+     or an unknown `connection_id`, no active account), it first deletes the
+     user `authorize` made (`DELETE /2.0/users/me` with the `carry` token), so
+     it isn't left behind. Best effort: a failure is logged (status only, no
+     token) and the owner gets the same sentence.
 
 ### Why only `bankwealth`
 
@@ -139,13 +144,21 @@ day per connection. Sandbox fair usage is 30 calls a minute, 86,400 a day.
 
 - **Every "Connect a French bank" click creates one permanent Powens user**
   (`/auth/init` with the client secret makes the token permanent at once), even
-  if the owner closes the webview. Abandoned attempts leave empty users.
+  if the owner closes the webview. Attempts that come back to Flexwall without
+  a connection delete their user (see `complete`); an owner who closes the tab
+  and never comes back leaves an empty user.
 - Each Flexwall connection is one Powens user with, normally, one connection.
   Reconnecting creates another user, so a second Flexwall connection (the
   `accountId` differs).
-- Removing the connection in Flexwall **doesn't delete the Powens user yet**
-  (`DELETE /2.0/users/me` exists, the host has no removal hook). Delete users
-  from the console or the API (users token) until it does.
+- Removing the connection in Flexwall **deletes the Powens user** (see
+  "Removing a connection"). If that call fails, the host removes the connection
+  anyway and logs it: delete the user from the console or the API.
+
+## Removing a connection
+
+`disconnect` sends `DELETE /2.0/users/me` with the user's Bearer token (204, read
+as text), which deletes the user and its bank connections. 401, 403 and 404 count
+as already deleted; no `POWENS_DOMAIN` or no stored token means nothing is sent.
 
 ## Not verified against a real account
 

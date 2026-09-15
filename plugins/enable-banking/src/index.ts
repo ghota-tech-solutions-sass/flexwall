@@ -365,6 +365,23 @@ export function makeEnableBankingConnector(clock: { now?: () => number } = {}): 
           };
         },
       },
+
+      /**
+       * Ends the session: `DELETE /sessions/{session_id}` with the app's JWT,
+       * which also closes the bank consent where the bank allows it. A session
+       * that expired, was closed or no longer exists is ended already.
+       */
+      async disconnect({ secret }, ctx) {
+        if (!secret.session || !ctx.env("ENABLE_BANKING_APP_ID")?.trim() || !ctx.env("ENABLE_BANKING_PRIVATE_KEY")) return;
+        const headers = await authorization(ctx);
+        try {
+          await ctx.fetch.text(`${API}/sessions/${encodeURIComponent(secret.session)}`, { method: "DELETE", headers });
+        } catch (error) {
+          const code = errorCode(error);
+          if ((error instanceof HttpError && error.status === 404) || (code && SESSION_GONE.has(code))) return;
+          explainApplication(error);
+        }
+      },
     },
     metrics: [
       {

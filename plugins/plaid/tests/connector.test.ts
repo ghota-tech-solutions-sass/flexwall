@@ -456,3 +456,70 @@ describe("plaid plugin", () => {
     }
   });
 });
+
+describe("disconnect", () => {
+  const disconnect = plaidConnector.auth!.disconnect!;
+  const shown = { institution: "Royal Bank of Plaid", country: "US", accounts: "3" };
+
+  test("given a connection, when it is removed, then its Item is removed at Plaid with the stored access token and the server's keys in headers", async () => {
+    // Given
+    const sent: { url: string; init: GuardedFetchInit | undefined }[] = [];
+    const ctx = fakeContext(
+      {
+        [`${API}/item/remove`]: (init, url) => {
+          sent.push({ url, init });
+          return { request_id: "m8MDnv9okwxFNBV" };
+        },
+      },
+      { env: ENV }
+    );
+
+    // When
+    await disconnect({ secret: { accessToken: ACCESS_TOKEN }, public: shown }, ctx);
+
+    // Then
+    expect(sent).toHaveLength(1);
+    expect(sent[0].url).toBe(`${API}/item/remove`);
+    expect(sent[0].init?.method).toBe("POST");
+    expect(sent[0].init?.headers).toMatchObject({ "Content-Type": "application/json", "PLAID-CLIENT-ID": CLIENT_ID, "PLAID-SECRET": SECRET });
+    expect(JSON.parse(String(sent[0].init?.body))).toEqual({ access_token: ACCESS_TOKEN });
+  });
+
+  test("given an Item Plaid no longer knows, when the connection is removed, then it resolves", async () => {
+    // Given
+    const answers = [plaidError(400, "ITEM_ERROR", "ITEM_NOT_FOUND"), plaidError(400, "INVALID_INPUT", "INVALID_ACCESS_TOKEN")];
+
+    // When
+    const results = await Promise.all(answers.map((answer) => disconnect({ secret: { accessToken: ACCESS_TOKEN }, public: shown }, fakeContext({ [`${API}/item/remove`]: answer }, { env: ENV }))));
+
+    // Then
+    expect(results).toEqual([undefined, undefined]);
+  });
+
+  test("given no Plaid app on the server or no stored token, when the connection is removed, then it resolves without a request", async () => {
+    // Given
+    const noApp = fakeContext({}, { env: { PLAID_CLIENT_ID: CLIENT_ID } });
+    const noToken = fakeContext({}, { env: ENV });
+
+    // When
+    await disconnect({ secret: { accessToken: ACCESS_TOKEN }, public: shown }, noApp);
+    await disconnect({ secret: {}, public: shown }, noToken);
+
+    // Then
+    expect([...noApp.calls, ...noToken.calls]).toEqual([]);
+  });
+
+  test("given Plaid refuses the keys or fails, when the connection is removed, then it throws without a key or the access token", async () => {
+    // Given
+    const refused = fakeContext({ [`${API}/item/remove`]: plaidError(400, "INVALID_INPUT", "INVALID_API_KEYS") }, { env: ENV });
+    const outage = fakeContext({ [`${API}/item/remove`]: plaidError(500, "API_ERROR", "INTERNAL_SERVER_ERROR") }, { env: ENV });
+
+    // When
+    const errors = await Promise.all([refused, outage].map((ctx) => disconnect({ secret: { accessToken: ACCESS_TOKEN }, public: shown }, ctx).catch((e: unknown) => e)));
+
+    // Then
+    expect(errors[0]).toBeInstanceOf(ConnectorError);
+    expect(errors[1]).toBeInstanceOf(HttpError);
+    for (const error of errors) expect(leaks((error as Error).message)).toEqual([]);
+  });
+});

@@ -437,3 +437,77 @@ describe("enable-banking plugin", () => {
     }
   });
 });
+
+describe("disconnect", () => {
+  const disconnect = connector.auth!.disconnect!;
+  const shown = { bank: "Nordea", country: "FI", accounts: "2" };
+  const stored = { session: SESSION, accounts: `${CURRENT},${SAVINGS}` };
+
+  test("given a connection, when it is removed, then its session is deleted with a DELETE signed by the application's JWT", async () => {
+    // Given
+    const sent: { url: string; init: GuardedFetchInit | undefined }[] = [];
+    const ctx = fakeContext(
+      {
+        [`${API}/sessions/`]: (init, url) => {
+          sent.push({ url, init });
+          return JSON.stringify({ message: "OK" });
+        },
+      },
+      { env: ENV }
+    );
+
+    // When
+    await disconnect({ secret: stored, public: shown }, ctx);
+
+    // Then
+    expect(sent).toHaveLength(1);
+    expect(sent[0].url).toBe(`${API}/sessions/${SESSION}`);
+    expect(sent[0].init?.method).toBe("DELETE");
+    const jwt = String(sent[0].init?.headers?.Authorization).replace(/^Bearer /, "");
+    expect(await verifies(jwt)).toBe(true);
+    expect(decode(jwt.split(".")[0]).kid).toBe(APP_ID);
+    expect(JSON.stringify(sent)).not.toContain(PEM_BODY);
+  });
+
+  test("given a session that expired, was closed or no longer exists, when the connection is removed, then it resolves", async () => {
+    // Given
+    const answers = [refuse(404, "SESSION_DOES_NOT_EXIST"), refuse(400, "CLOSED_SESSION"), refuse(422, "EXPIRED_SESSION"), refuse(422, "REVOKED_SESSION"), refuse(404, "NOT_FOUND")];
+
+    // When
+    const results = await Promise.all(answers.map((answer) => disconnect({ secret: stored, public: shown }, fakeContext({ [`${API}/sessions/`]: answer }, { env: ENV }))));
+
+    // Then
+    expect(results).toEqual(answers.map(() => undefined));
+  });
+
+  test("given no application on the server or no stored session, when the connection is removed, then it resolves without a request", async () => {
+    // Given
+    const noApp = fakeContext({}, { env: { ENABLE_BANKING_APP_ID: APP_ID } });
+    const noSession = fakeContext({}, { env: ENV });
+
+    // When
+    await disconnect({ secret: stored, public: shown }, noApp);
+    await disconnect({ secret: { accounts: CURRENT }, public: shown }, noSession);
+
+    // Then
+    expect([...noApp.calls, ...noSession.calls]).toEqual([]);
+  });
+
+  test("given Enable Banking refuses the application or fails, when the connection is removed, then it throws without the key or the session", async () => {
+    // Given
+    const refused = fakeContext({ [`${API}/sessions/`]: refuse(401, "UNAUTHORIZED_ACCESS") }, { env: ENV });
+    const outage = fakeContext({ [`${API}/sessions/`]: refuse(500, "ASPSP_ERROR") }, { env: ENV });
+
+    // When
+    const errors = await Promise.all([refused, outage].map((ctx) => disconnect({ secret: stored, public: shown }, ctx).catch((e: unknown) => e)));
+
+    // Then
+    expect(errors[0]).toBeInstanceOf(ConnectorError);
+    expect(errors[1]).toBeInstanceOf(HttpError);
+    for (const error of errors) {
+      const message = (error as Error).message;
+      expect(message).not.toContain(SESSION);
+      expect(message).not.toContain(PEM_BODY);
+    }
+  });
+});
