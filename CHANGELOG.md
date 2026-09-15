@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.10.0...v0.11.0) (2026-09-15)
+
+
+### Features
+
+* let go of connections at the provider, and fixes from end-to-end sandbox tests ([#31](https://github.com/ghota-tech-solutions-sass/flexwall/issues/31)) ([0b05ee7](https://github.com/ghota-tech-solutions-sass/flexwall/commit/0b05ee7ed8f2c10145342d5a6ccd17445c6cba87))
+
 ## [0.10.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.9.0...v0.10.0) (2026-09-15)
 
 
