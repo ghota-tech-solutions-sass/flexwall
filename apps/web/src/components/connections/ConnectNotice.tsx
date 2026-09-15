@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { ConnectionView } from "@/domain/connection";
 import { CONNECT_PARAMS } from "@/presentation/routes";
@@ -11,6 +12,8 @@ import { CONNECT_PARAMS } from "@/presentation/routes";
  */
 export function ConnectNotice({ connections, onConnected }: { connections: readonly ConnectionView[]; onConnected?: (connectionId: string) => void }) {
   const [notice, setNotice] = useState<{ kind: "connected" | "error"; text: string } | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -19,7 +22,8 @@ export function ConnectNotice({ connections, onConnected }: { connections: reado
     if (!connected && !error) return;
     url.searchParams.delete(CONNECT_PARAMS.connected);
     url.searchParams.delete(CONNECT_PARAMS.error);
-    window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+    // Through the router: a bare history.replaceState is undone by the App Router's own state.
+    router.replace(pathname + url.search + url.hash, { scroll: false });
     if (error) return setNotice({ kind: "error", text: error.slice(0, 300) });
     const connection = connections.find((c) => c.id === connected);
     if (!connection) return;
