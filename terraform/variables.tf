@@ -124,6 +124,28 @@ variable "price_lifetime_cents" {
 # CONNECTORS
 # =============================================================================
 
+variable "connector_secrets" {
+  description = "Server keys and app credentials for connectors, by env name (STEAM_API_KEY, TWITCH_CLIENT_ID, …). Each non-empty value becomes a Secret Manager secret read by the service. Empty or missing names leave that connector saying the server isn't set up."
+  type        = map(string)
+  sensitive   = true
+  default     = {}
+
+  validation {
+    condition = alltrue([for name in keys(var.connector_secrets) : contains([
+      "STEAM_API_KEY",
+      "TWITCH_CLIENT_ID",
+      "TWITCH_CLIENT_SECRET",
+      "TIKTOK_CLIENT_KEY",
+      "TIKTOK_CLIENT_SECRET",
+      "INSTAGRAM_APP_ID",
+      "INSTAGRAM_APP_SECRET",
+      "ENABLE_BANKING_APP_ID",
+      "ENABLE_BANKING_PRIVATE_KEY",
+    ], name)])
+    error_message = "connector_secrets only takes the names in CONNECTOR_ENV (apps/web/src/composition.ts) that Terraform doesn't already manage."
+  }
+}
+
 variable "github_token" {
   description = "Optional GitHub token with no scopes: raises the API limit for stars and followers from 60 to 5000 calls an hour. Empty leaves it unset."
   type        = string

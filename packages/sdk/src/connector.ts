@@ -38,12 +38,47 @@ export type Leaderboard = "revenue" | "wealth" | "streak" | "audience" | "stars"
 export const VERIFIED_LEADERBOARDS: readonly Leaderboard[] = ["revenue", "wealth"];
 
 export interface ConnectorAuth {
-  /** Credentials typed once per account. `secret` fields are encrypted. */
+  /**
+   * Credentials typed once per account. `secret` fields are encrypted. With
+   * `oauth`, these are the choices made before leaving for the provider (a
+   * country, a bank), often none.
+   */
   fields: Field[];
   /** Where to get them and which permissions to grant. Plain text. */
   help: string;
   /** Button label, e.g. "Connect Stripe". */
   label?: string;
+  /** Sign in at the provider instead of pasting a key. Replaces `connect`. */
+  oauth?: ConnectorOAuth;
+}
+
+/**
+ * A connection made by sending the owner to the provider and back. The host
+ * keeps the state, the cookie and the callback route; the connector only knows
+ * the provider's addresses and what its answers mean.
+ */
+export interface ConnectorOAuth {
+  /**
+   * Where to send the owner. `state` must travel to the provider and come back
+   * untouched. `carry` is sealed in a short-lived cookie and handed to
+   * `complete`: put a PKCE verifier there, never in the URL.
+   */
+  authorize(input: { fields: FieldValues; redirectUri: string; state: string }, ctx: ConnectorContext): Promise<{ url: string; carry?: Record<string, string> }>;
+  /** The owner came back: `query` is the callback's query string. Throw ConnectorError when they declined. */
+  complete(input: { fields: FieldValues; query: Record<string, string>; redirectUri: string; carry: Record<string, string> }, ctx: ConnectorContext): Promise<ConnectResult>;
+  /**
+   * Trades credentials for fresh ones before `expiresAt`, or when `fetch`
+   * throws ExpiredCredentialsError. Omit when the provider can't renew: the
+   * owner is asked to reconnect once they expire.
+   */
+  refresh?(input: { secret: Record<string, string>; public: Record<string, string> }, ctx: ConnectorContext): Promise<RefreshResult>;
+}
+
+export interface RefreshResult {
+  secret: Record<string, string>;
+  /** Replaces the stored public values when given. */
+  public?: Record<string, string>;
+  expiresAt?: number;
 }
 
 export interface ConnectResult {
@@ -55,6 +90,8 @@ export interface ConnectResult {
   label: string;
   /** Stable upstream account id, so reconnecting the same account replaces the old connection. */
   accountId?: string;
+  /** Epoch ms when the credentials stop working: an OAuth access token, a bank consent. */
+  expiresAt?: number;
 }
 
 export interface FetchRequest {
@@ -114,6 +151,11 @@ export interface ConnectorDef {
   /** Seconds a fetched value stays fresh. */
   ttl: number;
   /**
+   * A connection's own freshness, from its public values: lets an owner who
+   * pays per call (their own X key) choose how often to refresh. Never below `ttl`.
+   */
+  ttlFor?(connection: Record<string, string>): number;
+  /**
    * Metrics with the same key are fetched together. Default: one group per
    * metric and params. Return a constant when one call answers every metric.
    */
@@ -159,6 +201,21 @@ export class BlockedRequestError extends Error {
 
   static [Symbol.hasInstance](value: unknown): boolean {
     return value instanceof Error && value.name === "BlockedRequestError";
+  }
+}
+
+/**
+ * Thrown by `fetch` when the provider says the credentials expired. The host
+ * refreshes them through `auth.oauth.refresh` and tries once more.
+ */
+export class ExpiredCredentialsError extends Error {
+  constructor(message = "The credentials expired.") {
+    super(message);
+    this.name = "ExpiredCredentialsError";
+  }
+
+  static [Symbol.hasInstance](value: unknown): boolean {
+    return value instanceof Error && value.name === "ExpiredCredentialsError";
   }
 }
 

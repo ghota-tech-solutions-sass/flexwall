@@ -1,0 +1,21 @@
+{
+  "name": "@flexwall/plugin-enable-banking",
+  "version": "0.1.0",
+  "description": "Verified bank balances in Europe through open banking (Enable Banking), for Flexwall walls.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

@@ -164,6 +164,7 @@ export class FakeLinks implements AppLinks {
   checkoutCancelled = () => `${this.origin}/pricing`;
   billingReturn = () => `${this.origin}/settings`;
   referral = (handle: string) => `${this.origin}/r/${handle}`;
+  oauthCallback = () => `${this.origin}/api/connections/oauth/callback`;
 }
 
 export class RecordingMailer implements Mailer {

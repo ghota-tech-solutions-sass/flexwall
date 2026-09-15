@@ -225,6 +225,47 @@ endpoint; `plugins/lemon-squeezy` shows choosing one store among several.
 - **Least privilege.** Ask for read-only credentials and name the exact permissions or scopes in `help`. Refuse full-access keys when a restricted kind exists (Stripe refuses `sk_`). When the provider has no read-only keys (Lemon Squeezy), say so in `help` and recommend a dedicated key the owner can revoke.
 - Secret fields accept 4,000 characters by default; set `maxLength` if keys are longer.
 
+## Signing in at the provider (OAuth)
+
+When the provider has a sign-in flow instead of keys (Twitch, TikTok,
+Instagram, open banking), declare `auth.oauth` and no `connect`:
+
+```ts
+auth: {
+  label: "Sign in with Acme",
+  help: "You'll be asked to allow reading your follower count.",
+  fields: [],                       // choices made before leaving, e.g. a country and a bank
+  oauth: {
+    async authorize({ fields, redirectUri, state }, ctx) {
+      const verifier = randomVerifier();
+      return { url: `https://acme.com/oauth/authorize?${new URLSearchParams({ client_id, redirect_uri: redirectUri, state, code_challenge: await challenge(verifier) })}`, carry: { verifier } };
+    },
+    async complete({ query, redirectUri, carry }, ctx) {
+      if (query.error) throw new ConnectorError("You declined to connect Acme.");
+      const token = await exchange(query.code, carry.verifier, redirectUri, ctx);
+      return { secret: { access: token.access_token, refresh: token.refresh_token }, public: { handle }, label: `@${handle}`, accountId, expiresAt: Date.now() + token.expires_in * 1000 };
+    },
+    async refresh({ secret }, ctx) {
+      const token = await renew(secret.refresh, ctx);
+      return { secret: { access: token.access_token, refresh: token.refresh_token ?? secret.refresh }, expiresAt: Date.now() + token.expires_in * 1000 };
+    },
+  },
+},
+```
+
+- The host makes the `state`, keeps `carry` sealed in an HttpOnly cookie scoped to the callback for ten minutes, checks that the state comes back from the same owner, and redirects them to the page they started from. `redirectUri` is always `<app>/api/connections/oauth/callback`: operators register that address.
+- Put a PKCE verifier in `carry`, never in the URL.
+- Return `expiresAt` when credentials lapse. The host calls `refresh` a few minutes before, saves what it returns sealed, and runs one renewal per connection at a time, so rotating refresh tokens are used once. When `fetch` gets the provider's "token expired" answer first, throw `ExpiredCredentialsError`: the host renews and retries once.
+- Without `refresh`, the owner is asked to reconnect after `expiresAt` (a bank consent can't be renewed silently).
+- App credentials (client ids and secrets) come from `ctx.env`: add them to `CONNECTOR_ENV` in `apps/web/src/composition.ts`, to the `connector_secrets` validation in `terraform/variables.tf`, and to `docs/self-hosting.md`.
+
+## When the owner pays per call
+
+Some APIs bill every read (X). Let the owner bring their own key, and let the
+connection choose its refresh rate with `ttlFor(public)`: return the seconds
+chosen at connect time, stored in `public`. The host never refreshes faster
+than `ttl`. Say what each rate costs in the select's labels.
+
 ## Errors
 
 | Situation | What to do |

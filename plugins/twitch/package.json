@@ -1,0 +1,21 @@
+{
+  "name": "@flexwall/plugin-twitch",
+  "version": "0.1.0",
+  "description": "Verified followers, subscribers and live status from your own Twitch channel, through Sign in with Twitch.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

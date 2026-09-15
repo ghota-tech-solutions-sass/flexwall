@@ -1,0 +1,13 @@
+{
+  "data": {
+    "user": {
+      "open_id": "afd97af1-b87b-48b9-ac98-410aghda5344",
+      "display_name": "Ada Lovelace"
+    }
+  },
+  "error": {
+    "code": "ok",
+    "message": "",
+    "log_id": "20220829194722CBE87ED59D524E727021"
+  }
+}

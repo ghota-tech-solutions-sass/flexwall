@@ -4,7 +4,7 @@ import { DomainError, type DomainErrorCode } from "@/domain/errors";
 import { container } from "@/composition";
 import { isProduction } from "@/infrastructure/env";
 import { HTTP_STATUS, JSON_CONTENT_TYPE } from "./json";
-import { ROUTES } from "./routes";
+import { API, ROUTES } from "./routes";
 
 /**
  * Glue between HTTP and use cases. Controllers stay a few lines: read the
@@ -62,6 +62,25 @@ export function setSession(response: NextResponse, token: string) {
     path: ROUTES.home,
     maxAge: SESSION_MAX_AGE_S,
   });
+}
+
+/** A sign-in at a provider in progress: sealed, readable only by the callback, gone after ten minutes. */
+export const PENDING_SIGN_IN_COOKIE = "fw_oauth";
+const PENDING_SIGN_IN_MAX_AGE_S = 10 * 60;
+
+export function setPendingSignIn(response: NextResponse, sealed: string) {
+  response.cookies.set(PENDING_SIGN_IN_COOKIE, sealed, {
+    httpOnly: true,
+    secure: isProduction(),
+    // Lax: the provider sends the owner back with a top-level GET, which carries it.
+    sameSite: "lax",
+    path: API.oauthCallback,
+    maxAge: PENDING_SIGN_IN_MAX_AGE_S,
+  });
+}
+
+export function clearPendingSignIn(response: NextResponse) {
+  response.cookies.set(PENDING_SIGN_IN_COOKIE, "", { httpOnly: true, secure: isProduction(), sameSite: "lax", path: API.oauthCallback, maxAge: 0 });
 }
 
 /**

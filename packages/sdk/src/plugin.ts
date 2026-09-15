@@ -51,7 +51,8 @@ export function checkPlugins(plugins: readonly PluginDef[]): string[] {
         if (!sample) problems.push(`${where}: no sample for metric "${m.id}"`);
         else if (sample.type !== m.type) problems.push(`${where}: sample for "${m.id}" is ${sample.type}, metric says ${m.type}`);
       }
-      if (c.auth && !c.connect) problems.push(`${where}: has auth fields but no connect()`);
+      if (c.auth && !c.connect && !c.auth.oauth) problems.push(`${where}: has auth fields but no connect()`);
+      if (c.auth?.oauth && c.connect) problems.push(`${where}: has both oauth and connect(), pick one`);
       if (!c.auth && c.verified) problems.push(`${where}: verified connectors need auth, the badge means "from the owner's own account"`);
       if (c.ttl < 60) problems.push(`${where}: ttl under 60 seconds would hammer the upstream`);
     }

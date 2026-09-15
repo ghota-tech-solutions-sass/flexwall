@@ -1,0 +1,21 @@
+{
+  "name": "@flexwall/plugin-steam",
+  "version": "0.1.0",
+  "description": "Games owned, hours played and level of public Steam profiles, for Flexwall walls.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

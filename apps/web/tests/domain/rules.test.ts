@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { needsRenewal, RENEW_BEFORE_EXPIRY_MS, safeReturnPath } from "@/domain/connection";
 import { Handle } from "@/domain/handle";
 import { todayIn } from "@/domain/time";
 import { firstFreeSpot, mobileLayout, packInto } from "@/domain/layout";
@@ -158,5 +159,28 @@ describe("Today in a time zone", () => {
   test("given an unknown time zone, when today is read, then it falls back to the UTC date", () => {
     // Given / When / Then
     expect(todayIn("Mars/Olympus", Date.UTC(2026, 0, 2, 3))).toBe("2026-01-02");
+  });
+});
+
+describe("Connections that expire", () => {
+  test("given return addresses, when made safe, then only paths on this site survive", () => {
+    // Given / When / Then
+    expect(safeReturnPath("/edit", "/settings")).toBe("/edit");
+    expect(safeReturnPath("/settings?tab=1", "/settings")).toBe("/settings?tab=1");
+    expect(safeReturnPath("https://evil.example", "/settings")).toBe("/settings");
+    expect(safeReturnPath("//evil.example", "/settings")).toBe("/settings");
+    expect(safeReturnPath("/\\evil.example", "/settings")).toBe("/settings");
+    expect(safeReturnPath(undefined, "/settings")).toBe("/settings");
+  });
+
+  test("given credentials with and without an expiry, when checked, then renewal starts a few minutes before they lapse", () => {
+    // Given
+    const expiresAt = Date.UTC(2026, 8, 15, 12, 0, 0);
+
+    // When / Then
+    expect(needsRenewal({ expiresAt }, expiresAt - RENEW_BEFORE_EXPIRY_MS - 1)).toBe(false);
+    expect(needsRenewal({ expiresAt }, expiresAt - RENEW_BEFORE_EXPIRY_MS)).toBe(true);
+    expect(needsRenewal({ expiresAt: null }, expiresAt)).toBe(false);
+    expect(needsRenewal({}, expiresAt)).toBe(false);
   });
 });

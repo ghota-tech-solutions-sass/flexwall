@@ -1,0 +1,6 @@
+{
+  "message": "Session is expired",
+  "code": 401,
+  "error": "EXPIRED_SESSION",
+  "detail": null
+}

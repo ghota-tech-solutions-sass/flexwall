@@ -11,6 +11,7 @@ your own host, see [self-hosting.md](self-hosting.md).
 | Stripe products, prices, customer portal, webhook | `terraform/stripe.tf` | Terraform Apply workflow |
 | The running image | `flexwall-repo/flexwall:<sha>` | CI, on a release |
 | Stripe secret key (versions of `outflex-stripe-secret-key`) | Secret Manager | By hand, never Terraform |
+| Connector keys and apps (Steam, Twitch, TikTok, Instagram, Enable Banking) | `connector_secrets` in `terraform/cloud_run.tf`, from the `TF_VAR_CONNECTOR_SECRETS` repository secret (a JSON object by env name) | Terraform Apply workflow |
 
 Everything runs in the GCP project `ghota-outflex-prod`, `europe-west1`, with
 state in `gs://micro-sass-478507-tfstate/terraform/flexwall`. The project hosted

@@ -4,7 +4,9 @@ import { useState } from "react";
 import type { ConnectionView } from "@/domain/connection";
 import { catalog } from "@/plugins/registry";
 import { ConnectForm } from "@/components/connections/ConnectForm";
+import { ConnectNotice } from "@/components/connections/ConnectNotice";
 import { accountsGateway } from "@/presentation/editor/composition";
+import { ROUTES } from "@/presentation/routes";
 
 /** Accounts connected once and used by any tile. Forms come from each connector's declared auth fields. */
 export function ConnectionsManager({ initial, paid }: { initial: ConnectionView[]; paid: boolean }) {
@@ -18,6 +20,7 @@ export function ConnectionsManager({ initial, paid }: { initial: ConnectionView[
     <section className="panel" aria-labelledby="connections">
       <h2 id="connections">Connections</h2>
       <p>Credentials are encrypted and never shown again, not even to you. Use read-only keys.</p>
+      <ConnectNotice connections={connections} />
       {connections.length ? (
         <ul className="conn-list">
           {connections.map((c) => (
@@ -60,6 +63,7 @@ export function ConnectionsManager({ initial, paid }: { initial: ConnectionView[
           key={open}
           connectorId={open}
           connect={(values) => gateway.connectAccount(open, values)}
+          signIn={(values) => gateway.startSignIn(open, values, ROUTES.settings)}
           onConnected={(c) => {
             setConnections((list) => [...list.filter((x) => x.id !== c.id), c]);
             setOpen(null);

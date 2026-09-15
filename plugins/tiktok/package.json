@@ -1,0 +1,21 @@
+{
+  "name": "@flexwall/plugin-tiktok",
+  "version": "0.1.0",
+  "description": "Verified followers, likes and videos from your own TikTok account, through Login Kit.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

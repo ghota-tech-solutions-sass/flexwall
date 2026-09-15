@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { money, number } from "@flexwall/sdk";
-import { RENDER_DEADLINE_MS, ResolveWall, seriesKey } from "@/application/use-cases/resolve-wall";
+import { freshnessSeconds, RENDER_DEADLINE_MS, ResolveWall, seriesKey } from "@/application/use-cases/resolve-wall";
 import { aConnection, aTile, aUser } from "../builders";
 import { FakeRuntime, FixedClock, InMemoryConnections, InMemorySnapshots, InMemoryValueCache, TransparentSecretBox } from "../fakes";
-import { testCatalog } from "../fakes/test-plugin";
+import { SOCIAL_TOKEN_EXPIRY, testCatalog } from "../fakes/test-plugin";
 
 function setup() {
   const { catalog, upstream } = testCatalog();
@@ -12,8 +12,14 @@ function setup() {
   const snapshots = new InMemorySnapshots();
   const clock = new FixedClock();
   const resolve = new ResolveWall({ catalog, connections, cache, snapshots, secrets: new TransparentSecretBox(), runtime: new FakeRuntime(), clock });
-  return { upstream, connections, cache, snapshots, clock, resolve };
+  return { upstream, connections, cache, snapshots, clock, resolve, catalog };
 }
+
+const followers = () => aTile().withId("f").stat({ label: "Followers" }).metric("social", "followers", { connection: "soc-1" });
+const socialConnection = (access: string, expiresAt: number | null = SOCIAL_TOKEN_EXPIRY) => {
+  const builder = aConnection().withId("soc-1").ownedBy({ id: "user-1" }).forConnector("social").withPublic({ handle: "ada", refreshHours: "6" }).sealed(`sealed:{"access":"${access}","refresh":"r1"}`);
+  return (expiresAt === null ? builder : builder.expiringAt(expiresAt)).build();
+};
 
 const visitors = (id = "v") => aTile().withId(id).stat({ label: "Visitors" }).metric("analytics", "visitors", { params: { site: "a.com" } });
 const signups = (id = "s") => aTile().withId(id).stat({ label: "Signups" }).metric("analytics", "signups", { params: { site: "a.com" } });
@@ -173,5 +179,63 @@ describe("ResolveWall", () => {
 
     // Then
     expect(today).toBe("2026-09-15");
+  });
+
+  test("given a token about to lapse, when the wall renders, then it's renewed once, saved sealed, and the fetch uses the new one", async () => {
+    // Given
+    const { upstream, connections, clock, resolve } = setup();
+    await connections.save(socialConnection("a1"));
+    clock.time = SOCIAL_TOKEN_EXPIRY - 60_000;
+
+    // When
+    const { states } = await resolve.execute({ tiles: [followers().build()], owner: aUser().withId("user-1").build(), surface: "page" });
+
+    // Then
+    expect(states.f).toMatchObject({ status: "ready", inputs: { value: { value: number(1613, { unit: "count" }) } } });
+    expect(upstream.refreshes).toBe(1);
+    const saved = (await connections.byId("soc-1"))!;
+    expect(saved.sealed).toBe('sealed:{"access":"a2","refresh":"r1+"}');
+    expect(saved.expiresAt).toBe(SOCIAL_TOKEN_EXPIRY + 3600_000);
+  });
+
+  test("given a provider that says the token expired early, when the wall renders, then it's renewed and the fetch tried once more", async () => {
+    // Given
+    const { upstream, connections, resolve } = setup();
+    await connections.save(socialConnection("expired", null));
+
+    // When
+    const { states } = await resolve.execute({ tiles: [followers().build()], owner: aUser().withId("user-1").build(), surface: "page" });
+
+    // Then
+    expect(states.f).toMatchObject({ status: "ready" });
+    expect(upstream.refreshes).toBe(1);
+    expect(upstream.calls).toBe(1);
+  });
+
+  test("given a revoked sign-in, when the token needs renewing, then the owner is asked to reconnect", async () => {
+    // Given
+    const { upstream, connections, clock, resolve } = setup();
+    await connections.save(socialConnection("a1"));
+    upstream.refreshMode = "revoked";
+    clock.time = SOCIAL_TOKEN_EXPIRY + 1;
+
+    // When
+    const { states } = await resolve.execute({ tiles: [followers().build()], owner: aUser().withId("user-1").build(), surface: "editor" });
+
+    // Then
+    expect(states.f).toMatchObject({ status: "placeholder", message: "Reconnect Social: access was revoked." });
+    expect(upstream.calls).toBe(0);
+  });
+
+  test("given a connection that chose to refresh every 6 hours, when its freshness is read, then it's 6 hours but never under the connector's floor", () => {
+    // Given
+    const { catalog } = setup();
+    const social = catalog.connector("social")!;
+
+    // When / Then
+    expect(freshnessSeconds(social, socialConnection("a1"))).toBe(6 * 3600);
+    expect(freshnessSeconds(social, { ...socialConnection("a1"), public: { refreshHours: "0" } })).toBe(600);
+    expect(freshnessSeconds(social, { ...socialConnection("a1"), public: {} })).toBe(600);
+    expect(freshnessSeconds(social, null)).toBe(600);
   });
 });

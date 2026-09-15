@@ -1,0 +1,16 @@
+{
+  "data": {
+    "user": {
+      "open_id": "afd97af1-b87b-48b9-ac98-410aghda5344",
+      "follower_count": 48321,
+      "following_count": 212,
+      "likes_count": 1204917,
+      "video_count": 186
+    }
+  },
+  "error": {
+    "code": "ok",
+    "message": "",
+    "log_id": "20220829194722CBE87ED59D524E727021"
+  }
+}

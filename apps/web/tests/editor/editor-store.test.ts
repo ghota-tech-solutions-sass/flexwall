@@ -340,3 +340,50 @@ describe("Editor store: lock screen", () => {
     expect(store.getState().draft).toBe(before);
   });
 });
+
+describe("Editor store: signing in at a provider", () => {
+  const socialAccount: ConnectionView = { id: "soc-1", connector: "social", label: "@ada", public: {}, createdAt: 0 };
+
+  test("given unsaved edits, when the owner leaves to sign in, then the wall is saved before the address is handed out", async () => {
+    // Given
+    const { gateway, actions } = anEditor();
+    actions.setTitle("Ada");
+
+    // When
+    const outcome = await actions.signIn("social", {}, "/edit");
+
+    // Then
+    expect(gateway.saved.map((d) => d.title)).toEqual(["Ada"]);
+    expect(gateway.signIns).toEqual([{ connector: "social", values: {}, returnTo: "/edit" }]);
+    expect(outcome).toEqual({ ok: true, value: "https://provider.test/authorize?state=s" });
+  });
+
+  test("given a save that fails, when the owner leaves to sign in, then they stay with the reason and no sign-in starts", async () => {
+    // Given
+    const { gateway, actions } = anEditor();
+    gateway.saveOutcome = { ok: false, message: "The wall couldn't be saved." };
+    actions.setTitle("Ada");
+
+    // When
+    const outcome = await actions.signIn("social", {}, "/edit");
+
+    // Then
+    expect(outcome).toEqual({ ok: false, message: "The wall couldn't be saved." });
+    expect(gateway.signIns).toEqual([]);
+  });
+
+  test("given an account connected while away, when the editor adopts it, then tiles waiting for that connector use it", () => {
+    // Given
+    const { store, actions } = anEditor({
+      connections: [socialAccount],
+      wall: aWall().with(aTile().withId("f").stat().metric("social", "followers", { connection: null }).at(0, 0, 2, 1)),
+    });
+
+    // When
+    actions.adoptConnection("soc-1");
+
+    // Then
+    expect((store.getState().draft.tiles[0].inputs.value as { connection: string | null }).connection).toBe("soc-1");
+  });
+});
+

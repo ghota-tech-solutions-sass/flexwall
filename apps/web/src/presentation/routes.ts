@@ -12,6 +12,9 @@ export const SIGN_IN_PARAMS = { token: "token", timeZone: "tz" } as const;
 /** Query parameters /settings reads. */
 export const SETTINGS_PARAMS = { upgraded: "upgraded" } as const;
 
+/** Query parameters added to the page an owner returns to after signing in at a provider. */
+export const CONNECT_PARAMS = { connected: "connected", error: "connect_error" } as const;
+
 /** Query parameters /login reads. */
 export const LOGIN_PARAMS = { expired: "expired" } as const;
 
@@ -60,6 +63,10 @@ export const API = {
   lockscreenLink: "/api/wall/lockscreen-link",
   connections: "/api/connections",
   connection: (id: string) => `/api/connections/${segment(id)}`,
+  /** Starts a sign-in at a provider: answers where to send the owner. */
+  oauthStart: "/api/connections/oauth",
+  /** Where providers send the owner back. Registered with each provider, so never rename it. */
+  oauthCallback: "/api/connections/oauth/callback",
   handle: "/api/me/handle",
   signInRequest: "/api/auth/request",
   signOut: "/api/auth/logout",
