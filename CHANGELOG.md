@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.11.0...v0.12.0) (2026-09-15)
+
+
+### Features
+
+* credits for X, and settings that tell accounts apart ([#33](https://github.com/ghota-tech-solutions-sass/flexwall/issues/33)) ([18f67fa](https://github.com/ghota-tech-solutions-sass/flexwall/commit/18f67fa753434d19a9f45d758659f8f6b94393ab))
+
 ## [0.11.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.10.0...v0.11.0) (2026-09-15)
 
 
