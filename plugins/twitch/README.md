@@ -62,6 +62,14 @@ none is sent; the client secret stays on the server and the host checks
   scope, a moderator or a mismatched broadcaster, throws
   `ExpiredCredentialsError` so the host refreshes and retries once.
 
+## Removing a connection
+
+`disconnect` sends `POST https://id.twitch.tv/oauth2/revoke` (form `client_id`,
+`token`) for the access token and, in parallel, the refresh token: Twitch
+documents revoking access tokens only, but a stored one has often expired, and
+revoking only it could leave the grant alive. A 400 `Invalid token` counts as
+already revoked; no `TWITCH_CLIENT_ID` or no stored token means nothing is sent.
+
 ## Errors
 
 - Missing `TWITCH_CLIENT_ID` or `TWITCH_CLIENT_SECRET`: "This Flexwall server has
@@ -111,7 +119,9 @@ Built from Twitch's documentation and examples, without a registered app:
 - that followers `total` is returned to a token without `moderator:read:followers`
   (documented, not observed);
 - that validating on each fetch, rather than on a server-side hourly timer,
-  satisfies Twitch's audit when no one views a wall for hours.
+  satisfies Twitch's audit when no one views a wall for hours;
+- whether `/oauth2/revoke` accepts a refresh token, and whether revoking the
+  access token already ends the refresh token.
 
 ## Develop
 

@@ -143,9 +143,16 @@ interface Server {
 
 /** The server's Plaid app, or a sentence before any request. */
 function server(ctx: ConnectorContext): Server {
+  const app = configuredServer(ctx);
+  if (!app) throw new ConnectorError(NO_APP);
+  return app;
+}
+
+/** The server's Plaid app, or null when its keys aren't set. */
+function configuredServer(ctx: ConnectorContext): Server | null {
   const clientId = ctx.env("PLAID_CLIENT_ID")?.trim();
   const secret = ctx.env("PLAID_SECRET")?.trim();
-  if (!clientId || !secret) throw new ConnectorError(NO_APP);
+  if (!clientId || !secret) return null;
   const env = (ctx.env("PLAID_ENV")?.trim() || "sandbox").toLowerCase();
   if (env !== "sandbox" && env !== "production") throw new ConnectorError("This Flexwall server's PLAID_ENV must be sandbox or production.");
   return { base: HOSTS[env], headers: { "Content-Type": "application/json", "PLAID-CLIENT-ID": clientId, "PLAID-SECRET": secret } };
@@ -258,6 +265,23 @@ export const plaidConnector = defineConnector({
           ...(accountId ? { accountId } : {}),
         };
       },
+    },
+
+    /**
+     * `POST /item/remove` ends the Item's subscriptions (billed per Item) and
+     * invalidates its access token. An Item Plaid can't find, or a token it
+     * doesn't know (removed already, or from another environment), is done.
+     */
+    async disconnect({ secret }, ctx) {
+      const app = configuredServer(ctx);
+      if (!app || !secret.accessToken) return;
+      try {
+        await post(ctx, app, "/item/remove", { access_token: secret.accessToken });
+      } catch (error) {
+        const code = errorCode(error);
+        if (code === "ITEM_NOT_FOUND" || code === "INVALID_ACCESS_TOKEN") return;
+        explainServer(error);
+      }
     },
   },
   metrics: [

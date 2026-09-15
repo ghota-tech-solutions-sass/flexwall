@@ -13,6 +13,9 @@ export class ScriptedUpstream {
   /** Renewals asked of the sign-in connector, and whether its provider still honours them. */
   refreshes = 0;
   refreshMode: "ok" | "revoked" = "ok";
+  /** What the sign-in connector was asked to let go of upstream, and how its provider answers. */
+  disconnected: Record<string, string>[] = [];
+  disconnectMode: "ok" | "fail" = "ok";
 
   async respond(): Promise<Record<string, Value | null>> {
     this.calls++;
@@ -105,6 +108,10 @@ export function testCatalog(upstream = new ScriptedUpstream()) {
     auth: {
       help: "Sign in to allow reading your followers.",
       fields: [],
+      async disconnect({ secret }) {
+        if (upstream.disconnectMode === "fail") throw new Error("provider down");
+        upstream.disconnected.push(secret);
+      },
       oauth: {
         async authorize({ redirectUri, state }) {
           return { url: `https://social.test/authorize?${new URLSearchParams({ state, redirect_uri: redirectUri })}`, carry: { verifier: "v1" } };

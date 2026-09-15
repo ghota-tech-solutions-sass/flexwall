@@ -54,6 +54,11 @@ export function bandFloor(n: number, min = 1000): number {
  * at $1k; plain amounts (coins) start at 1.
  */
 export function formatBand(v: Pick<NumberValue, "value" | "unit" | "currency">): string {
+  // A debt is a range too: "−$10k+" says how deep without saying the amount.
+  if (v.value < 0) {
+    const debt = formatBand({ ...v, value: -v.value });
+    return debt.startsWith("under") ? debt : `−${debt}`;
+  }
   const money = v.unit === "currency";
   const symbol = money ? currencySymbol(v.currency) : "";
   const floor = bandFloor(v.value, money ? 1000 : 1);

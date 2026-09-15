@@ -48,13 +48,14 @@ the metric is empty (`null`).
      portal URL holds neither.
 2. The owner picks a brokerage and signs in there. SnapTrade redirects back with
    `status=SUCCESS&connection_id=…`, `status=ERROR&status_code=…&error_code=…`
-   or `status=ABANDONED`.
+   or `status=ABANDONED`. **Cancelling the portal sends back only `state`, with
+   no `status`** (verified live, 2026-09-15).
 3. `complete`
    - `ABANDONED`: "You left SnapTrade before connecting a brokerage…".
    - `ERROR`: a sentence per `error_code` (`1066` credentials refused, `3000`
      brokerage unreachable, `1006` session expired, otherwise generic).
-   - Then `GET /authorizations` and `GET /accounts`. No connection: "No
-     brokerage was connected." Existence comes from connections, because a new
+   - Then `GET /authorizations` and `GET /accounts`. No connection (a cancelled
+     portal lands here): "No brokerage was connected." Existence comes from connections, because a new
      connection's accounts can lag its first sync (the account count may then
      read 0 in the connection list until the next connect).
    - `secret`: `{ userId, userSecret }`. `public`: `{ brokerages, accounts }`.
@@ -62,6 +63,11 @@ the metric is empty (`null`).
      SnapTrade `userId`.
    - No `expiresAt`, no `refresh`: SnapTrade keeps connections alive; a broken
      one is reported as `disabled`.
+   - Whenever `complete` throws because nothing was connected (`ABANDONED`,
+     `ERROR`, no connection), it first deletes the user `authorize` registered
+     (`DELETE /snapTrade/deleteUser`, as in "Removing a connection"), so it isn't
+     billed. Best effort: a failure is logged (status only, no id or secret) and
+     the owner gets the same sentence.
 
 Because every sign-in registers a new SnapTrade user, **connecting again
 creates a second Flexwall connection** (a new `accountId`) and a second
@@ -85,6 +91,13 @@ is then a floor). `portfolio-value` and `accounts` never read balances.
 For accounts whose holdings the brokerage doesn't expose
 (`sync_status.holdings.holdings_unavailable`, e.g. Vanguard employer plans),
 `portfolio-value` still uses the brokerage's total, but `cash` may be understated.
+
+## Removing a connection
+
+`disconnect` sends a signed `DELETE /snapTrade/deleteUser?clientId&timestamp&userId`
+(no `userSecret`, `content: null`); SnapTrade queues the deletion and answers 200.
+A 404, code `1083` or a "user not found" body counts as already deleted; no
+server app or no stored user id means nothing is sent.
 
 ## Signing
 
@@ -190,12 +203,12 @@ connection or sync in it; incomplete connections aren't billed.
 - **Every Flexwall connection registers one SnapTrade user**, so each is one
   billed connected user, whatever the number of brokerages behind it.
   Reconnecting creates another one.
-- **Removing a connection in Flexwall doesn't delete its SnapTrade user**: the
-  host has no removal hook for connectors yet, and `ctx.fetch` has no `DELETE`
-  (`DELETE /snapTrade/deleteUser`). Until then, delete users whose connection
-  is gone from the SnapTrade Dashboard or its API, or they keep being billed.
-  Users registered by abandoned sign-ins have no connection and aren't billed,
-  but stay listed.
+- **Removing a connection in Flexwall deletes its SnapTrade user** (see
+  "Removing a connection"), which ends its bill. If that call fails (outage,
+  refused key), the host still removes the connection and logs it: delete the
+  user from the SnapTrade Dashboard or its API. Users registered by abandoned
+  sign-ins are deleted when the owner comes back to Flexwall; an owner who never
+  comes back leaves an unbilled user with no connection listed.
 
 ## Not verified against a real account
 

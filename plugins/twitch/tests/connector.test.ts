@@ -310,3 +310,79 @@ describe("twitch plugin", () => {
     });
   });
 });
+
+describe("disconnect", () => {
+  const disconnect = twitchConnector.auth!.disconnect!;
+  const shown = { login: "twitchdev", displayName: "TwitchDev" };
+
+  test("given a connection, when it is removed, then the access and refresh tokens are each revoked with the client id, form-encoded", async () => {
+    // Given
+    const sent: { url: string; init: GuardedFetchInit | undefined }[] = [];
+    const ctx = fakeContext(
+      {
+        [`${ID}/revoke`]: (init, url) => {
+          sent.push({ url, init });
+          return "";
+        },
+      },
+      { env }
+    );
+
+    // When
+    await disconnect({ secret, public: shown }, ctx);
+
+    // Then
+    expect(sent.map((s) => s.url)).toEqual([`${ID}/revoke`, `${ID}/revoke`]);
+    for (const { init } of sent) {
+      expect(init?.method).toBe("POST");
+      expect(init?.headers?.["Content-Type"]).toBe("application/x-www-form-urlencoded");
+    }
+    const bodies = sent.map((s) => Object.fromEntries(new URLSearchParams(String(s.init?.body))));
+    expect(bodies).toEqual([
+      { client_id: CLIENT_ID, token: ACCESS },
+      { client_id: CLIENT_ID, token: REFRESH },
+    ]);
+    expect(JSON.stringify(sent)).not.toContain(CLIENT_SECRET);
+  });
+
+  test("given tokens Twitch no longer knows, when the connection is removed, then it resolves", async () => {
+    // Given
+    const ctx = fakeContext({ [`${ID}/revoke`]: refuse(400, { status: 400, message: "Invalid token" }) }, { env });
+
+    // When
+    const result = await disconnect({ secret, public: shown }, ctx);
+
+    // Then
+    expect(result).toBeUndefined();
+    expect(ctx.calls).toHaveLength(2);
+  });
+
+  test("given no Twitch app on the server or no stored token, when the connection is removed, then it resolves without a request", async () => {
+    // Given
+    const noApp = fakeContext({}, { env: { TWITCH_CLIENT_SECRET: CLIENT_SECRET } });
+    const noToken = fakeContext({}, { env });
+
+    // When
+    await disconnect({ secret, public: shown }, noApp);
+    await disconnect({ secret: { accessToken: "", refreshToken: "" }, public: shown }, noToken);
+
+    // Then
+    expect([...noApp.calls, ...noToken.calls]).toEqual([]);
+  });
+
+  test("given Twitch refuses the client or fails, when the connection is removed, then it throws without a token", async () => {
+    // Given
+    const unknownClient = fakeContext({ [`${ID}/revoke`]: refuse(404, { status: 404, message: "client does not exist" }) }, { env });
+    const outage = fakeContext({ [`${ID}/revoke`]: refuse(503, { status: 503, message: "Service Unavailable" }) }, { env });
+
+    // When
+    const errors = await Promise.all([unknownClient, outage].map((ctx) => disconnect({ secret, public: shown }, ctx).catch((e: unknown) => e)));
+
+    // Then
+    for (const error of errors) {
+      expect(error).toBeInstanceOf(HttpError);
+      const message = (error as Error).message;
+      expect([ACCESS, REFRESH, CLIENT_SECRET].filter((s) => message.includes(s))).toEqual([]);
+    }
+  });
+});

@@ -20,6 +20,8 @@ describe("Ranges for sensitive amounts", () => {
     expect(formatBand({ value: 250_000 })).toBe("100k+");
     expect(formatBand({ value: 12.4 })).toBe("10+");
     expect(formatBand({ value: 0.35 })).toBe("under 1");
+    expect(formatBand({ value: -77_164, unit: "currency", currency: "usd" })).toBe("−$10k+");
+    expect(formatBand({ value: -250, unit: "currency", currency: "usd" })).toBe("under $1k");
   });
 
   test("given a tile's display choice, when deciding, then auto follows the metric and explicit choices win", () => {

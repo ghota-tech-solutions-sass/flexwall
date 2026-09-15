@@ -113,7 +113,7 @@ function build() {
     connectAccount: new ConnectAccount({ users, connections, catalog, runtime, secrets, ids, clock }),
     startConnectionSignIn: new StartConnectionSignIn({ users, connections, catalog, runtime, secrets, ids, clock, links }),
     finishConnectionSignIn: new FinishConnectionSignIn({ users, connections, catalog, runtime, secrets, ids, clock, links }),
-    removeConnection: new RemoveConnection({ connections }),
+    removeConnection: new RemoveConnection({ connections, catalog, secrets, runtime, clock }),
     resolveWall,
     getLockscreen: new GetLockscreen({ walls, users, tokens }),
     listExplore: new ListExplore({ walls, users, resolve: resolveWall, catalog, clock }),
