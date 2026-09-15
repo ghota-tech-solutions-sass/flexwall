@@ -1,0 +1,43 @@
+{
+  "session_id": "4e0f1a2b-3c4d-4e5f-8a9b-0c1d2e3f4a5b",
+  "accounts": [
+    {
+      "account_id": { "iban": "FI0455231152453547" },
+      "all_account_ids": [{ "identification": "123456", "scheme_name": "BBAN" }],
+      "account_servicer": { "bic_fi": "NDEAFIHH", "name": "Nordea" },
+      "name": "Asko Teirila",
+      "usage": "PRIV",
+      "cash_account_type": "CACC",
+      "product": "Current account",
+      "currency": "EUR",
+      "uid": "07cc67f4-45d6-494b-adac-09b5cbc7e2b5",
+      "identification_hash": "WwpbCiJhY2NvdW50IiwKImFjY291bnRfaWQiLAoiaWJhbiIKXQpd.E8GzhnnsFC7K+4e3YMYYKpyM83Zx6toXrjgcvPP/Lqc=",
+      "identification_hashes": ["WwpbCiJhY2NvdW50IiwKImFjY291bnRfaWQiLAoiaWJhbiIKXQpd.E8GzhnnsFC7K+4e3YMYYKpyM83Zx6toXrjgcvPP/Lqc="]
+    },
+    {
+      "account_id": { "iban": "FI2112345600000785" },
+      "all_account_ids": [],
+      "usage": "PRIV",
+      "cash_account_type": "SVGS",
+      "product": "Savings account",
+      "currency": "EUR",
+      "uid": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+      "identification_hash": "WwpbCiJhY2NvdW50IiwKImFjY291bnRfaWQiLAoiaWJhbiIKXQpd.AOm/TULGPD4a4GdcWhR9xh0GPlPUZuB2O1S9SYFWEz0=",
+      "identification_hashes": ["WwpbCiJhY2NvdW50IiwKImFjY291bnRfaWQiLAoiaWJhbiIKXQpd.AOm/TULGPD4a4GdcWhR9xh0GPlPUZuB2O1S9SYFWEz0="]
+    },
+    {
+      "account_id": { "other": { "identification": "5412********1234", "scheme_name": "CPAN" } },
+      "all_account_ids": [],
+      "usage": "PRIV",
+      "cash_account_type": "CARD",
+      "product": "Credit card",
+      "currency": "EUR",
+      "uid": "9b1d2c3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e",
+      "identification_hash": "WwpbCiJhY2NvdW50IiwKImFjY291bnRfaWQiLAoib3RoZXIiCl0K.Zm9vYmFyYmF6cXV4",
+      "identification_hashes": []
+    }
+  ],
+  "aspsp": { "name": "Nordea", "country": "FI" },
+  "psu_type": "personal",
+  "access": { "valid_until": "2027-03-14T12:00:00.000000+00:00" }
+}

@@ -1,0 +1,44 @@
+{
+  "aspsps": [
+    {
+      "auth_methods": [
+        {
+          "approach": "REDIRECT",
+          "credentials": [],
+          "hidden_method": false,
+          "name": "MTA",
+          "psu_type": "personal"
+        }
+      ],
+      "beta": false,
+      "bic": "NDEAFIHH",
+      "country": "FI",
+      "logo": "https://enablebanking.com/brands/FI/Nordea/",
+      "maximum_consent_validity": 15552000,
+      "name": "Nordea",
+      "payments": [],
+      "psu_types": ["business", "personal"],
+      "required_psu_headers": ["Psu-Ip-Address"]
+    },
+    {
+      "auth_methods": [
+        {
+          "approach": "REDIRECT",
+          "credentials": [],
+          "hidden_method": false,
+          "name": "MTA",
+          "psu_type": "personal"
+        }
+      ],
+      "beta": false,
+      "bic": "OKOYFIHH",
+      "country": "FI",
+      "logo": "https://enablebanking.com/brands/FI/OP/",
+      "maximum_consent_validity": 7776000,
+      "name": "OP",
+      "payments": [],
+      "psu_types": ["personal"],
+      "required_psu_headers": []
+    }
+  ]
+}
