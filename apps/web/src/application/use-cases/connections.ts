@@ -186,13 +186,44 @@ export class FinishConnectionSignIn {
   }
 }
 
+/** How long removing a connection waits for the provider to let go of it. */
+export const DISCONNECT_DEADLINE_MS = 5000;
+
+/**
+ * Removes a connection, and first asks the connector to let go of it
+ * upstream: revoke tokens, delete the user or item billed per connection.
+ * That part is best effort: a provider that's down or refuses never keeps
+ * the owner from removing their account.
+ */
 export class RemoveConnection {
-  constructor(private readonly deps: { connections: ConnectionRepository }) {}
+  constructor(private readonly deps: { connections: ConnectionRepository; catalog: Catalog; secrets: SecretBox; runtime: ConnectorRuntime; clock: Clock; log?: (message: string) => void }) {}
 
   async execute(input: { userId: string; connectionId: string }): Promise<void> {
     const connection = await this.deps.connections.byId(input.connectionId);
     if (!connection) throw notFound("This connection");
     if (connection.ownerId !== input.userId) throw forbidden();
+    await this.letGo(connection);
     await this.deps.connections.delete(connection.id);
+  }
+
+  private async letGo(connection: Connection): Promise<void> {
+    const disconnect = this.deps.catalog.connector(connection.connector)?.auth?.disconnect;
+    if (!disconnect) return;
+    const log = this.deps.log ?? ((message: string) => console.log(message));
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const secret = this.deps.secrets.open(connection.sealed);
+      const today = new Date(this.deps.clock.now()).toISOString().slice(0, 10);
+      await Promise.race([
+        disconnect({ secret, public: connection.public }, this.deps.runtime.context(today)),
+        new Promise((_, reject) => {
+          timer = setTimeout(() => reject(new Error(`no answer within ${DISCONNECT_DEADLINE_MS}ms`)), DISCONNECT_DEADLINE_MS);
+        }),
+      ]);
+    } catch (error) {
+      log(`[connections] ${connection.connector} didn't let go of connection ${connection.id} upstream: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      clearTimeout(timer);
+    }
   }
 }

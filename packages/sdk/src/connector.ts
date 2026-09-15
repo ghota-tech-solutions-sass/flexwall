@@ -50,6 +50,12 @@ export interface ConnectorAuth {
   label?: string;
   /** Sign in at the provider instead of pasting a key. Replaces `connect`. */
   oauth?: ConnectorOAuth;
+  /**
+   * The owner removed the connection: revoke its tokens, delete the upstream
+   * user or item that bills per connection. Best effort: the host removes the
+   * connection whatever happens here, and logs failures.
+   */
+  disconnect?(input: { secret: Record<string, string>; public: Record<string, string> }, ctx: ConnectorContext): Promise<void>;
 }
 
 /**
@@ -105,7 +111,8 @@ export interface FetchRequest {
 export type FetchResult = Partial<Record<string, Value | null>>;
 
 export interface GuardedFetchInit {
-  method?: "GET" | "POST";
+  /** DELETE is for `disconnect`: removing what a connection created upstream. Read a 204 with `text`. */
+  method?: "GET" | "POST" | "DELETE";
   headers?: Record<string, string>;
   body?: string;
   /** Default 1 MB, host maximum 4 MB. */

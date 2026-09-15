@@ -81,11 +81,46 @@ describe("ConnectAccount", () => {
 });
 
 describe("RemoveConnection", () => {
+  function removeSetup() {
+    const connections = new InMemoryConnections();
+    const { catalog, upstream } = testCatalog();
+    const logs: string[] = [];
+    const remove = new RemoveConnection({ connections, catalog, secrets: new TransparentSecretBox(), runtime: new FakeRuntime(), clock: new FixedClock(), log: (m) => logs.push(m) });
+    return { connections, upstream, logs, remove };
+  }
+
+  test("given a connection its provider bills or keeps tokens for, when the owner removes it, then the provider is told first with its credentials", async () => {
+    // Given
+    const { connections, upstream, remove } = removeSetup();
+    await connections.save(aConnection().withId("c1").ownedBy({ id: "u1" }).forConnector("social").sealed('sealed:{"access":"a1","refresh":"r1"}').build());
+
+    // When
+    await remove.execute({ userId: "u1", connectionId: "c1" });
+
+    // Then
+    expect(upstream.disconnected).toEqual([{ access: "a1", refresh: "r1" }]);
+    expect(connections.items.has("c1")).toBe(false);
+  });
+
+  test("given a provider that's down, when the owner removes the connection, then it's still removed and the failure is logged", async () => {
+    // Given
+    const { connections, upstream, logs, remove } = removeSetup();
+    upstream.disconnectMode = "fail";
+    await connections.save(aConnection().withId("c1").ownedBy({ id: "u1" }).forConnector("social").sealed('sealed:{"access":"a1"}').build());
+
+    // When
+    await remove.execute({ userId: "u1", connectionId: "c1" });
+
+    // Then
+    expect(connections.items.has("c1")).toBe(false);
+    expect(logs.join()).toContain("provider down");
+    expect(logs.join()).not.toContain("a1");
+  });
+
   test("given someone else's connection, when a user removes it, then it's refused and kept", async () => {
     // Given
-    const connections = new InMemoryConnections();
-    await connections.save(aConnection().withId("c1").ownedBy({ id: "u2" }).build());
-    const remove = new RemoveConnection({ connections });
+    const { connections, upstream, remove } = removeSetup();
+    await connections.save(aConnection().withId("c1").ownedBy({ id: "u2" }).forConnector("social").build());
 
     // When
     const attempt = remove.execute({ userId: "u1", connectionId: "c1" });
@@ -93,6 +128,7 @@ describe("RemoveConnection", () => {
     // Then
     await expect(attempt).rejects.toMatchObject({ code: "forbidden" });
     expect(connections.items.has("c1")).toBe(true);
+    expect(upstream.disconnected).toEqual([]);
   });
 });
 

@@ -259,6 +259,14 @@ auth: {
 - Without `refresh`, the owner is asked to reconnect after `expiresAt` (a bank consent can't be renewed silently).
 - App credentials (client ids and secrets) come from `ctx.env`: add them to `CONNECTOR_ENV` in `apps/web/src/composition.ts`, to the `connector_secrets` validation in `terraform/variables.tf`, and to `docs/self-hosting.md`.
 
+## Removing a connection
+
+When the owner removes a connection, the host calls `auth.disconnect({ secret, public }, ctx)` first, if the connector has one. Use it to stop what the connection keeps alive upstream: delete the user or item a provider bills for (SnapTrade, Powens, Plaid), revoke OAuth tokens, end a bank session.
+
+- It's best effort: the host waits at most 5 seconds, logs failures, and removes the connection anyway.
+- Treat "already gone" answers (404, an expired token, a closed session) as success, and return quietly when the server has no app credentials.
+- `ctx.fetch` accepts `method: "DELETE"`; read an empty answer with `text`.
+
 ## When the owner pays per call
 
 Some APIs bill every read (X). Let the owner bring their own key, and let the
