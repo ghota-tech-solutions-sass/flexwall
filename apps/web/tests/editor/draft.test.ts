@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   addTile,
   applyLayout,
+  dropCell,
   applyLockscreenLayout,
   attachConnection,
   bindingFor,
@@ -21,6 +22,30 @@ const { catalog } = testCatalog();
 const connections = [{ id: "c1", connector: "billing", label: "Billing", public: {}, createdAt: 0 }];
 
 describe("Editor model", () => {
+  test("given a cell the owner dropped a widget on, when the tile is added, then it lands there, kept inside the columns", () => {
+    // Given
+    const draft = aWall().draft();
+
+    // When
+    const inside = addTile(draft, "stat", catalog, connections, () => "a", { x: 1, y: 3 })!;
+    const overflowing = addTile(draft, "stat", catalog, connections, () => "b", { x: 3, y: -2 })!;
+
+    // Then
+    expect(inside.draft.tiles.at(-1)!.layout).toEqual({ x: 1, y: 3, w: 2, h: 1 });
+    expect(overflowing.draft.tiles.at(-1)!.layout).toEqual({ x: 2, y: 0, w: 2, h: 1 });
+  });
+
+  test("given points on the wall grid, when turned into drop cells, then they snap to the cell under them and stay inside the columns", () => {
+    // Given
+    const grid = { cell: 100, gap: 12, columns: 4 };
+
+    // When / Then
+    expect(dropCell({ x: 10, y: 10 }, grid, 1)).toEqual({ x: 0, y: 0 });
+    expect(dropCell({ x: 230, y: 120 }, grid, 1)).toEqual({ x: 2, y: 1 });
+    expect(dropCell({ x: 440, y: 5 }, grid, 2)).toEqual({ x: 2, y: 0 });
+    expect(dropCell({ x: -40, y: -40 }, grid, 2)).toEqual({ x: 0, y: 0 });
+  });
+
   test("given a wall with a full first row, when a stat is added, then it lands on the next free row with a typed number", () => {
     // Given
     const draft = aWall().with(aTile().withId("wide").note().at(0, 0, 2, 1)).with(aTile().withId("wide2").note().at(2, 0, 2, 1)).draft();

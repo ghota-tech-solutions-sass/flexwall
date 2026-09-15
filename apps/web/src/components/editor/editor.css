@@ -80,6 +80,12 @@
 .canvas-title:hover, .canvas-bio:hover { background: color-mix(in srgb, currentColor 5%, transparent); }
 .canvas-title:focus, .canvas-bio:focus { background: color-mix(in srgb, currentColor 5%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, currentColor 35%, transparent); }
 
+/* Dragging a widget in: the grid keeps room to drop on, and the spot shows where the tile will land. */
+.canvas-grid { position: relative; }
+.canvas-grid.dropping .react-grid-layout { min-height: 180px; }
+.canvas-drop-spot { position: absolute; z-index: 20; pointer-events: none; border: 2px dashed; border-radius: 16px; background-clip: padding-box; opacity: 0.35; transition: left 0.12s ease-out, top 0.12s ease-out; }
+.library button[draggable="true"] { cursor: grab; }
+.library button[draggable="true"]:active { cursor: grabbing; }
 .canvas-empty { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 48px 20px; border: 1.5px dashed; border-radius: 18px; text-align: center; font-size: 15px; }
 .canvas-empty p { margin: 0; }
 .canvas-empty div { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }

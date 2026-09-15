@@ -78,17 +78,37 @@ export function bindingFor(ref: SourceRef, catalog: Catalog, connections: readon
   return { kind: "metric", connector: connector.id, metric: metric.id, params, connection, history: ref.kind === "history" ? ref.window : null };
 }
 
-/** A new tile of `widgetId`, placed in the first free spot, fed by sensible defaults. */
-export function addTile(draft: WallDraft, widgetId: string, catalog: BrowsableCatalog, connections: readonly ConnectionView[], newId: NewTileId): { draft: WallDraft; tileId: string } | null {
+/** The cell under a point of the wall grid, for a tile `w` wide dropped with its top-left corner there. */
+export function dropCell(point: { x: number; y: number }, grid: { cell: number; gap: number; columns: number }, w: number): { x: number; y: number } {
+  const pitch = grid.cell + grid.gap;
+  const x = Math.min(Math.max(0, Math.floor(point.x / pitch)), grid.columns - w);
+  const y = Math.max(0, Math.floor(point.y / pitch));
+  return { x, y };
+}
+
+/**
+ * A new tile of `widgetId`, fed by sensible defaults: in the first free spot,
+ * or at the cell it was dropped on, kept inside the wall's columns.
+ */
+export function addTile(
+  draft: WallDraft,
+  widgetId: string,
+  catalog: BrowsableCatalog,
+  connections: readonly ConnectionView[],
+  newId: NewTileId,
+  at?: { x: number; y: number }
+): { draft: WallDraft; tileId: string } | null {
   const widget = catalog.widget(widgetId);
   if (!widget) return null;
   const [w, h] = widget.size.default;
-  const layout = firstFreeSpot(
-    draft.tiles.map((t) => t.layout),
-    w,
-    h,
-    WALL_COLUMNS
-  );
+  const layout = at
+    ? { x: Math.min(Math.max(0, Math.round(at.x)), WALL_COLUMNS - w), y: Math.max(0, Math.round(at.y)), w, h }
+    : firstFreeSpot(
+        draft.tiles.map((t) => t.layout),
+        w,
+        h,
+        WALL_COLUMNS
+      );
   const inputs: Record<string, Binding> = {};
   for (const input of widget.inputs) {
     if (input.optional) continue;
