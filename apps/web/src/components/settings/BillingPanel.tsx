@@ -14,6 +14,7 @@ export function BillingPanel({
   hasCustomer,
   bonusProUntil,
   paidPlan,
+  offeredUntil,
 }: {
   entitlements: Entitlements;
   subscription: Subscription | null;
@@ -22,16 +23,23 @@ export function BillingPanel({
   bonusProUntil: number | null;
   /** The plan paid for, ignoring referral rewards. */
   paidPlan: Entitlements["plan"];
+  /** Pro offered by Flexwall: undefined when none, null when it has no end, else when it ends. */
+  offeredUntil?: number | null;
 }) {
   const [error, setError] = useState<string | null>(null);
   const renews = subscription ? new Date(subscription.currentPeriodEnd).toLocaleDateString() : null;
-  const onRewards = entitlements.plan === "pro" && paidPlan === "free";
+  const offered = entitlements.plan === "pro" && paidPlan === "free" && offeredUntil !== undefined;
+  const onRewards = entitlements.plan === "pro" && paidPlan === "free" && !offered;
   return (
     <section className="panel" aria-labelledby="billing">
       <h2 id="billing">Plan</h2>
       <p>
         {entitlements.plan === "lifetime"
           ? "Lifetime. Thank you for backing Flexwall early."
+          : offered
+            ? offeredUntil === null
+              ? "Pro, offered by Flexwall."
+              : `Pro, offered by Flexwall until ${new Date(offeredUntil).toLocaleDateString()}.`
           : onRewards
             ? `Pro from referral rewards until ${new Date(bonusProUntil ?? 0).toLocaleDateString()}. Subscribe to keep it after that.`
             : entitlements.plan === "pro"

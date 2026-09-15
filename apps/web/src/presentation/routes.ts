@@ -22,7 +22,7 @@ export const LOGIN_PARAMS = { expired: "expired" } as const;
 const FLAG_ON = "1";
 
 /** Where route families start, for prefixes (robots) and builders alike. */
-const PREFIX = { api: "/api/", lockscreen: "/l/", referral: "/r/", report: "/report" } as const;
+const PREFIX = { api: "/api/", lockscreen: "/l/", referral: "/r/", report: "/report", admin: "/admin" } as const;
 
 const SIGN_IN_VERIFY = `${PREFIX.api}auth/verify`;
 
@@ -34,6 +34,13 @@ export const ROUTES = {
   onboarding: "/onboarding",
   edit: "/edit",
   settings: "/settings",
+  /** The back office: accounts, offered Pro, moderation. Answers 404 to anyone but administrators. */
+  admin: PREFIX.admin,
+  adminAccounts: (query: { q?: string; source?: string }) => {
+    const params = new URLSearchParams(Object.entries(query).filter((e): e is [string, string] => Boolean(e[1])));
+    return params.size ? `${PREFIX.admin}?${params}` : PREFIX.admin;
+  },
+  adminAccount: (id: string) => `${PREFIX.admin}/accounts/${segment(id)}`,
   pricing: "/pricing",
   explore: "/explore",
   exploreSorted: (sort: string) => `/explore?${new URLSearchParams({ sort })}`,
@@ -65,6 +72,8 @@ export const API = {
   connection: (id: string) => `/api/connections/${segment(id)}`,
   /** Starts a sign-in at a provider: answers where to send the owner. */
   oauthStart: "/api/connections/oauth",
+  adminPro: (accountId: string) => `/api/admin/accounts/${segment(accountId)}/pro`,
+  adminWall: (accountId: string) => `/api/admin/accounts/${segment(accountId)}/wall`,
   /** Where providers send the owner back. Registered with each provider, so never rename it. */
   oauthCallback: "/api/connections/oauth/callback",
   handle: "/api/me/handle",
@@ -79,4 +88,4 @@ export const API = {
 } as const;
 
 /** Path prefixes of screens and links that must stay out of search engines. */
-export const PRIVATE_PATH_PREFIXES = [PREFIX.api, ROUTES.edit, ROUTES.settings, ROUTES.onboarding, PREFIX.lockscreen, PREFIX.referral, PREFIX.report] as const;
+export const PRIVATE_PATH_PREFIXES = [PREFIX.api, ROUTES.edit, ROUTES.settings, ROUTES.onboarding, PREFIX.lockscreen, PREFIX.referral, PREFIX.report, PREFIX.admin] as const;

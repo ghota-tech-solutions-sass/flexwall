@@ -32,6 +32,7 @@ docker run -p 3000:3000 --env-file .env flexwall
 | `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET` | for Instagram | A Meta app with Instagram API with Instagram Login. See `plugins/instagram/README.md`. |
 | `ENABLE_BANKING_APP_ID`, `ENABLE_BANKING_PRIVATE_KEY` | for bank accounts | An Enable Banking application and its RSA private key (PEM). See `plugins/enable-banking/README.md`. |
 | `MODERATION_INBOX` | no | Where wall reports are sent. |
+| `ADMIN_EMAILS` | for the back office | Comma-separated emails that can open `/admin`: list accounts, offer Pro without payment, take walls offline. Empty or unset, `/admin` answers 404 to everyone. |
 
 Connectors that sign in at a provider (Twitch, TikTok, Instagram, bank
 accounts) send owners back to `https://<your host>/api/connections/oauth/callback`:

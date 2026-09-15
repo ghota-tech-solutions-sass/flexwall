@@ -124,6 +124,12 @@ variable "price_lifetime_cents" {
 # CONNECTORS
 # =============================================================================
 
+variable "admin_emails" {
+  description = "Accounts that can open the back office at /admin: list accounts, offer Pro, moderate walls. Empty turns the back office off."
+  type        = list(string)
+  default     = ["villers@ghotatechsolutions.com"]
+}
+
 variable "connector_secrets" {
   description = "Server keys and app credentials for connectors, by env name (STEAM_API_KEY, TWITCH_CLIENT_ID, …). Each non-empty value becomes a Secret Manager secret read by the service. Empty or missing names leave that connector saying the server isn't set up."
   type        = map(string)

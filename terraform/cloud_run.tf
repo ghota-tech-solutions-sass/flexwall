@@ -209,6 +209,7 @@ locals {
       NEXT_PUBLIC_APP_URL          = local.app_url
       GOOGLE_PROJECT_ID            = var.project_id
       MODERATION_INBOX             = var.moderation_inbox
+      ADMIN_EMAILS                 = join(",", var.admin_emails)
       STRIPE_PRICE_MONTHLY         = stripe_price.monthly.id
       STRIPE_PRICE_YEARLY          = stripe_price.yearly.id
       STRIPE_PRICE_LIFETIME        = stripe_price.lifetime.id
