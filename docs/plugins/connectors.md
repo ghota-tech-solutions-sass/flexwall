@@ -253,7 +253,7 @@ auth: {
 },
 ```
 
-- The host makes the `state`, keeps `carry` sealed in an HttpOnly cookie scoped to the callback for ten minutes, checks that the state comes back from the same owner, and redirects them to the page they started from. `redirectUri` is always `<app>/api/connections/oauth/callback`: operators register that address.
+- The host makes the `state`, keeps `carry` sealed in an HttpOnly cookie scoped to the callback for thirty minutes, checks that the state comes back from the same owner, and redirects them to the page they started from. `redirectUri` is always `<app>/api/connections/oauth/callback`: operators register that address.
 - Put a PKCE verifier in `carry`, never in the URL.
 - Return `expiresAt` when credentials lapse. The host calls `refresh` a few minutes before, saves what it returns sealed, and runs one renewal per connection at a time, so rotating refresh tokens are used once. When `fetch` gets the provider's "token expired" answer first, throw `ExpiredCredentialsError`: the host renews and retries once.
 - Without `refresh`, the owner is asked to reconnect after `expiresAt` (a bank consent can't be renewed silently).

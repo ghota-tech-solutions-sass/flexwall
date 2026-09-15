@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { needsRenewal, RENEW_BEFORE_EXPIRY_MS, safeReturnPath } from "@/domain/connection";
+import { callbackQuery, needsRenewal, RENEW_BEFORE_EXPIRY_MS, safeReturnPath } from "@/domain/connection";
 import { Handle } from "@/domain/handle";
 import { todayIn } from "@/domain/time";
 import { firstFreeSpot, mobileLayout, packInto } from "@/domain/layout";
@@ -171,6 +171,16 @@ describe("Connections that expire", () => {
     expect(safeReturnPath("//evil.example", "/settings")).toBe("/settings");
     expect(safeReturnPath("/\\evil.example", "/settings")).toBe("/settings");
     expect(safeReturnPath(undefined, "/settings")).toBe("/settings");
+  });
+
+  test("given a provider that appends its parameters with a second question mark, when the callback is read, then state and its parameters come apart", () => {
+    // Given
+    const glued = new URLSearchParams("state=abc?status=SUCCESS&connection_id=42");
+    const clean = new URLSearchParams("state=abc&status=SUCCESS");
+
+    // When / Then
+    expect(callbackQuery(glued.entries())).toEqual({ state: "abc", status: "SUCCESS", connection_id: "42" });
+    expect(callbackQuery(clean.entries())).toEqual({ state: "abc", status: "SUCCESS" });
   });
 
   test("given credentials with and without an expiry, when checked, then renewal starts a few minutes before they lapse", () => {

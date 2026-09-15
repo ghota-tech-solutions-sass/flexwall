@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { container } from "@/composition";
+import { callbackQuery } from "@/domain/connection";
 import { DomainError } from "@/domain/errors";
 import { clearPendingSignIn, PENDING_SIGN_IN_COOKIE, sessionUserId } from "@/presentation/http";
 import { CONNECT_PARAMS, ROUTES } from "@/presentation/routes";
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
 
   let target: string;
   try {
-    const query = Object.fromEntries(req.nextUrl.searchParams.entries());
+    const query = callbackQuery(req.nextUrl.searchParams.entries());
     const { connection, returnTo } = await c.finishConnectionSignIn.execute({ userId, pending, query });
     target = withParam(returnTo, CONNECT_PARAMS.connected, connection.id);
   } catch (error) {
