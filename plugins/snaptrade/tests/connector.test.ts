@@ -235,7 +235,8 @@ describe("complete", () => {
     expect(result.accountId).toBe(USER_ID);
     expect(result.expiresAt).toBeUndefined();
     expect(JSON.stringify([result.public, result.label])).not.toContain(USER_SECRET);
-    expect(ctx.calls).toEqual([`${API}/authorizations?${userQuery}`, `${API}/accounts?${userQuery}`]);
+    // Both requests are signed and sent in parallel: which leaves first isn't part of the contract.
+    expect([...ctx.calls].sort()).toEqual([`${API}/accounts?${userQuery}`, `${API}/authorizations?${userQuery}`]);
   });
 
   test("given the owner left the portal or it failed, when completing, then they get a sentence and nothing is requested", async () => {
@@ -339,7 +340,8 @@ describe("fetch", () => {
     // Then
     expect(values["portfolio-value"]).toEqual(money(15363.23, "usd"));
     expect(values.accounts).toEqual(number(1, { unit: "count" }));
-    expect(ctx.calls).toEqual([`${API}/authorizations?${userQuery}`, `${API}/accounts?${userQuery}`]);
+    // Both requests are signed and sent in parallel: which leaves first isn't part of the contract.
+    expect([...ctx.calls].sort()).toEqual([`${API}/accounts?${userQuery}`, `${API}/authorizations?${userQuery}`]);
     expect(signatures).toEqual([hmac(`{"content":null,"path":"/authorizations","query":"${userQuery}"}`)]);
   });
 
