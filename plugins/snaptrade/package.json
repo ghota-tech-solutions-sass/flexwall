@@ -1,0 +1,21 @@
+{
+  "name": "@flexwall/plugin-snaptrade",
+  "version": "0.1.0",
+  "description": "Verified brokerage account values worldwide through SnapTrade, for Flexwall walls.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

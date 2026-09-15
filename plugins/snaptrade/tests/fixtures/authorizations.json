@@ -1,0 +1,21 @@
+[
+  {
+    "id": "87b24961-b51e-4db8-9226-f198f6518a89",
+    "created_date": "2024-08-20T21:56:19.123Z",
+    "brokerage": {
+      "id": "ebf91a5b-0920-4266-9e36-f6cfe8c40946",
+      "slug": "ROBINHOOD",
+      "name": "Robinhood",
+      "display_name": "Robinhood",
+      "enabled": true,
+      "maintenance_mode": false,
+      "is_degraded": false,
+      "brokerage_type": { "id": "2bcd7cc3-e922-4976-bce1-9858296801c3", "name": "Traditional Brokerage" }
+    },
+    "name": "Connection-1",
+    "type": "read",
+    "disabled": false,
+    "disabled_date": null,
+    "data_freshness_mode": { "institution": "realtime", "snaptrade": "delayed" }
+  }
+]

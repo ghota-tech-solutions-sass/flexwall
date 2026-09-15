@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { OAUTH_PENDING_TTL_MS } from "@/domain/connection";
 import { DomainError, type DomainErrorCode } from "@/domain/errors";
 import { container } from "@/composition";
 import { isProduction } from "@/infrastructure/env";
@@ -64,9 +65,9 @@ export function setSession(response: NextResponse, token: string) {
   });
 }
 
-/** A sign-in at a provider in progress: sealed, readable only by the callback, gone after ten minutes. */
+/** A sign-in at a provider in progress: sealed, readable only by the callback, gone once it can't finish anymore. */
 export const PENDING_SIGN_IN_COOKIE = "fw_oauth";
-const PENDING_SIGN_IN_MAX_AGE_S = 10 * 60;
+const PENDING_SIGN_IN_MAX_AGE_S = OAUTH_PENDING_TTL_MS / 1000;
 
 export function setPendingSignIn(response: NextResponse, sealed: string) {
   response.cookies.set(PENDING_SIGN_IN_COOKIE, sealed, {

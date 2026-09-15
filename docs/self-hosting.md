@@ -30,6 +30,9 @@ docker run -p 3000:3000 --env-file .env flexwall
 | `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET` | for Twitch | A Twitch application. See `plugins/twitch/README.md`. |
 | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | for TikTok | A TikTok for Developers app with Login Kit. See `plugins/tiktok/README.md`. |
 | `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET` | for Instagram | A Meta app with Instagram API with Instagram Login. See `plugins/instagram/README.md`. |
+| `SNAPTRADE_CLIENT_ID`, `SNAPTRADE_CONSUMER_KEY` | for brokerages through SnapTrade | See `plugins/snaptrade/README.md`. |
+| `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV` | for US and Canadian banks and investments through Plaid | `PLAID_ENV` is `sandbox` or `production`. See `plugins/plaid/README.md`. |
+| `POWENS_DOMAIN`, `POWENS_CLIENT_ID`, `POWENS_CLIENT_SECRET` | for French banks, life insurance and PEA through Powens | See `plugins/powens/README.md`. |
 | `ENABLE_BANKING_APP_ID`, `ENABLE_BANKING_PRIVATE_KEY` | for bank accounts | An Enable Banking application and its RSA private key (PEM). See `plugins/enable-banking/README.md`. |
 | `MODERATION_INBOX` | no | Where wall reports are sent. |
 | `ADMIN_EMAILS` | for the back office | Comma-separated emails that can open `/admin`: list accounts, offer Pro without payment, take walls offline. Empty or unset, `/admin` answers 404 to everyone. |

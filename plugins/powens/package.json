@@ -1,0 +1,21 @@
+{
+  "name": "@flexwall/plugin-powens",
+  "version": "0.1.0",
+  "description": "Verified French bank, PEA, brokerage and life insurance balances through Powens, for Flexwall walls.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@flexwall/sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

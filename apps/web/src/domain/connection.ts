@@ -26,8 +26,23 @@ export function needsRenewal(connection: Pick<Connection, "expiresAt">, now: num
   return typeof connection.expiresAt === "number" && now >= connection.expiresAt - RENEW_BEFORE_EXPIRY_MS;
 }
 
-/** How long a sign-in at a provider may take, from leaving Flexwall to coming back. */
-export const OAUTH_PENDING_TTL_MS = 10 * 60_000;
+/** How long a sign-in at a provider may take, from leaving Flexwall to coming back: a bank's own sign-in can be slow (Plaid allows 30 minutes). */
+export const OAUTH_PENDING_TTL_MS = 30 * 60_000;
+
+/**
+ * A callback's query as the provider meant it. Some providers append their
+ * own parameters with a second "?" to a return address that already has one
+ * (".../callback?state=abc?status=SUCCESS"), which leaves them inside `state`.
+ */
+export function callbackQuery(params: Iterable<[string, string]>): Record<string, string> {
+  const query: Record<string, string> = {};
+  for (const [key, raw] of params) {
+    const [value, ...rest] = raw.split("?");
+    query[key] ??= value!;
+    for (const [k, v] of new URLSearchParams(rest.join("&"))) query[k] ??= v;
+  }
+  return query;
+}
 
 /**
  * Where to send the owner back after signing in at a provider: a path on this

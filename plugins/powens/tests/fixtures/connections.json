@@ -1,0 +1,17 @@
+{
+  "connections": [
+    {
+      "id": 42,
+      "id_user": 7,
+      "id_connector": 40,
+      "state": null,
+      "error_message": null,
+      "last_update": "2026-09-15 06:12:31",
+      "created": "2026-09-01 10:00:00",
+      "active": true,
+      "expire": null,
+      "connector_uuid": "338178e6-3d01-564f-9a7b-52ca442459bf",
+      "connector": { "id": 40, "name": "Connecteur de test", "auth_mechanism": "credentials", "capabilities": ["bank", "bankwealth", "document", "profile"] }
+    }
+  ]
+}

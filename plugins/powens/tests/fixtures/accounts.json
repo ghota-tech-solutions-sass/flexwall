@@ -1,0 +1,13 @@
+{
+  "accounts": [
+    { "id": 12345, "id_connection": 42, "id_user": 7, "name": "Compte de dépôt", "number": "0212366548", "iban": "FR1221954549412158521", "type": "checking", "balance": 1452.56, "coming": null, "currency": { "id": "EUR", "symbol": "€", "precision": 2 }, "disabled": null, "deleted": null, "display": true },
+    { "id": 12346, "id_connection": 42, "id_user": 7, "name": "Livret A", "type": { "id": 2, "name": "livret_a", "is_invest": false }, "balance": 22950, "coming": null, "currency": { "id": "EUR" }, "disabled": null, "deleted": null, "display": true },
+    { "id": 12347, "id_connection": 42, "id_user": 7, "name": "PEA", "type": "pea", "balance": 48210.4, "currency": { "id": "EUR" }, "disabled": null, "deleted": null, "display": true },
+    { "id": 12348, "id_connection": 42, "id_user": 7, "name": "Assurance vie", "type": { "id": 9, "name": "lifeinsurance", "is_invest": true }, "balance": 1055575.41, "valuation": 1055575.41, "currency": { "id": "EUR" }, "disabled": null, "deleted": null, "display": true },
+    { "id": 12349, "id_connection": 42, "id_user": 7, "name": "Prêt immobilier", "type": "loan", "balance": -150000, "currency": { "id": "EUR" }, "disabled": null, "deleted": null, "display": true, "loan": { "type": "mortgage", "total_amount": 200000, "used_amount": 200000 } },
+    { "id": 12350, "id_connection": 42, "id_user": 7, "name": "Carte différée", "type": "card", "balance": -320.5, "currency": { "id": "EUR" }, "disabled": null, "deleted": null, "display": true },
+    { "id": 12351, "id_connection": 42, "id_user": 7, "name": "Compte titres USD", "type": "market", "balance": 9000, "currency": { "id": "USD" }, "disabled": null, "deleted": null, "display": true }
+  ],
+  "balances": { "EUR": 977857.87, "USD": 9000 },
+  "coming_balances": {}
+}
