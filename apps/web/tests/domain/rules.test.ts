@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { needsRenewal, RENEW_BEFORE_EXPIRY_MS, safeReturnPath } from "@/domain/connection";
 import { Handle } from "@/domain/handle";
 import { todayIn } from "@/domain/time";
-import { firstFreeSpot, mobileLayout, packInto } from "@/domain/layout";
+import { firstFreeSpot, makeRoom, mobileLayout, packInto } from "@/domain/layout";
 import { entitlementsOf, PAST_DUE_GRACE_MS } from "@/domain/user";
 import { effectiveTheme } from "@/domain/wall";
 import { aTile, aUser, NOW } from "../builders";
@@ -184,3 +184,26 @@ describe("Connections that expire", () => {
     expect(needsRenewal({}, expiresAt)).toBe(false);
   });
 });
+
+describe("Dropping a tile on a wall", () => {
+  test("given tiles under the spot a tile is dropped on, when room is made, then they move down below it, and those they land on move too", () => {
+    // Given
+    const dropped = { x: 0, y: 0, w: 2, h: 1 };
+    const others = [
+      { i: "wide", x: 0, y: 0, w: 4, h: 1 },
+      { i: "under", x: 1, y: 1, w: 1, h: 1 },
+      { i: "aside", x: 3, y: 2, w: 1, h: 1 },
+    ];
+
+    // When
+    const moved = makeRoom(dropped, others);
+
+    // Then
+    expect(moved).toEqual([
+      { i: "wide", x: 0, y: 1, w: 4, h: 1 },
+      { i: "under", x: 1, y: 2, w: 1, h: 1 },
+      { i: "aside", x: 3, y: 2, w: 1, h: 1 },
+    ]);
+  });
+});
+

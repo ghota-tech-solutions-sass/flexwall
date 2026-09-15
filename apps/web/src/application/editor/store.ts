@@ -1,7 +1,7 @@
 import { createStore, type StoreApi } from "zustand/vanilla";
 import type { FieldValue, FieldValues } from "@flexwall/sdk";
 import type { ConnectionView } from "@/domain/connection";
-import type { DeviceId } from "@/domain/layout";
+import { makeRoom, type DeviceId } from "@/domain/layout";
 import type { SourceRef } from "@/domain/source";
 import { canUseTheme, type Binding, type Visibility, type WallDraft } from "@/domain/wall";
 import {
@@ -46,6 +46,11 @@ export interface EditorActions {
   showSurface(surface: EditorSurface): void;
 
   addTile(widgetId: string): void;
+  /** The owner started dragging a widget out of the library, or stopped. */
+  startLibraryDrag(widgetId: string): void;
+  endLibraryDrag(): void;
+  /** A widget dropped on the wall: the new tile takes that cell, and tiles under it move down. */
+  dropTile(widgetId: string, at: { x: number; y: number }): void;
   removeTile(tileId: string): void;
   undoRemove(): void;
   duplicateTile(tileId: string): void;
@@ -146,6 +151,18 @@ export function createEditorStore(deps: EditorDeps, init: EditorInit): EditorSto
         change(() => result.draft);
         set({ selected: result.tileId, surface: "wall", connectRequest: null });
       },
+      startLibraryDrag: (widgetId) => set({ libraryDrag: canAddTile(get()) ? widgetId : null }),
+      endLibraryDrag: () => set({ libraryDrag: null }),
+      dropTile: (widgetId, at) => {
+        set({ libraryDrag: null });
+        if (!canAddTile(get())) return;
+        const result = addTile(get().draft, widgetId, catalog, get().connections, newTileId, at);
+        if (!result) return;
+        const tile = result.draft.tiles.find((t) => t.id === result.tileId)!;
+        const others = get().draft.tiles.map((t) => ({ i: t.id, ...t.layout }));
+        change(() => applyLayout(result.draft, [{ i: tile.id, ...tile.layout }, ...makeRoom(tile.layout, others)]));
+        set({ selected: result.tileId, surface: "wall", connectRequest: null });
+      },
       removeTile: (tileId) => {
         const tile = get().draft.tiles.find((t) => t.id === tileId);
         if (!tile) return;
@@ -168,6 +185,7 @@ export function createEditorStore(deps: EditorDeps, init: EditorInit): EditorSto
         change(() => result.draft);
         set({ selected: result.tileId });
       },
+      // While a widget is dragged in, the grid previews pushed tiles: only the drop commits them.
       moveTiles: (layout) => change((d) => applyLayout(d, layout)),
 
       setVisibility: (tileId, visibility) => change((d) => updateTile(d, tileId, (t) => (t.visibility === visibility ? t : { ...t, visibility }))),

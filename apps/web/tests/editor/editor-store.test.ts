@@ -387,3 +387,49 @@ describe("Editor store: signing in at a provider", () => {
   });
 });
 
+describe("Editor store: dragging tiles in from the library", () => {
+  test("given a widget dropped on a tile, when it lands, then it takes that cell and the tile moves down to make room", () => {
+    // Given
+    const { store, actions } = anEditor({ wall: aWall().with(aTile().withId("a").stat().at(0, 0, 2, 1)).with(aTile().withId("b").stat().at(0, 1, 2, 1)) });
+    actions.startLibraryDrag("note");
+
+    // When
+    actions.dropTile("note", { x: 0, y: 0 });
+
+    // Then
+    const state = store.getState();
+    const added = state.draft.tiles.find((t) => t.widget === "note")!;
+    expect(added.layout).toMatchObject({ x: 0, y: 0 });
+    expect(state.draft.tiles.find((t) => t.id === "a")!.layout).toEqual({ x: 0, y: added.layout.h, w: 2, h: 1 });
+    expect(state.draft.tiles.find((t) => t.id === "b")!.layout).toEqual({ x: 0, y: added.layout.h + 1, w: 2, h: 1 });
+    expect(state.selected).toBe(added.id);
+    expect(state.libraryDrag).toBeNull();
+  });
+
+  test("given a widget dropped on an empty cell, when it lands, then nothing else moves", () => {
+    // Given
+    const { store, actions } = anEditor({ wall: aWall().with(aTile().withId("a").stat().at(0, 0, 2, 1)) });
+
+    // When
+    actions.dropTile("note", { x: 2, y: 0 });
+
+    // Then
+    expect(store.getState().draft.tiles.find((t) => t.id === "a")!.layout).toEqual({ x: 0, y: 0, w: 2, h: 1 });
+    expect(store.getState().draft.tiles.find((t) => t.widget === "note")!.layout).toMatchObject({ x: 2, y: 0 });
+  });
+
+  test("given a full wall, when a widget is dropped, then no tile is added", () => {
+    // Given
+    const wall = aWall();
+    for (let i = 0; i < 8; i++) wall.with(aTile().withId(`t${i}`).stat().at(0, i, 2, 1));
+    const { store, actions } = anEditor({ wall });
+    actions.startLibraryDrag("note");
+
+    // When
+    actions.dropTile("note", { x: 2, y: 0 });
+
+    // Then
+    expect(store.getState().draft.tiles).toHaveLength(8);
+    expect(store.getState().libraryDrag).toBeNull();
+  });
+});

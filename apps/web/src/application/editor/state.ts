@@ -42,6 +42,8 @@ export interface EditorState {
   lockscreenError: string | null;
   /** A theme the owner can't use yet, drawn on the canvas to try it on. Never saved. */
   themePreview: string | null;
+  /** The widget being dragged from the library, so the wall can size its drop spot. */
+  libraryDrag: string | null;
 }
 
 /** What the page hands the editor on load. */
@@ -58,6 +60,7 @@ export function initialState(init: EditorInit): EditorState {
     connectRequest: null,
     lockscreenError: null,
     themePreview: null,
+    libraryDrag: null,
   };
 }
 

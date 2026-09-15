@@ -1,9 +1,10 @@
 // Rendered inside the Editor client boundary.
+import { useState } from "react";
 import ReactGridLayout, { useContainerWidth, verticalCompactor, type Layout } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import { CELL_UNITS, GAP_UNITS, gridUnits, themeBackground, type Size, type Theme } from "@flexwall/sdk";
 import type { TileState } from "@/application/use-cases/resolve-wall";
-import { tileName } from "@/application/editor/draft";
+import { dropCell, tileName } from "@/application/editor/draft";
 import { editorTheme } from "@/application/editor/state";
 import { WALL_COLUMNS } from "@/domain/layout";
 import { BIO_MAX, TITLE_MAX, type Tile } from "@/domain/wall";
@@ -35,10 +36,45 @@ export function WallCanvas() {
   const states = useEditor((s) => s.states);
   const today = useEditor((s) => s.today);
   const selected = useEditor((s) => s.selected);
+  const libraryDrag = useEditor((s) => s.libraryDrag);
   const actions = useEditorActions();
+  const [dropAt, setDropAt] = useState<{ x: number; y: number } | null>(null);
+  const dragged = libraryDrag ? catalog.widget(libraryDrag) : null;
+  const [dropW, dropH] = dragged?.size.default ?? [1, 1];
 
   const { width, containerRef, mounted } = useContainerWidth();
   const px = width / gridUnits(WALL_COLUMNS);
+  const pitch = (CELL_UNITS + GAP_UNITS) * px;
+
+  /**
+   * Drops are handled here rather than by the grid: the grid's own drop keeps
+   * a layout of its own that fights the wall's. The spot follows the pointer;
+   * the tile lands on release, and the grid only sees the new wall.
+   */
+  const cellUnder = (e: React.DragEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    // The pointer holds the tile by its middle, the way it looks while dragging.
+    const point = { x: e.clientX - rect.left - ((dropW - 1) * pitch) / 2, y: e.clientY - rect.top - ((dropH - 1) * pitch) / 2 };
+    return dropCell(point, { cell: CELL_UNITS * px, gap: GAP_UNITS * px, columns: WALL_COLUMNS }, dropW);
+  };
+  const dropHandlers = {
+    onDragOver: (e: React.DragEvent<HTMLDivElement>) => {
+      if (!dragged) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+      const cell = cellUnder(e);
+      if (cell.x !== dropAt?.x || cell.y !== dropAt?.y) setDropAt(cell);
+    },
+    onDragLeave: (e: React.DragEvent<HTMLDivElement>) => {
+      if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropAt(null);
+    },
+    onDrop: (e: React.DragEvent<HTMLDivElement>) => {
+      if (!dragged) return;
+      e.preventDefault();
+      setDropAt(null);
+      actions.dropTile(dragged.id, cellUnder(e));
+    },
+  };
 
   const layout: Layout = tiles.map((t) => {
     const size = catalog.widget(t.widget)?.size ?? FALLBACK_SIZE;
@@ -61,7 +97,21 @@ export function WallCanvas() {
         />
         <textarea className="canvas-bio" aria-label="Bio" placeholder="Add a short bio: what you build, for whom." rows={1} value={bio} maxLength={BIO_MAX} style={{ color: theme.muted }} onChange={(e) => actions.setBio(e.target.value)} />
       </header>
-      <div ref={containerRef}>
+      <div ref={containerRef} className={dragged ? "canvas-grid dropping" : "canvas-grid"} {...dropHandlers}>
+        {dragged && dropAt ? (
+          <div
+            className="canvas-drop-spot"
+            aria-hidden="true"
+            style={{
+              left: dropAt.x * pitch,
+              top: dropAt.y * pitch,
+              width: gridUnits(dropW) * px,
+              height: gridUnits(dropH) * px,
+              borderColor: theme.accent,
+              background: theme.accent,
+            }}
+          />
+        ) : null}
         {mounted && width > 0 ? (
           <ReactGridLayout
             width={width}

@@ -36,6 +36,29 @@ export function firstOverlap(boxes: readonly Box[]): [number, number] | null {
   return null;
 }
 
+/**
+ * Makes room for a box put down at a fixed place: every box it would cover
+ * moves down just below it, and boxes those land on move down in turn, the
+ * way a grid shoves tiles aside. Nothing moves up or sideways.
+ */
+export function makeRoom<T extends Box>(fixed: Box, others: readonly T[]): T[] {
+  const settled: Box[] = [fixed];
+  // Top to bottom, so a box pushed down is checked against everything already above it.
+  const order = others.map((box, index) => ({ box, index })).sort((a, b) => a.box.y - b.box.y || a.box.x - b.box.x);
+  const out = new Array<T>(others.length);
+  for (const { box, index } of order) {
+    let next = { ...box };
+    let blocker = settled.find((s) => overlaps(s, next));
+    while (blocker) {
+      next = { ...next, y: blocker.y + blocker.h };
+      blocker = settled.find((s) => overlaps(s, next));
+    }
+    settled.push(next);
+    out[index] = next;
+  }
+  return out;
+}
+
 /** Rows the layout uses. */
 export function heightOf(boxes: readonly Box[]): number {
   return boxes.reduce((h, b) => Math.max(h, b.y + b.h), 0);
