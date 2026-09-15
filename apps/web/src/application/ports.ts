@@ -15,6 +15,8 @@ export interface UserRepository {
   byId(id: string): Promise<User | null>;
   byEmail(email: string): Promise<User | null>;
   byStripeCustomer(customerId: string): Promise<User | null>;
+  /** Accounts for the administration, at most `limit`, in no particular order. */
+  list(limit: number): Promise<User[]>;
   save(user: User): Promise<void>;
 }
 

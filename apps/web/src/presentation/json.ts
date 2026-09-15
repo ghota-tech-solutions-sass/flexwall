@@ -37,3 +37,11 @@ export async function postJson<T>(path: string, body: unknown = {}): Promise<Jso
   const parsed = (await res.json().catch(() => ({}))) as JsonAnswer<T>["body"];
   return { ok: res.ok, status: res.status, body: parsed };
 }
+
+/** Sends `body` as JSON with any mutating method, never throwing on a non-2xx status or a bad body. */
+export async function sendJson<T>(method: "POST" | "PUT" | "DELETE", path: string, body: unknown = {}): Promise<JsonAnswer<T>> {
+  const res = await fetch(path, { method, headers: JSON_HEADERS, body: JSON.stringify(body) }).catch(() => null);
+  if (!res) return { ok: false, status: 0, body: { message: "Couldn't reach Flexwall. Check your connection and try again." } as JsonAnswer<T>["body"] };
+  const parsed = (await res.json().catch(() => ({}))) as JsonAnswer<T>["body"];
+  return { ok: res.ok, status: res.status, body: parsed };
+}

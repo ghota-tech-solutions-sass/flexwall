@@ -25,6 +25,25 @@ export interface User {
   referredBy: string | null;
   /** Epoch ms until which referral rewards keep Pro on. Accounts created before referrals have it undefined. */
   bonusProUntil: number | null;
+  /** Pro given by an administrator, free of charge. Older accounts have it undefined. */
+  complimentary?: Complimentary | null;
+}
+
+/** Pro offered from the administration: nobody pays, Stripe knows nothing about it. */
+export interface Complimentary {
+  /** Epoch ms when it ends; null keeps it until an administrator takes it back. */
+  until: number | null;
+  grantedAt: number;
+  /** The administrator's email, for the record. */
+  grantedBy: string;
+  /** Why, in the administrator's words. */
+  note: string;
+}
+
+/** Whether offered Pro is in force at `now`. */
+export function complimentaryActive(user: { complimentary?: Complimentary | null }, now: number): boolean {
+  const c = user.complimentary;
+  return Boolean(c) && (c!.until === null || c!.until > now);
 }
 
 export type Plan = "free" | "pro" | "lifetime";
@@ -48,7 +67,7 @@ export const PAID_TILE_LIMIT = 60;
 /** A failed renewal keeps Pro this long while Stripe retries the card. */
 export const PAST_DUE_GRACE_MS = 7 * 24 * 60 * 60 * 1000;
 
-type PlanFacts = Pick<User, "lifetime" | "subscription"> & { bonusProUntil?: number | null };
+type PlanFacts = Pick<User, "lifetime" | "subscription"> & { bonusProUntil?: number | null; complimentary?: Complimentary | null };
 
 /** What the user pays for, ignoring referral rewards: decides whether they can subscribe again. */
 export function paidPlanOf(user: PlanFacts, now: number): Plan {
@@ -60,11 +79,23 @@ export function paidPlanOf(user: PlanFacts, now: number): Plan {
   return "free";
 }
 
-/** The plan in force: what they pay for, or Pro while referral rewards last. */
+/** The plan in force: what they pay for, or Pro while it's offered or referral rewards last. */
 export function planOf(user: PlanFacts, now: number): Plan {
   const paid = paidPlanOf(user, now);
   if (paid !== "free") return paid;
+  if (complimentaryActive(user, now)) return "pro";
   return (user.bonusProUntil ?? 0) > now ? "pro" : "free";
+}
+
+/** Why a user has the plan they have, for the people who look after accounts. */
+export type PlanSource = "lifetime" | "subscription" | "complimentary" | "referral" | "free";
+
+export function planSourceOf(user: PlanFacts, now: number): PlanSource {
+  const paid = paidPlanOf(user, now);
+  if (paid === "lifetime") return "lifetime";
+  if (paid === "pro") return "subscription";
+  if (complimentaryActive(user, now)) return "complimentary";
+  return (user.bonusProUntil ?? 0) > now ? "referral" : "free";
 }
 
 /** The only place that turns a plan into what a user may do. */
@@ -95,5 +126,6 @@ export function newUser(input: { id: string; email: string; now: number; timeZon
     lifetime: false,
     referredBy: null,
     bonusProUntil: null,
+    complimentary: null,
   };
 }

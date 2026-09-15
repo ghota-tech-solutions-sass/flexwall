@@ -36,6 +36,10 @@ export class UserBuilder {
     this.user.referredBy = userId;
     return this;
   }
+  offeredPro(until: number | null, by = "admin@flexwall.lol") {
+    this.user.complimentary = { until, grantedAt: NOW, grantedBy: by, note: "" };
+    return this;
+  }
   withBonusProUntil(at: number | null) {
     this.user.bonusProUntil = at;
     return this;

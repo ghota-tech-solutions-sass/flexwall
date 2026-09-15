@@ -31,6 +31,7 @@ export class DbUsers implements UserRepository {
   async byStripeCustomer(customerId: string) {
     return ((await this.db.where("users", [["stripeCustomerId", customerId]], 1))[0] as unknown as User) ?? null;
   }
+  list = (limit: number) => this.db.where("users", [], limit) as unknown as Promise<User[]>;
   save = (user: User) => this.db.set("users", user.id, asDoc(user));
 }
 

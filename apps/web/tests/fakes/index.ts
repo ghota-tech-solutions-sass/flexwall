@@ -37,6 +37,9 @@ export class InMemoryUsers implements UserRepository {
   async byStripeCustomer(customerId: string) {
     return structuredClone([...this.items.values()].find((u) => u.stripeCustomerId === customerId) ?? null);
   }
+  async list(limit: number) {
+    return structuredClone([...this.items.values()].slice(0, limit));
+  }
   async save(user: User) {
     this.items.set(user.id, structuredClone(user));
   }

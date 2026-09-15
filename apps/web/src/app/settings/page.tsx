@@ -21,15 +21,25 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   });
   const upgraded = (await searchParams)[SETTINGS_PARAMS.upgraded];
   const program = await container().getReferralProgram.execute({ userId });
+  const administrator = await container().isAdministrator.execute({ userId });
+  const now = Date.now();
+  const offer = owner.user.complimentary;
 
   return (
     <div className="page">
       <TopBar signedIn />
       <main style={{ maxWidth: 1000 }}>
         <div className="settings-head">
-          <Link href={ROUTES.edit} className="link">
-            Back to the editor
-          </Link>
+          <div className="row">
+            <Link href={ROUTES.edit} className="link">
+              Back to the editor
+            </Link>
+            {administrator ? (
+              <Link href={ROUTES.admin} className="link">
+                Accounts
+              </Link>
+            ) : null}
+          </div>
           <h1 className="display">Settings</h1>
         </div>
         {upgraded ? <p className="hint">Payment received. Pro turns on as soon as Stripe confirms, usually within a few seconds.</p> : null}
@@ -37,6 +47,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           entitlements={owner.entitlements}
           paidPlan={owner.paidPlan}
           bonusProUntil={owner.user.bonusProUntil ?? null}
+          offeredUntil={offer && (offer.until === null || offer.until > now) ? offer.until : undefined}
           subscription={owner.user.subscription}
           hasCustomer={Boolean(owner.user.stripeCustomerId)}
         />

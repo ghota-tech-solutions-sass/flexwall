@@ -1,5 +1,6 @@
 import { RequestSignInLink, SignIn } from "@/application/use-cases/auth";
 import { ApplyBillingEvent, OpenBillingPortal, StartCheckout } from "@/application/use-cases/billing";
+import { GetAccount, IsAdministrator, ListAccounts, ModerateWall, OfferPro, WithdrawPro } from "@/application/use-cases/admin";
 import { ClaimHandle } from "@/application/use-cases/claim-handle";
 import { ConnectAccount, FinishConnectionSignIn, RemoveConnection, StartConnectionSignIn } from "@/application/use-cases/connections";
 import { ListExplore, ReportWall } from "@/application/use-cases/explore";
@@ -11,6 +12,7 @@ import { StripeGateway } from "@/infrastructure/billing/stripe-gateway";
 import { isProduction, optionalEnv } from "@/infrastructure/env";
 import { ConsoleMailer, GmailMailer } from "@/infrastructure/mail/mailers";
 import { db } from "@/infrastructure/persistence/db";
+import { parseAdministrators } from "@/domain/admin";
 import { DbConnections, DbEventLog, DbHandles, DbReferrals, DbSnapshots, DbUsers, DbValueCache, DbWalls } from "@/infrastructure/persistence/repositories";
 import { AesSecretBox } from "@/infrastructure/security/secret-box";
 import { HmacTokenService } from "@/infrastructure/security/tokens";
@@ -83,6 +85,9 @@ function build() {
   });
   const runtime = new GuardedRuntime(CONNECTOR_ENV);
 
+  const administrators = parseAdministrators(optionalEnv("ADMIN_EMAILS"));
+  const admin = { users, walls, connections, clock, administrators };
+
   const resolveWall = new ResolveWall({ catalog, connections, cache, snapshots, secrets, runtime, clock });
 
   return {
@@ -109,6 +114,12 @@ function build() {
     openBillingPortal: new OpenBillingPortal({ users, payments, links }),
     applyBillingEvent: new ApplyBillingEvent({ users, events, referrals, clock }),
     getReferralProgram: new GetReferralProgram({ users, referrals, clock, links }),
+    isAdministrator: new IsAdministrator(admin),
+    listAccounts: new ListAccounts(admin),
+    getAccount: new GetAccount(admin),
+    offerPro: new OfferPro(admin),
+    withdrawPro: new WithdrawPro(admin),
+    moderateWall: new ModerateWall(admin),
     payments,
     users,
   };
