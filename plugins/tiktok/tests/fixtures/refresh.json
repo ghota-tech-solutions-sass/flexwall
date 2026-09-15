@@ -1,0 +1,9 @@
+{
+  "access_token": "act.renewed67890Renewed67890Renewed",
+  "expires_in": 86400,
+  "open_id": "afd97af1-b87b-48b9-ac98-410aghda5344",
+  "refresh_expires_in": 31535000,
+  "refresh_token": "rft.rotated67890Rotated67890Rotated",
+  "scope": "user.info.basic,user.info.stats",
+  "token_type": "Bearer"
+}
