@@ -18,9 +18,10 @@ request.
 - **Walls** at `/@handle`: a 4-column grid on desktop, a derived 2-column one on phones.
 - **Editor**: widget library, drag and resize, an inspector generated from each widget's declared options.
 - **Connectors**:
-  - Code and audience: GitHub, npm, PyPI, Bluesky, Hacker News, YouTube, WakaTime, Monkeytype, Chess.com, Lichess.
+  - Code and audience: GitHub, npm, PyPI, Bluesky, Hacker News, YouTube, X (your own API key, you choose the refresh rate and see its cost), Twitch, TikTok, Instagram, WakaTime, Monkeytype, Steam, Chess.com, Lichess.
   - Revenue, verified: Stripe, Lemon Squeezy, Polar, Paddle, RevenueCat, Gumroad, Plausible.
-  - Wealth, verified: Alpaca, Trading 212, Interactive Brokers, Kraken, Binance, Coinbase. Public crypto wallets (Bitcoin, Ethereum, Base, Solana), unverified.
+  - Wealth, verified: bank accounts through Enable Banking (EU open banking), Alpaca, Trading 212, Interactive Brokers, Kraken, Binance, Coinbase. Public crypto wallets (Bitcoin, Ethereum, Base, Solana), unverified.
+  - Sign in at the provider (OAuth) for Twitch, TikTok, Instagram and banks: tokens renew on their own, expired consents ask the owner to reconnect.
   - Any JSON endpoint.
 - **Ranges for money**: balances and portfolios print as `$1M+` everywhere they leave the wall owner's editor, unless the owner asks a tile for the exact number.
 - **Widgets**: number with goal, trend line, heatmap, countdown, time left, note, link.

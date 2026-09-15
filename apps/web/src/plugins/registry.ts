@@ -26,6 +26,12 @@ import wakatime from "@flexwall/plugin-wakatime";
 import chessCom from "@flexwall/plugin-chess-com";
 import lichess from "@flexwall/plugin-lichess";
 import monkeytype from "@flexwall/plugin-monkeytype";
+import twitch from "@flexwall/plugin-twitch";
+import tiktok from "@flexwall/plugin-tiktok";
+import instagram from "@flexwall/plugin-instagram";
+import enableBanking from "@flexwall/plugin-enable-banking";
+import steam from "@flexwall/plugin-steam";
+import x from "@flexwall/plugin-x";
 import { createCatalog } from "./catalog";
 
 /**
@@ -35,6 +41,6 @@ import { createCatalog } from "./catalog";
  *
  * Adding a plugin: `bun run new-plugin <id>`, then list it here.
  */
-export const PLUGINS: readonly PluginDef[] = [core, github, stripe, http, npm, pypi, bluesky, hackernews, lemonSqueezy, polar, plausible, youtube, alpaca, trading212, interactiveBrokers, kraken, binance, coinbase, cryptoWallet, revenuecat, paddle, gumroad, wakatime, chessCom, lichess, monkeytype];
+export const PLUGINS: readonly PluginDef[] = [core, github, stripe, http, npm, pypi, bluesky, hackernews, lemonSqueezy, polar, plausible, youtube, alpaca, trading212, interactiveBrokers, kraken, binance, coinbase, cryptoWallet, revenuecat, paddle, gumroad, wakatime, chessCom, lichess, monkeytype, twitch, tiktok, instagram, enableBanking, steam, x];
 
 export const catalog = createCatalog(PLUGINS, DEFAULT_THEME_ID);

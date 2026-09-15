@@ -23,10 +23,12 @@
         "@flexwall/plugin-coinbase": "workspace:*",
         "@flexwall/plugin-core": "workspace:*",
         "@flexwall/plugin-crypto-wallet": "workspace:*",
+        "@flexwall/plugin-enable-banking": "workspace:*",
         "@flexwall/plugin-github": "workspace:*",
         "@flexwall/plugin-gumroad": "workspace:*",
         "@flexwall/plugin-hackernews": "workspace:*",
         "@flexwall/plugin-http": "workspace:*",
+        "@flexwall/plugin-instagram": "workspace:*",
         "@flexwall/plugin-interactive-brokers": "workspace:*",
         "@flexwall/plugin-kraken": "workspace:*",
         "@flexwall/plugin-lemon-squeezy": "workspace:*",
@@ -38,9 +40,13 @@
         "@flexwall/plugin-polar": "workspace:*",
         "@flexwall/plugin-pypi": "workspace:*",
         "@flexwall/plugin-revenuecat": "workspace:*",
+        "@flexwall/plugin-steam": "workspace:*",
         "@flexwall/plugin-stripe": "workspace:*",
+        "@flexwall/plugin-tiktok": "workspace:*",
         "@flexwall/plugin-trading212": "workspace:*",
+        "@flexwall/plugin-twitch": "workspace:*",
         "@flexwall/plugin-wakatime": "workspace:*",
+        "@flexwall/plugin-x": "workspace:*",
         "@flexwall/plugin-youtube": "workspace:*",
         "@flexwall/sdk": "workspace:*",
         "@google-cloud/firestore": "^9.0.0",
@@ -148,6 +154,19 @@
         "react",
       ],
     },
+    "plugins/enable-banking": {
+      "name": "@flexwall/plugin-enable-banking",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
+    },
     "plugins/github": {
       "name": "@flexwall/plugin-github",
       "version": "0.1.0",
@@ -181,6 +200,19 @@
       "dependencies": {
         "@flexwall/sdk": "workspace:*",
       },
+    },
+    "plugins/instagram": {
+      "name": "@flexwall/plugin-instagram",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
     },
     "plugins/interactive-brokers": {
       "name": "@flexwall/plugin-interactive-brokers",
@@ -295,12 +327,38 @@
         "react",
       ],
     },
+    "plugins/steam": {
+      "name": "@flexwall/plugin-steam",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
+    },
     "plugins/stripe": {
       "name": "@flexwall/plugin-stripe",
       "version": "0.1.0",
       "dependencies": {
         "@flexwall/sdk": "workspace:*",
       },
+    },
+    "plugins/tiktok": {
+      "name": "@flexwall/plugin-tiktok",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
     },
     "plugins/trading212": {
       "name": "@flexwall/plugin-trading212",
@@ -315,8 +373,34 @@
         "react",
       ],
     },
+    "plugins/twitch": {
+      "name": "@flexwall/plugin-twitch",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
+    },
     "plugins/wakatime": {
       "name": "@flexwall/plugin-wakatime",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": "^19.0.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
+    },
+    "plugins/x": {
+      "name": "@flexwall/plugin-x",
       "version": "0.1.0",
       "dependencies": {
         "@flexwall/sdk": "workspace:*",
@@ -356,6 +440,8 @@
 
     "@flexwall/plugin-crypto-wallet": ["@flexwall/plugin-crypto-wallet@workspace:plugins/crypto-wallet"],
 
+    "@flexwall/plugin-enable-banking": ["@flexwall/plugin-enable-banking@workspace:plugins/enable-banking"],
+
     "@flexwall/plugin-github": ["@flexwall/plugin-github@workspace:plugins/github"],
 
     "@flexwall/plugin-gumroad": ["@flexwall/plugin-gumroad@workspace:plugins/gumroad"],
@@ -363,6 +449,8 @@
     "@flexwall/plugin-hackernews": ["@flexwall/plugin-hackernews@workspace:plugins/hackernews"],
 
     "@flexwall/plugin-http": ["@flexwall/plugin-http@workspace:plugins/http"],
+
+    "@flexwall/plugin-instagram": ["@flexwall/plugin-instagram@workspace:plugins/instagram"],
 
     "@flexwall/plugin-interactive-brokers": ["@flexwall/plugin-interactive-brokers@workspace:plugins/interactive-brokers"],
 
@@ -386,11 +474,19 @@
 
     "@flexwall/plugin-revenuecat": ["@flexwall/plugin-revenuecat@workspace:plugins/revenuecat"],
 
+    "@flexwall/plugin-steam": ["@flexwall/plugin-steam@workspace:plugins/steam"],
+
     "@flexwall/plugin-stripe": ["@flexwall/plugin-stripe@workspace:plugins/stripe"],
+
+    "@flexwall/plugin-tiktok": ["@flexwall/plugin-tiktok@workspace:plugins/tiktok"],
 
     "@flexwall/plugin-trading212": ["@flexwall/plugin-trading212@workspace:plugins/trading212"],
 
+    "@flexwall/plugin-twitch": ["@flexwall/plugin-twitch@workspace:plugins/twitch"],
+
     "@flexwall/plugin-wakatime": ["@flexwall/plugin-wakatime@workspace:plugins/wakatime"],
+
+    "@flexwall/plugin-x": ["@flexwall/plugin-x@workspace:plugins/x"],
 
     "@flexwall/plugin-youtube": ["@flexwall/plugin-youtube@workspace:plugins/youtube"],
 
