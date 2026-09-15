@@ -3,13 +3,17 @@
 import { useState } from "react";
 import type { CreditsView } from "@/application/use-cases/credits";
 import { centsPerCredit, CREDIT_PACK_DETAILS, CREDIT_PACKS, SUGGESTED_CREDIT_PACK, type CreditEntry, type CreditPack } from "@/domain/credits";
+import { APP_LOCALE, DISPLAY_TIME_ZONE } from "@/domain/time";
 import { postJson } from "@/presentation/json";
 import { API, CREDITS_ANCHOR } from "@/presentation/routes";
 import { CheckoutConsentScope, useCheckoutConsent } from "@/components/site/CheckoutConsent";
 
 const REASON_LABELS: Record<CreditEntry["reason"], string> = { purchase: "Bought", spend: "Refresh", grant: "Offered", refund: "Taken back" };
 
-const plural = (n: number, one: string, many: string) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
+// One locale and zone on server and browser alike, or hydration trips over "1,200" against "1 200".
+const count = (n: number) => n.toLocaleString(APP_LOCALE);
+const day = (at: number) => new Date(at).toLocaleDateString(APP_LOCALE, { timeZone: DISPLAY_TIME_ZONE });
+const plural = (n: number, one: string, many: string) => `${count(n)} ${n === 1 ? one : many}`;
 
 /** The balance, what spends it, and the packs to top it up. Metered connectors (X without a developer app) read these credits. */
 export function CreditsPanel({ view, justBought }: { view: CreditsView; justBought: boolean }) {
@@ -19,7 +23,7 @@ export function CreditsPanel({ view, justBought }: { view: CreditsView; justBoug
       <h2 id={`${CREDITS_ANCHOR}-title`}>Credits</h2>
       {justBought ? <p className="hint">Payment received. Your credits land as soon as Stripe confirms, usually within a few seconds.</p> : null}
       <div className="credits-balance">
-        <strong className="credits-count">{balance.toLocaleString()}</strong>
+        <strong className="credits-count">{count(balance)}</strong>
         <span>
           {balance === 1 ? "credit left" : "credits left"}
           {daysLeft !== null ? ` · about ${plural(daysLeft, "day", "days")} at ${plural(perDay, "credit", "credits")} a day` : ""}
@@ -52,7 +56,7 @@ export function CreditsPanel({ view, justBought }: { view: CreditsView; justBoug
                   {REASON_LABELS[e.reason]} {e.detail && e.reason !== "purchase" ? <span className="hint">{e.detail}</span> : null}
                 </span>
                 <span className="hint">
-                  {e.amount > 0 ? `+${e.amount}` : e.amount} · {new Date(e.at).toLocaleDateString()}
+                  {e.amount > 0 ? `+${e.amount}` : e.amount} · {day(e.at)}
                 </span>
               </li>
             ))}
@@ -85,7 +89,7 @@ function PackButton({ pack }: { pack: CreditPack }) {
           setError(res.body.message ?? "Checkout didn't open.");
         }}
       >
-        {busy ? "Opening…" : `${credits.toLocaleString()} credits · $${priceUsd}`}
+        {busy ? "Opening…" : `${count(credits)} credits · $${priceUsd}`}
       </button>
       <span className="hint">
         {centsPerCredit(pack)}¢ a credit · {plural(Math.floor(credits / 30), "account", "accounts")} for a month
