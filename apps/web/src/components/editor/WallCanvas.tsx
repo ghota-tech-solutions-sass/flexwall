@@ -10,6 +10,8 @@ import { WALL_COLUMNS } from "@/domain/layout";
 import { BIO_MAX, TITLE_MAX, type Tile } from "@/domain/wall";
 import { catalog } from "@/plugins/registry";
 import { BrandMark, hasMark } from "@/components/brand/Logos";
+import { ConnectionTitle } from "@/components/connections/ConnectionTitle";
+import { displayNameText } from "@/domain/connection";
 import { TileBody } from "@/rendering/tile";
 import { useConnectionNames, useEditor, useEditorActions } from "./EditorContext";
 import { CopyIcon, EyeIcon, EyeOffIcon, KeyIcon, PlusIcon, TrashIcon } from "./icons";
@@ -177,16 +179,17 @@ function TileTools({ tile }: { tile: Tile }) {
   const hidden = tile.visibility === "private";
   const feeding = tileConnections(tile).flatMap((id) => {
     const connection = connections.find((c) => c.id === id);
-    return connection ? [{ connection, name: names[id] ?? connection.label }] : [];
+    return connection ? [{ connection, shown: names[id] }] : [];
   });
-  const shown = feeding[0];
+  const first = feeding[0];
   return (
     <div className="tile-tools" role="toolbar" aria-label="Tile actions">
-      {shown ? (
+      {first ? (
         <>
-          <small title={`From ${feeding.map((f) => f.name).join(", ")}`}>
-            {hasMark(shown.connection.connector) ? <BrandMark id={shown.connection.connector} size={12} /> : <KeyIcon size={12} />}
-            <b>{feeding.length > 1 ? `${shown.name} +${feeding.length - 1}` : shown.name}</b>
+          <small aria-label={`From ${feeding.map((f) => displayNameText(f.shown ?? { name: f.connection.label, number: null })).join(", ")}`}>
+            {hasMark(first.connection.connector) ? <BrandMark id={first.connection.connector} size={12} /> : <KeyIcon size={12} />}
+            <ConnectionTitle shown={first.shown} fallback={first.connection.label} />
+            {feeding.length > 1 ? <i>+{feeding.length - 1}</i> : null}
           </small>
           <span aria-hidden="true" />
         </>

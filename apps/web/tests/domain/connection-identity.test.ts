@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { connectionDetail, connectionName, credentialsState, disambiguate, normalizeNickname, viewOf, type ConnectionView } from "@/domain/connection";
+import { connectionDetail, connectionName, credentialsState, disambiguate, displayNames, normalizeNickname, viewOf, type ConnectionView } from "@/domain/connection";
 import { aConnection } from "../builders";
 
 const view = (over: Partial<ConnectionView> = {}): ConnectionView => ({ id: "c1", connector: "billing", label: "Billing account", public: {}, createdAt: 0, ...over });
@@ -81,6 +81,8 @@ describe("Telling connections apart", () => {
 
     // Then
     expect(names).toEqual({ first: "Billing account · 1", later: "Billing account · 2", named: "Side project", "other-connector": "Billing account" });
+    // Lists that cut long names keep the number apart.
+    expect(displayNames(views).later).toEqual({ name: "Billing account", number: 2 });
   });
 
   test("given accounts connected at the same instant, when named, then the numbering is stable", () => {

@@ -3,11 +3,12 @@
 import { useRef, useState } from "react";
 import type { TileRef } from "@/application/editor/draft";
 import type { Outcome } from "@/application/editor/ports";
-import { connectionDetail, credentialsState, disambiguate, type ConnectionView } from "@/domain/connection";
+import { connectionDetail, credentialsState, displayNames, displayNameText, type ConnectionView, type DisplayName } from "@/domain/connection";
 import { catalog } from "@/plugins/registry";
 import { BrandMark, hasMark } from "@/components/brand/Logos";
 import { ConnectForm } from "@/components/connections/ConnectForm";
 import { ConnectNotice } from "@/components/connections/ConnectNotice";
+import { ConnectionTitle } from "@/components/connections/ConnectionTitle";
 import { ConnectorPicker } from "@/components/connections/ConnectorPicker";
 import { RenameField } from "@/components/connections/RenameField";
 import { KeyIcon, PlusIcon } from "@/components/editor/icons";
@@ -27,7 +28,7 @@ export function ConnectionsManager({ initial, paid, usage, now }: { initial: Con
   const [connections, setConnections] = useState(initial);
   const [adding, setAdding] = useState<Adding>({ step: "closed" });
   const addRef = useRef<HTMLDivElement>(null);
-  const names = disambiguate(connections, connectorName);
+  const names = displayNames(connections, connectorName);
   const groups = groupByConnector(connections, connectorName);
 
   const reconnect = (connectorId: string) => {
@@ -53,7 +54,7 @@ export function ConnectionsManager({ initial, paid, usage, now }: { initial: Con
                   <ConnectionRow
                     key={c.id}
                     connection={c}
-                    name={names[c.id] ?? c.label}
+                    shown={names[c.id] ?? { name: c.label, number: null }}
                     used={usage[c.id] ?? []}
                     now={now}
                     rename={async (nickname) => {
@@ -121,7 +122,7 @@ type Mode = "idle" | "renaming" | "confirming";
 
 function ConnectionRow({
   connection,
-  name,
+  shown,
   used,
   now,
   rename,
@@ -129,7 +130,7 @@ function ConnectionRow({
   onReconnect,
 }: {
   connection: ConnectionView;
-  name: string;
+  shown: DisplayName;
   used: TileRef[];
   now: number;
   rename: (nickname: string | null) => Promise<Outcome<ConnectionView>>;
@@ -143,6 +144,7 @@ function ConnectionRow({
   const detail = connectionDetail(connection);
   const credentials = credentialsLine(credentialsState(connection, Boolean(connector?.auth?.oauth?.refresh), now), formatDate);
   const tileNames = used.map((t) => t.name).join(", ");
+  const name = displayNameText(shown);
 
   return (
     <li className="conn-row" data-mode={mode}>
@@ -152,7 +154,9 @@ function ConnectionRow({
           <RenameField nickname={connection.nickname} label={connection.label} save={rename} onDone={() => setMode("idle")} />
         ) : (
           <>
-            <strong className="conn-name">{name}</strong>
+            <strong className="conn-name">
+              <ConnectionTitle shown={shown} fallback={connection.label} />
+            </strong>
             {detail ? <span className="conn-detail">{detail}</span> : null}
           </>
         )}

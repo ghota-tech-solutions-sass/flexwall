@@ -4,12 +4,13 @@ import { parseTypedNumber, themeBackground, type ConnectorDef, type WidgetInputD
 import { sourcesFor, tilesUsing, type SourceOption } from "@/application/editor/draft";
 import { editorTheme } from "@/application/editor/state";
 import type { InputTarget } from "@/application/editor/store";
-import { connectionDetail, type ConnectionView } from "@/domain/connection";
+import { connectionDetail, displayNameText, type ConnectionView } from "@/domain/connection";
 import { connectorOfSource, sameSource, sourceOfBinding, type SourceRef } from "@/domain/source";
 import { canUseTheme, effectiveTheme, STATIC_TEXT_MAX, VISIBILITIES, type Tile, type Visibility } from "@/domain/wall";
 import { catalog } from "@/plugins/registry";
 import { BrandMark, hasMark } from "@/components/brand/Logos";
 import { ConnectForm } from "@/components/connections/ConnectForm";
+import { ConnectionTitle } from "@/components/connections/ConnectionTitle";
 import { RenameField } from "@/components/connections/RenameField";
 import { FieldInput } from "@/components/forms/FieldInput";
 import { removalWarning, usageLine } from "@/presentation/connections";
@@ -306,7 +307,9 @@ function AccountPicker({ connector, target, current, own, focusKey }: { connecto
               <button type="button" role="radio" aria-checked={current === c.id} onClick={() => actions.chooseAccount(target, c.id)}>
                 <ConnectorMark id={connector.id} />
                 <span>
-                  <strong>{names[c.id] ?? c.label}</strong>
+                  <strong>
+                    <ConnectionTitle shown={names[c.id]} fallback={c.label} />
+                  </strong>
                   {connectionDetail(c) ? <small>{connectionDetail(c)}</small> : null}
                 </span>
                 {current === c.id ? <CheckIcon size={14} /> : null}
@@ -473,7 +476,7 @@ function Accounts() {
       {connections.length ? (
         <ul className="ed-options static">
           {connections.map((c) => {
-            const name = names[c.id] ?? c.label;
+            const name = displayNameText(names[c.id] ?? { name: c.label, number: null });
             const detail = connectionDetail(c);
             const used = tilesUsing(c.id, tiles, catalog);
             const confirming = editing?.kind === "remove" && editing.connectionId === c.id;
@@ -483,7 +486,9 @@ function Accounts() {
                 <div>
                   <ConnectorMark id={c.connector} />
                   <span>
-                    <strong>{name}</strong>
+                    <strong>
+                      <ConnectionTitle shown={names[c.id]} fallback={c.label} />
+                    </strong>
                     <small>{[catalog.connector(c.connector)?.name ?? c.connector, detail].filter(Boolean).join(" · ")}</small>
                   </span>
                   {confirming ? (

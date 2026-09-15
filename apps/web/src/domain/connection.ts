@@ -112,26 +112,40 @@ export function connectionDetail(view: Pick<ConnectionView, "label" | "nickname"
     .join(" · ");
 }
 
-/**
- * Display names by connection id. Accounts of one connector that would read
- * the same are numbered in the order they were connected: "Acme · 1", "Acme · 2".
- */
-export function disambiguate(views: readonly ConnectionView[], connectorName: (connectorId: string) => string | undefined = () => undefined): Record<string, string> {
+/** A connection's name split from the number that tells it apart, so a list can cut a long name and still show the number. */
+export interface DisplayName {
+  name: string;
+  /** 1, 2… when another account of the same connector reads the same; else null. */
+  number: number | null;
+}
+
+export type ConnectorNames = (connectorId: string) => string | undefined;
+
+/** Names and numbers by connection id: accounts of one connector that would read the same are numbered in the order they were connected. */
+export function displayNames(views: readonly ConnectionView[], connectorName: ConnectorNames = () => undefined): Record<string, DisplayName> {
   const groups = new Map<string, ConnectionView[]>();
   for (const view of views) {
     const key = JSON.stringify([view.connector, connectionName(view, connectorName(view.connector)).toLowerCase()]);
     groups.set(key, [...(groups.get(key) ?? []), view]);
   }
-  const names: Record<string, string> = {};
+  const names: Record<string, DisplayName> = {};
   for (const group of groups.values()) {
     // Same instant (imports, tests): the id keeps the numbering stable.
     const ordered = [...group].sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id));
     ordered.forEach((view, i) => {
-      const name = connectionName(view, connectorName(view.connector));
-      names[view.id] = ordered.length > 1 ? `${name} · ${i + 1}` : name;
+      names[view.id] = { name: connectionName(view, connectorName(view.connector)), number: ordered.length > 1 ? i + 1 : null };
     });
   }
   return names;
+}
+
+export function displayNameText({ name, number }: DisplayName): string {
+  return number === null ? name : `${name} · ${number}`;
+}
+
+/** Display names by connection id, as one string each: "Acme · 1", "Acme · 2". */
+export function disambiguate(views: readonly ConnectionView[], connectorName: ConnectorNames = () => undefined): Record<string, string> {
+  return Object.fromEntries(Object.entries(displayNames(views, connectorName)).map(([id, shown]) => [id, displayNameText(shown)]));
 }
 
 /** Whether credentials keep working: renewed on their own, good until a date, or already lapsed. Null when they don't expire. */

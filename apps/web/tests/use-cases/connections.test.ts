@@ -132,10 +132,13 @@ describe("RenameConnection", () => {
     // When
     const cleared = await rename.execute({ userId: "u1", connectionId: "c1", nickname: "   " });
     const long = await rename.execute({ userId: "u1", connectionId: "c1", nickname: "n".repeat(60) });
+    const absent = await rename.execute({ userId: "u1", connectionId: "c1", nickname: undefined });
 
     // Then
     expect(cleared.nickname).toBeNull();
     expect(long.nickname).toBe("n".repeat(40));
+    // A request without a name clears it, like an empty one: the connector's label shows again.
+    expect(absent.nickname).toBeNull();
   });
 
   test("given something that isn't a name, when sent, then it's refused and the connection is unchanged", async () => {

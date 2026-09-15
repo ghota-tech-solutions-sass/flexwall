@@ -18,6 +18,7 @@ export function ConnectorPicker({ paid, onPick }: { paid: boolean; onPick: (conn
         <SearchIcon size={16} />
         <input
           type="search"
+          autoFocus
           value={query}
           placeholder="Search Stripe, GitHub, a bank…"
           aria-label="Search connectors"

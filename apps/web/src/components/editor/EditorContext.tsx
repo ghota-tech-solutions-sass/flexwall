@@ -5,7 +5,7 @@ import { useStore } from "zustand";
 import type { EditorDeps } from "@/application/editor/ports";
 import type { EditorInit } from "@/application/editor/state";
 import { createEditorStore, type EditorActions, type EditorStore, type EditorStoreState } from "@/application/editor/store";
-import { disambiguate } from "@/domain/connection";
+import { displayNames, type DisplayName } from "@/domain/connection";
 import { catalog } from "@/plugins/registry";
 
 const EditorStoreContext = createContext<EditorStore | null>(null);
@@ -29,9 +29,9 @@ export function useEditor<T>(select: (state: EditorStoreState) => T): T {
 }
 
 /** Every account's name, numbered where two of one connector would read the same. One map, so an account reads the same everywhere. */
-export function useConnectionNames(): Record<string, string> {
+export function useConnectionNames(): Record<string, DisplayName> {
   const connections = useEditor((s) => s.connections);
-  return useMemo(() => disambiguate(connections, (id) => catalog.connector(id)?.name), [connections]);
+  return useMemo(() => displayNames(connections, (id) => catalog.connector(id)?.name), [connections]);
 }
 
 /** The editor's use cases. Stable for the store's lifetime. */

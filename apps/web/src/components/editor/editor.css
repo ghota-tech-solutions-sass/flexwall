@@ -114,7 +114,7 @@
 /* The account feeding a tile, so owners with several accounts see which is which. */
 .tile-tools > small { display: inline-flex; align-items: center; gap: 5px; max-width: 150px; padding: 0 6px 0 7px; color: var(--ink-2); font-size: 12px; font-weight: 500; }
 .tile-tools > small svg { flex: none; }
-.tile-tools > small > b { overflow: hidden; font-weight: inherit; text-overflow: ellipsis; white-space: nowrap; }
+.tile-tools > small > i { flex: none; color: var(--muted); font-style: normal; }
 
 .tile-connect { position: absolute; left: 50%; top: 50%; z-index: 2; display: inline-flex; align-items: center; gap: 7px; max-width: calc(100% - 16px); padding: 7px 13px; border: 0; border-radius: 999px; background: var(--primary); color: var(--primary-ink); font: inherit; font-size: 13px; font-weight: 550; white-space: nowrap; cursor: pointer; transform: translate(-50%, -50%); box-shadow: 0 6px 20px -6px rgba(12, 13, 16, 0.4); transition: transform 0.3s var(--spring); }
 .tile-connect:hover { transform: translate(-50%, -50%) scale(1.03); }
@@ -222,7 +222,7 @@
 .ed-options small { display: block; overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .ed-options li > .ed-note { padding: 0 10px 10px 50px; }
 .ed-options li > .rename-field { padding: 0 10px 10px 50px; }
-.ed-options .rename-field-row input { min-height: 32px; padding: 4px 10px; font-size: 14px; }
+.ed-options .rename-field-row input { flex-basis: 90px; min-height: 32px; padding: 4px 10px; font-size: 14px; }
 .ed-options .rename-field-row .btn { min-height: 30px; padding: 4px 10px; font-size: 13px; }
 .ed-row-actions { display: flex; }
 .ed-row-actions .ed-icon-btn { width: 28px; height: 28px; }

@@ -595,6 +595,13 @@ main ~ .footer { margin-top: 120px; }
   .conn-usage { white-space: normal; }
 }
 
+/* An account's name may be cut to fit; the number telling it apart never is. */
+.conn-title { display: flex; gap: 4px; min-width: 0; max-width: 100%; }
+.conn-title > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conn-title-number { flex: none; white-space: nowrap; }
+/* Settings has room: long names wrap there instead of being cut. */
+.conn-name .conn-title > span:first-child { overflow-wrap: anywhere; white-space: normal; }
+
 /* Naming an account in place, in settings and in the editor. */
 .rename-field { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 .rename-field-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
