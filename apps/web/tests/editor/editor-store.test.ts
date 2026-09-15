@@ -314,6 +314,42 @@ describe("Editor store: accounts", () => {
     expect(store.getState().draft.tiles[0].inputs.value).toMatchObject({ connection: null });
   });
 
+  test("given two Billing accounts, when the owner names one, then only that account changes and the wall isn't saved or refetched", async () => {
+    // Given
+    const otherAccount: ConnectionView = { ...billingAccount, id: "c2" };
+    const { store, gateway, scheduler, actions } = anEditor({ connections: [billingAccount, otherAccount], wall: aWall().with(aTile().withId("a").stat().metric("billing", "mrr", { connection: "c2" })) });
+    const draft = store.getState().draft;
+
+    // When
+    const outcome = await actions.renameAccount("c2", " Side project ");
+    await scheduler.advance(EDITOR_TIMINGS.autosaveMs);
+
+    // Then
+    expect(outcome.ok).toBe(true);
+    expect(gateway.renamedAccounts).toEqual([{ connectionId: "c2", nickname: " Side project " }]);
+    expect(store.getState().connections.map((c) => [c.id, c.nickname ?? null])).toEqual([
+      ["c1", null],
+      ["c2", "Side project"],
+    ]);
+    expect(store.getState().draft).toBe(draft);
+    expect(store.getState().save).toEqual({ kind: "saved" });
+    expect(gateway.saved).toHaveLength(0);
+    expect(gateway.resolved).toHaveLength(0);
+  });
+
+  test("given a rename the server refuses, when the owner names an account, then the reason comes back and the list is unchanged", async () => {
+    // Given
+    const { store, gateway, actions } = anEditor({ connections: [billingAccount] });
+    gateway.renameOutcome = () => ({ ok: false, message: "That isn't yours." });
+
+    // When
+    const outcome = await actions.renameAccount("c1", "Mine");
+
+    // Then
+    expect(outcome).toEqual({ ok: false, message: "That isn't yours." });
+    expect(store.getState().connections).toEqual([billingAccount]);
+  });
+
   test("given a picked metric, when the owner already has an account for it, then the binding uses that account", () => {
     // Given
     const { store, actions } = anEditor({ connections: [billingAccount], wall: aWall().with(aTile().withId("a").stat()) });

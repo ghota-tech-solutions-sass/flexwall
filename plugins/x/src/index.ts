@@ -1,11 +1,15 @@
-import { ConnectorError, defineConnector, definePlugin, field, HttpError, number, type ConnectorContext, type FetchResult } from "@flexwall/sdk";
+import { ConnectorError, defineConnector, definePlugin, field, HttpError, number, type ConnectorContext, type ConnectorDef, type FetchResult } from "@flexwall/sdk";
 
 /**
- * Public numbers of one X account, read with the owner's own X developer app.
+ * Public numbers of one X account, two ways:
  *
- * X's API is pay-per-use, so Flexwall doesn't hold a key: the owner pastes the
- * Bearer Token of their own app and X bills their developer account. One user
- * lookup answers every metric, and the owner picks how often it runs.
+ * - `x`: with the owner's own X developer app. The owner pastes the Bearer
+ *   Token of their app, X bills their developer account, and they pick how
+ *   often it runs.
+ * - `x-credits`: with Flexwall's X app (`X_BEARER_TOKEN`). The owner types a
+ *   handle and pays in Flexwall credits, one a day per account the wall shows.
+ *
+ * One user lookup answers every metric either way.
  *
  * Verified against docs.x.com (September 2026): the OpenAPI spec, User lookup,
  * Rate limits, Response codes, and Pricing pages.
@@ -95,7 +99,11 @@ function problemOf(body: string): XProblem {
 }
 
 /** Turns what the owner can fix into a sentence; everything else (429, usage caps, 5xx) goes through. */
-function explain(error: unknown): never {
+function explain(error: unknown, key: "owner" | "server"): never {
+  if (error instanceof HttpError && key === "server" && [401, 402, 403].includes(error.status)) {
+    // Flexwall's own key or X account: nothing the owner can fix, and nothing to reveal about it.
+    throw new ConnectorError("X is unavailable on Flexwall right now. Your credits aren't spent while it lasts.");
+  }
   if (error instanceof HttpError) {
     const problem = problemOf(error.body);
     const text = `${problem.type ?? ""} ${problem.title ?? ""} ${problem.reason ?? ""}`.toLowerCase();
@@ -115,7 +123,7 @@ function explain(error: unknown): never {
   throw error;
 }
 
-async function lookup(handle: string, token: string, ctx: ConnectorContext): Promise<XUser> {
+async function lookup(handle: string, token: string, ctx: ConnectorContext, key: "owner" | "server" = "owner"): Promise<XUser> {
   let body: UserResponse;
   try {
     // One read answers every metric. The token travels in the header only, never in the URL.
@@ -123,7 +131,7 @@ async function lookup(handle: string, token: string, ctx: ConnectorContext): Pro
       headers: { Authorization: `Bearer ${token}` },
     });
   } catch (error) {
-    explain(error);
+    explain(error, key);
   }
   if (body?.data?.id) return body.data;
   // X answers an unknown or suspended handle with 200, an `errors` array and no `data`.
@@ -136,6 +144,35 @@ async function lookup(handle: string, token: string, ctx: ConnectorContext): Pro
   }
   throw new Error(`X answered the lookup of @${handle} without a user${problem?.title ? ` (${problem.title})` : ""}.`);
 }
+
+function metricsOf(user: XUser): FetchResult {
+  const m = user.public_metrics ?? {};
+  return {
+    followers: count(m.followers_count),
+    following: count(m.following_count),
+    posts: count(m.post_count ?? m.tweet_count),
+    listed: count(m.listed_count),
+    likes: count(m.like_count),
+  };
+}
+
+const METRICS = [
+  { id: "followers", name: "Followers", type: "number", unit: "count", defaults: { label: "followers on X" }, leaderboard: "audience" },
+  { id: "following", name: "Following", type: "number", unit: "count", defaults: { label: "following on X" } },
+  { id: "posts", name: "Posts", description: "Posts, including reposts.", type: "number", unit: "count", defaults: { label: "posts on X" } },
+  { id: "listed", name: "Listed", description: "Lists that include this account.", type: "number", unit: "count", defaults: { label: "lists on X" } },
+  { id: "likes", name: "Likes", description: "Posts this account has liked.", type: "number", unit: "count", defaults: { label: "likes on X" } },
+] as const satisfies ConnectorDef["metrics"];
+
+const SAMPLE = {
+  followers: number(1613, { unit: "count" }),
+  following: number(284, { unit: "count" }),
+  posts: number(3920, { unit: "count" }),
+  listed: number(27, { unit: "count" }),
+  likes: number(8410, { unit: "count" }),
+};
+
+const HANDLE_FIELD = field.text("handle", "X handle", { placeholder: "@XDevelopers", maxLength: 16, pattern: HANDLE_PATTERN, patternMessage: "must be an X handle, like @XDevelopers" });
 
 const xConnector = defineConnector({
   id: "x",
@@ -162,7 +199,7 @@ const xConnector = defineConnector({
         pattern: "^\\S{20,1000}$",
         patternMessage: "must be the token alone, without \"Bearer \" or spaces",
       }),
-      field.text("handle", "X handle", { placeholder: "@XDevelopers", maxLength: 16, pattern: HANDLE_PATTERN, patternMessage: "must be an X handle, like @XDevelopers" }),
+      HANDLE_FIELD,
       field.select(
         "refresh",
         "Refresh",
@@ -171,13 +208,7 @@ const xConnector = defineConnector({
       ),
     ],
   },
-  metrics: [
-    { id: "followers", name: "Followers", type: "number", unit: "count", defaults: { label: "followers on X" }, leaderboard: "audience" },
-    { id: "following", name: "Following", type: "number", unit: "count", defaults: { label: "following on X" } },
-    { id: "posts", name: "Posts", description: "Posts, including reposts.", type: "number", unit: "count", defaults: { label: "posts on X" } },
-    { id: "listed", name: "Listed", description: "Lists that include this account.", type: "number", unit: "count", defaults: { label: "lists on X" } },
-    { id: "likes", name: "Likes", description: "Posts this account has liked.", type: "number", unit: "count", defaults: { label: "likes on X" } },
-  ],
+  metrics: [...METRICS],
 
   // The handle lives on the connection, and the host adds the connection to the key: one lookup answers every metric.
   cacheKey: () => "profile",
@@ -186,16 +217,7 @@ const xConnector = defineConnector({
     const token = secret?.token;
     const handle = normalizeHandle(settings?.handle);
     if (!token || !handle) return {};
-    const user = await lookup(handle, token, ctx);
-    const m = user.public_metrics ?? {};
-    const out: FetchResult = {
-      followers: count(m.followers_count),
-      following: count(m.following_count),
-      posts: count(m.post_count ?? m.tweet_count),
-      listed: count(m.listed_count),
-      likes: count(m.like_count),
-    };
-    return out;
+    return metricsOf(await lookup(handle, token, ctx));
   },
 
   async connect(input, ctx) {
@@ -211,21 +233,56 @@ const xConnector = defineConnector({
     };
   },
 
-  sample: {
-    followers: number(1613, { unit: "count" }),
-    following: number(284, { unit: "count" }),
-    posts: number(3920, { unit: "count" }),
-    listed: number(27, { unit: "count" }),
-    likes: number(8410, { unit: "count" }),
+  sample: SAMPLE,
+});
+
+/** How often a credits connection reads X. X counts a profile once per UTC day, so later reads that day should be free; four a day keeps the cost bounded if they aren't. */
+export const CREDITS_TTL = 6 * 3600;
+
+const xCreditsConnector = defineConnector({
+  id: "x-credits",
+  name: "X with credits",
+  description: "Followers, following, posts, lists and likes of an X account, with no X developer app: one Flexwall credit a day per account.",
+  homepage: "https://x.com",
+  tier: "free",
+  // A handle anyone can type proves nothing about who owns it.
+  verified: false,
+  ttl: CREDITS_TTL,
+  creditsPerDay: 1,
+  auth: {
+    label: "Track an X account",
+    help:
+      "No X developer account needed: Flexwall reads the profile with its own X app. Each account costs one credit per day it refreshes, whatever the number of tiles showing it; days nobody views your wall cost nothing. Buy credits in settings.",
+    fields: [HANDLE_FIELD],
   },
+  metrics: [...METRICS],
+  cacheKey: () => "profile",
+
+  async fetch({ public: settings }, ctx) {
+    const handle = normalizeHandle(settings?.handle);
+    if (!handle) return {};
+    const token = ctx.env("X_BEARER_TOKEN");
+    if (!token) throw new ConnectorError("This Flexwall server has no X app.");
+    return metricsOf(await lookup(handle, token, ctx, "server"));
+  },
+
+  // No read here: connecting would be a free lookup. An unknown handle shows on the first refresh, which then costs nothing.
+  async connect(input, ctx) {
+    if (!ctx.env("X_BEARER_TOKEN")) throw new ConnectorError("This Flexwall server has no X app.");
+    const handle = normalizeHandle(input.handle);
+    if (!new RegExp(HANDLE_PATTERN).test(handle)) throw new ConnectorError("That isn't an X handle.");
+    return { secret: {}, public: { handle }, label: `@${handle}`, accountId: handle };
+  },
+
+  sample: SAMPLE,
 });
 
 export default definePlugin({
   id: "x",
   name: "X",
-  description: "Followers, following, posts, lists and likes of an X account, read with your own X developer app.",
+  description: "Followers, following, posts, lists and likes of an X account, with your own X developer app or Flexwall credits.",
   author: { name: "Flexwall", url: "https://flexwall.lol" },
-  connectors: [xConnector],
+  connectors: [xConnector, xCreditsConnector],
 });
 
-export { xConnector };
+export { xConnector, xCreditsConnector };

@@ -229,6 +229,15 @@ export class ConnectionBuilder {
     this.connection.expiresAt = epochMs;
     return this;
   }
+  /** Left out by default, like documents saved before owners could name accounts. */
+  named(nickname: string | null) {
+    this.connection.nickname = nickname;
+    return this;
+  }
+  connectedAt(epochMs: number) {
+    this.connection.createdAt = epochMs;
+    return this;
+  }
   build(): Connection {
     return structuredClone(this.connection);
   }

@@ -213,6 +213,9 @@ locals {
       STRIPE_PRICE_MONTHLY         = stripe_price.monthly.id
       STRIPE_PRICE_YEARLY          = stripe_price.yearly.id
       STRIPE_PRICE_LIFETIME        = stripe_price.lifetime.id
+      STRIPE_PRICE_CREDITS_STARTER = stripe_price.credits["starter"].id
+      STRIPE_PRICE_CREDITS_REGULAR = stripe_price.credits["regular"].id
+      STRIPE_PRICE_CREDITS_LARGE   = stripe_price.credits["large"].id
       STRIPE_PORTAL_CONFIGURATION  = stripe_portal_configuration.billing.id
       STRIPE_REFERRAL_COUPON       = stripe_coupon.referral.id
       STRIPE_AUTOMATIC_TAX         = tostring(var.stripe_automatic_tax)

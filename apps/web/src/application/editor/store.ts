@@ -81,6 +81,8 @@ export interface EditorActions {
   /** An account connected while the owner was away signing in: tiles waiting for its connector use it. */
   adoptConnection(connectionId: string): void;
   removeAccount(connection: ConnectionView): Promise<Outcome<void>>;
+  /** Names an account so the owner tells it apart; the wall itself doesn't change. */
+  renameAccount(connectionId: string, nickname: string | null): Promise<Outcome<ConnectionView>>;
 
   toggleLockscreen(tileId: string, on: boolean): void;
   arrangeLockscreen(layout: readonly LayoutItem[]): void;
@@ -254,6 +256,12 @@ export function createEditorStore(deps: EditorDeps, init: EditorInit): EditorSto
         const remaining = get().connections.filter((c) => c.id !== connection.id);
         change((d) => detachConnection(d, connection, remaining));
         set({ connections: remaining });
+        return outcome;
+      },
+      // Not through `change`: a name lives on the account, so nothing on the wall needs saving or refetching.
+      renameAccount: async (connectionId, nickname) => {
+        const outcome = await gateway.renameAccount(connectionId, nickname);
+        if (outcome.ok) set((s) => ({ connections: s.connections.map((c) => (c.id === connectionId ? outcome.value : c)) }));
         return outcome;
       },
 

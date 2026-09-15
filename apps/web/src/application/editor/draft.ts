@@ -276,3 +276,20 @@ export function tileName(tile: Tile, catalog: Catalog): string {
   const own = tile.options[LABEL_OPTION_KEY] || tile.options[TITLE_OPTION_KEY];
   return own ? String(own) : (catalog.widget(tile.widget)?.name ?? tile.widget);
 }
+
+/** The accounts feeding a tile, once each, in the order of its inputs. */
+export function tileConnections(tile: Tile): string[] {
+  const ids = Object.values(tile.inputs).flatMap((b) => (b.kind === "metric" && b.connection ? [b.connection] : []));
+  return [...new Set(ids)];
+}
+
+/** A tile as account lists name it. */
+export interface TileRef {
+  id: string;
+  name: string;
+}
+
+/** The tiles an account feeds, in wall order, so the owner sees what removing or renaming it touches. */
+export function tilesUsing(connectionId: string, tiles: readonly Tile[], catalog: Catalog): TileRef[] {
+  return tiles.filter((t) => tileConnections(t).includes(connectionId)).map((t) => ({ id: t.id, name: tileName(t, catalog) }));
+}

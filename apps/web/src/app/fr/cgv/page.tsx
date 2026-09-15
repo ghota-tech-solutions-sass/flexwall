@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LEGAL_PATHS, LegalDocument, legalMetadata, MediatorBlock } from "@/components/legal/LegalDocument";
+import { CREDIT_PACK_DETAILS, CREDIT_PACKS } from "@/domain/credits";
 import { PLAN_PRICES_USD } from "@/domain/pricing";
 import { REFERRAL_DISCOUNT_PERCENT, REFERRAL_REWARD_CAP, REFERRAL_REWARD_DAYS } from "@/domain/referral";
 import { FREE_TILE_LIMIT } from "@/domain/user";
@@ -151,7 +152,21 @@ export default function CgvPage() {
         {PUBLISHER.companyName} peut modifier ou arrêter le programme pour l&apos;avenir ; les récompenses déjà acquises sont conservées.
       </p>
 
-      <h2>17. Réclamations, médiation et droit applicable</h2>
+      <h2>17. Crédits</h2>
+      <p>
+        Certains connecteurs, comme « X with credits », lisent avec une clé payante détenue par {PUBLISHER.companyName} et se paient en crédits, vendus par
+        packs :{" "}
+        {CREDIT_PACKS.map((p) => `${CREDIT_PACK_DETAILS[p].credits} crédits pour ${String(CREDIT_PACK_DETAILS[p].priceUsd).replace(".", ",")} $`).join(", ")},
+        toutes taxes comprises. Un crédit est consommé par compte connecté pour chaque jour UTC où il est actualisé auprès du fournisseur ; les
+        actualisations suivantes du même jour, et les jours sans actualisation, ne coûtent rien. Une actualisation qui échoue rend son crédit. Les crédits sont
+        livrés dès l&apos;acceptation du paiement, n&apos;expirent pas tant que le service existe, n&apos;ont aucune valeur monétaire et ne sont pas cessibles.
+        En cochant la case avant le paiement, vous demandez leur livraison avant la fin du délai de rétractation ; les crédits non consommés sont remboursés sur
+        demande écrite dans les 14 jours suivant l&apos;achat. Sans crédits, ces connecteurs continuent d&apos;afficher leurs dernières valeurs. Si un
+        fournisseur cesse de servir la clé ou change ses prix, {PUBLISHER.companyName} peut retirer le connecteur ; les crédits non consommés sont alors
+        remboursés sur demande.
+      </p>
+
+      <h2>18. Réclamations, médiation et droit applicable</h2>
       <p>
         Toute réclamation s&apos;adresse d&apos;abord à <a href={`mailto:${email}`}>{email}</a>.
       </p>

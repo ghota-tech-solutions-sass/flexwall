@@ -10,7 +10,10 @@ const segment = (value: string) => encodeURIComponent(value);
 export const SIGN_IN_PARAMS = { token: "token", timeZone: "tz" } as const;
 
 /** Query parameters /settings reads. */
-export const SETTINGS_PARAMS = { upgraded: "upgraded" } as const;
+export const SETTINGS_PARAMS = { upgraded: "upgraded", credits: "credits" } as const;
+
+/** The credits section of settings, where the out-of-credits message sends owners. */
+export const CREDITS_ANCHOR = "credits";
 
 /** Query parameters added to the page an owner returns to after signing in at a provider. */
 export const CONNECT_PARAMS = { connected: "connected", error: "connect_error" } as const;
@@ -55,6 +58,9 @@ export const ROUTES = {
   lockscreen: (wallId: string, key: string) => `${PREFIX.lockscreen}${segment(wallId)}/${segment(key)}`,
   /** Settings after a paid checkout: says Pro is on its way. */
   settingsUpgraded: `/settings?${new URLSearchParams({ [SETTINGS_PARAMS.upgraded]: FLAG_ON })}`,
+  /** Settings after a credit pack is paid for: says the credits are on their way. */
+  settingsCreditsBought: `/settings?${new URLSearchParams({ [SETTINGS_PARAMS.credits]: FLAG_ON })}#${CREDITS_ANCHOR}`,
+  settingsCredits: `/settings#${CREDITS_ANCHOR}`,
   legalFr: "/fr/mentions-legales",
   termsFr: "/fr/cgv",
   privacyFr: "/fr/confidentialite",
@@ -74,6 +80,7 @@ export const API = {
   oauthStart: "/api/connections/oauth",
   adminPro: (accountId: string) => `/api/admin/accounts/${segment(accountId)}/pro`,
   adminWall: (accountId: string) => `/api/admin/accounts/${segment(accountId)}/wall`,
+  adminCredits: (accountId: string) => `/api/admin/accounts/${segment(accountId)}/credits`,
   /** Where providers send the owner back. Registered with each provider, so never rename it. */
   oauthCallback: "/api/connections/oauth/callback",
   handle: "/api/me/handle",
@@ -81,6 +88,7 @@ export const API = {
   signOut: "/api/auth/logout",
   billingCheckout: "/api/billing/checkout",
   billingPortal: "/api/billing/portal",
+  billingCredits: "/api/billing/credits",
   report: "/api/report",
   signInVerify: SIGN_IN_VERIFY,
   /** The link mailed to sign in. */

@@ -38,11 +38,15 @@ export class HttpEditorGateway implements EditorGateway {
     return this.call("DELETE", API.connection(connectionId), undefined, () => undefined);
   }
 
+  renameAccount(connectionId: string, nickname: string | null): Promise<Outcome<ConnectionView>> {
+    return this.call("PATCH", API.connection(connectionId), { nickname }, (body) => (body as { connection: ConnectionView }).connection);
+  }
+
   rotateLockscreenLink(): Promise<Outcome<string>> {
     return this.call("POST", API.lockscreenLink, {}, (body) => (body as { lockscreenPath: string }).lockscreenPath);
   }
 
-  private async call<T>(method: "POST" | "PUT" | "DELETE", path: string, payload: unknown, read: (body: unknown) => T): Promise<Outcome<T>> {
+  private async call<T>(method: "POST" | "PUT" | "PATCH" | "DELETE",path: string, payload: unknown, read: (body: unknown) => T): Promise<Outcome<T>> {
     const init: RequestInit = payload === undefined ? { method } : { method, headers: JSON_HEADERS, body: JSON.stringify(payload) };
     const response = await this.fetch(path, init).catch(() => null);
     if (!response) return { ok: false, message: UNREACHABLE_MESSAGE };

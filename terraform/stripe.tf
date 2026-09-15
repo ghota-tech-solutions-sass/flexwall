@@ -7,6 +7,7 @@
 #
 #   Pro       $6 a month or $48 a year   subscription
 #   Lifetime  $99 once                   payment
+#   Credits   100 $3.99, 400 $11.99, 1200 $29.99, once each   payment
 #
 # Prices include taxes (tax_behavior inclusive): with Stripe Tax on, the VAT of
 # the buyer's country comes out of the price instead of being added to it.
@@ -132,6 +133,47 @@ resource "stripe_price" "lifetime" {
   }
 }
 
+# One credit keeps one metered connection (X without a developer app) fresh for
+# a UTC day. Packs are one-off payments; the app adds the credits on
+# checkout.session.completed.
+resource "stripe_product" "credits" {
+  name        = "Flexwall credits"
+  description = "Credits for connectors Flexwall reads with its own paid key, such as X. One credit per account per day."
+  tax_code    = local.stripe_tax_code
+
+  metadata = {
+    app     = "flexwall"
+    kind    = "credits"
+    managed = "terraform"
+  }
+}
+
+locals {
+  credit_packs = {
+    starter = { credits = 100, cents = var.credits_starter_cents }
+    regular = { credits = 400, cents = var.credits_regular_cents }
+    large   = { credits = 1200, cents = var.credits_large_cents }
+  }
+}
+
+resource "stripe_price" "credits" {
+  for_each = local.credit_packs
+
+  product      = stripe_product.credits.id
+  currency     = "usd"
+  unit_amount  = each.value.cents
+  nickname     = "${each.value.credits} credits"
+  tax_behavior = "inclusive"
+
+  metadata = {
+    app     = "flexwall"
+    kind    = "credits"
+    pack    = each.key
+    credits = tostring(each.value.credits)
+    managed = "terraform"
+  }
+}
+
 # =============================================================================
 # REFERRALS
 # =============================================================================
@@ -217,7 +259,7 @@ resource "stripe_portal_configuration" "billing" {
 
 resource "stripe_webhook_endpoint" "billing" {
   url         = "${local.app_url}/api/webhooks/stripe"
-  description = "Flexwall billing: lifetime payments and subscription changes"
+  description = "Flexwall billing: lifetime and credit payments, subscription changes"
 
   enabled_events = [
     "checkout.session.completed",
@@ -257,6 +299,7 @@ output "stripe_prices" {
     monthly  = stripe_price.monthly.id
     yearly   = stripe_price.yearly.id
     lifetime = stripe_price.lifetime.id
+    credits  = { for pack, price in stripe_price.credits : pack => price.id }
   }
   description = "Price ids the app sells."
 }

@@ -111,6 +111,10 @@
 .tile-tools button:hover { background: var(--surface-2); color: var(--ink); }
 .tile-tools button.danger:hover { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }
 .tile-tools > span { width: 1px; height: 16px; margin-inline: 2px; background: var(--hairline); }
+/* The account feeding a tile, so owners with several accounts see which is which. */
+.tile-tools > small { display: inline-flex; align-items: center; gap: 5px; max-width: 150px; padding: 0 6px 0 7px; color: var(--ink-2); font-size: 12px; font-weight: 500; }
+.tile-tools > small svg { flex: none; }
+.tile-tools > small > i { flex: none; color: var(--muted); font-style: normal; }
 
 .tile-connect { position: absolute; left: 50%; top: 50%; z-index: 2; display: inline-flex; align-items: center; gap: 7px; max-width: calc(100% - 16px); padding: 7px 13px; border: 0; border-radius: 999px; background: var(--primary); color: var(--primary-ink); font: inherit; font-size: 13px; font-weight: 550; white-space: nowrap; cursor: pointer; transform: translate(-50%, -50%); box-shadow: 0 6px 20px -6px rgba(12, 13, 16, 0.4); transition: transform 0.3s var(--spring); }
 .tile-connect:hover { transform: translate(-50%, -50%) scale(1.03); }
@@ -217,6 +221,15 @@
 .ed-options strong { display: block; overflow: hidden; font-size: 14px; font-weight: 550; text-overflow: ellipsis; white-space: nowrap; }
 .ed-options small { display: block; overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .ed-options li > .ed-note { padding: 0 10px 10px 50px; }
+.ed-options li > .rename-field { padding: 0 10px 10px 50px; }
+.ed-options .rename-field-row input { flex-basis: 90px; min-height: 32px; padding: 4px 10px; font-size: 14px; }
+.ed-options .rename-field-row .btn { min-height: 30px; padding: 4px 10px; font-size: 13px; }
+.ed-row-actions { display: flex; }
+.ed-row-actions .ed-icon-btn { width: 28px; height: 28px; }
+.ed-usage { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: -4px 0 0; padding: 0 10px 10px 50px; color: var(--muted); font-size: 12px; }
+.ed-usage > span { margin-right: 2px; }
+.ed-usage button { max-width: 100%; overflow: hidden; padding: 1px 7px; border: 0; border-radius: 6px; background: var(--surface-2); color: var(--ink); font: inherit; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.ed-usage button:hover { box-shadow: inset 0 0 0 1px var(--hairline-strong); }
 .ed-confirm { display: flex; gap: 4px; }
 .ed-confirm button { min-height: 28px; padding: 3px 10px; border: 0; border-radius: 7px; background: var(--surface-2); color: var(--ink); font: inherit; font-size: 12.5px; font-weight: 550; cursor: pointer; }
 .ed-confirm button.danger { background: var(--danger); color: #fff; }

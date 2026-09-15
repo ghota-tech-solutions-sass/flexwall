@@ -1,8 +1,9 @@
+import { CREDIT_PACK_DETAILS, type CreditPack } from "@/domain/credits";
 import { DomainError } from "@/domain/errors";
 import { TERMS_VERSION } from "@/domain/publisher";
 import { convert, grantMonth, refundable, takeMonthBack } from "@/domain/referral";
 import { paidPlanOf } from "@/domain/user";
-import type { AppLinks, BillingEvent, BillingPlan, Clock, EventLog, PaymentGateway, ReferralRepository, UserRepository } from "../ports";
+import type { AppLinks, BillingEvent, BillingPlan, Clock, CreditAccounts, EventLog, PaymentGateway, ReferralRepository, UserRepository } from "../ports";
 
 export class StartCheckout {
   constructor(
@@ -38,6 +39,27 @@ export class StartCheckout {
   }
 }
 
+/** Opens the payment of a credit pack. Any account can buy credits, free or Pro. */
+export class StartCreditsCheckout {
+  constructor(private readonly deps: { users: UserRepository; payments: PaymentGateway; clock: Clock; links: AppLinks }) {}
+
+  async execute(input: { userId: string; pack: CreditPack; acceptedTerms: boolean }): Promise<{ url: string }> {
+    if (!this.deps.payments.enabled()) throw new DomainError("payments_unavailable", "Payments aren't switched on yet.");
+    if (input.acceptedTerms !== true) throw new DomainError("invalid_input", "Accept the terms and ask for your credits to be delivered now to continue.");
+    const user = await this.deps.users.byId(input.userId);
+    if (!user) throw new DomainError("unauthenticated", "Sign in again.");
+    const { url, customerId } = await this.deps.payments.creditsCheckoutUrl({
+      user,
+      pack: input.pack,
+      consent: { termsVersion: TERMS_VERSION, acceptedAt: this.deps.clock.now() },
+      successUrl: this.deps.links.creditsPurchased(),
+      cancelUrl: this.deps.links.billingReturn(),
+    });
+    if (customerId !== user.stripeCustomerId) await this.deps.users.save({ ...user, stripeCustomerId: customerId });
+    return { url };
+  }
+}
+
 export class OpenBillingPortal {
   constructor(private readonly deps: { users: UserRepository; payments: PaymentGateway; links: AppLinks }) {}
 
@@ -54,13 +76,24 @@ export class OpenBillingPortal {
  * payment earns their referrer a month; a refund soon after takes it back.
  */
 export class ApplyBillingEvent {
-  constructor(private readonly deps: { users: UserRepository; events: EventLog; referrals: ReferralRepository; clock: Clock }) {}
+  constructor(private readonly deps: { users: UserRepository; events: EventLog; referrals: ReferralRepository; credits: CreditAccounts; clock: Clock }) {}
 
   async execute(event: BillingEvent): Promise<"applied" | "duplicate" | "unknown_user"> {
     const user = ("userId" in event && event.userId ? await this.deps.users.byId(event.userId) : null) ?? (await this.deps.users.byStripeCustomer(event.customerId));
     if (!user) return "unknown_user";
     if (!(await this.deps.events.firstTime(event.id))) return "duplicate";
 
+    if (event.type === "credits") {
+      // Keyed by the event: a replay past the event log still adds the pack once.
+      await this.deps.credits.adjust({ userId: user.id, entryId: event.id, amount: CREDIT_PACK_DETAILS[event.pack].credits, reason: "purchase", detail: event.pack });
+      if (user.stripeCustomerId !== event.customerId) await this.deps.users.save({ ...user, stripeCustomerId: event.customerId });
+      return "applied";
+    }
+    if (event.type === "credits_refund") {
+      // What was already spent stays spent: the balance stops at zero.
+      await this.deps.credits.adjust({ userId: user.id, entryId: event.id, amount: -CREDIT_PACK_DETAILS[event.pack].credits, reason: "refund", detail: `${event.pack} refunded` });
+      return "applied";
+    }
     if (event.type === "refund") {
       await this.refund(user.id);
       return "applied";

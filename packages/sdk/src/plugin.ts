@@ -55,6 +55,10 @@ export function checkPlugins(plugins: readonly PluginDef[]): string[] {
       if (c.auth?.oauth && c.connect) problems.push(`${where}: has both oauth and connect(), pick one`);
       if (!c.auth && c.verified) problems.push(`${where}: verified connectors need auth, the badge means "from the owner's own account"`);
       if (c.ttl < 60) problems.push(`${where}: ttl under 60 seconds would hammer the upstream`);
+      if (c.creditsPerDay !== undefined) {
+        if (!Number.isInteger(c.creditsPerDay) || c.creditsPerDay < 1) problems.push(`${where}: creditsPerDay must be a whole number of at least 1`);
+        if (!c.auth) problems.push(`${where}: credits are charged per connection, so connectors with creditsPerDay need auth`);
+      }
     }
     for (const w of p.widgets ?? []) {
       const where = `plugin ${p.id}, widget ${w.id}`;

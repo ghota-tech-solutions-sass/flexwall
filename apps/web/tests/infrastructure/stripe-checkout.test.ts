@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { checkoutSessionParams } from "@/infrastructure/billing/stripe-gateway";
+import { checkoutSessionParams, CREDITS_METADATA_KIND, creditsSessionParams } from "@/infrastructure/billing/stripe-gateway";
 
 const base = {
   customerId: "cus_1",
@@ -97,5 +97,38 @@ describe("Checkout session", () => {
     // Then
     expect(params.discounts).toBeUndefined();
     expect(params.allow_promotion_codes).toBe(true);
+  });
+});
+
+describe("Credits checkout session", () => {
+  const credits = { customerId: "cus_1", userId: "u1", consent: base.consent, successUrl: "https://flexwall.test/settings?credits=1", cancelUrl: "https://flexwall.test/settings" };
+
+  test("given a pack, when its checkout is built, then it's a one-off payment with an invoice and the pack in the metadata", () => {
+    // Given
+    const input = { ...credits, pack: "regular" as const, priceId: "price_credits_regular", options: { automaticTax: true, collectTermsConsent: false, referralCoupon: "coupon_ref" } };
+
+    // When
+    const params = creditsSessionParams(input);
+
+    // Then
+    expect(params.mode).toBe("payment");
+    expect(params.line_items).toEqual([{ price: "price_credits_regular", quantity: 1 }]);
+    expect(params.metadata).toMatchObject({ userId: "u1", kind: CREDITS_METADATA_KIND, pack: "regular", terms_version: "2026-09-14", immediate_start: "requested" });
+    expect(params.payment_intent_data?.metadata).toEqual(params.metadata);
+    expect(params.invoice_creation).toEqual({ enabled: true });
+    expect(params.automatic_tax).toEqual({ enabled: true });
+    // The referral discount is for plans only.
+    expect(params.discounts).toBeUndefined();
+  });
+
+  test("given no configured price, when a pack checkout is built, then the inline price is the pack's, taxes included", () => {
+    // Given
+    const input = { ...credits, pack: "starter" as const, priceId: null, options: { automaticTax: false, collectTermsConsent: false, referralCoupon: null } };
+
+    // When
+    const params = creditsSessionParams(input);
+
+    // Then
+    expect(params.line_items?.[0]?.price_data).toMatchObject({ currency: "usd", unit_amount: 399, tax_behavior: "inclusive" });
   });
 });

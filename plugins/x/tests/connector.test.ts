@@ -11,6 +11,7 @@ import plugin, {
   refreshLabel,
   REFRESH_HOURS,
   xConnector,
+  xCreditsConnector,
 } from "../src/index";
 
 /**
@@ -385,5 +386,79 @@ describe("x connector", () => {
       expect(values).toEqual({});
       expect(ctx.calls).toEqual([]);
     });
+  });
+});
+
+describe("x-credits connector", () => {
+  const SERVER_TOKEN = "AAAAAAAAAAAAAAAAAAAAAFlexwallServerToken";
+  const env = { X_BEARER_TOKEN: SERVER_TOKEN };
+
+  test("given the definition, when read, then it costs a credit a day, refreshes every 6 hours and shares the X metrics", () => {
+    // Given / When
+    const c = xCreditsConnector;
+
+    // Then
+    expect(c.creditsPerDay).toBe(1);
+    expect(c.ttl).toBe(6 * 3600);
+    expect(c.verified).toBe(false);
+    expect(c.metrics.map((m) => m.id)).toEqual(ALL);
+    expect(c.auth!.fields.map((f) => f.key)).toEqual(["handle"]);
+  });
+
+  test("given a handle, when connected, then nothing is read from X and the handle is stored normalised", async () => {
+    // Given
+    const ctx = fakeContext({}, { env });
+
+    // When
+    const result = await xCreditsConnector.connect!({ handle: "@XDevelopers" }, ctx);
+
+    // Then
+    expect(ctx.calls).toEqual([]);
+    expect(result).toMatchObject({ secret: {}, public: { handle: "xdevelopers" }, label: "@xdevelopers" });
+  });
+
+  test("given a stored handle, when fetched, then the lookup uses Flexwall's token and answers every metric", async () => {
+    // Given
+    let authorization = "";
+    const ctx = fakeContext(
+      {
+        [LOOKUP]: (init: GuardedFetchInit | undefined) => {
+          authorization = String((init?.headers as Record<string, string>)?.Authorization);
+          return fixture("user");
+        },
+      },
+      { env }
+    );
+
+    // When
+    const values = await xCreditsConnector.fetch({ metrics: ALL, params: {}, secret: {}, public: { handle: "xdevelopers" } }, ctx);
+
+    // Then
+    expect(authorization).toBe(`Bearer ${SERVER_TOKEN}`);
+    expect(ctx.calls).toEqual([url("xdevelopers")]);
+    expect(Object.keys(values).sort()).toEqual([...ALL].sort());
+  });
+
+  test("given Flexwall's X account out of credits, when fetched, then the owner reads nothing about Flexwall's key", async () => {
+    // Given
+    const ctx = fakeContext({ [LOOKUP]: refuse(402, raw("credits-depleted")) }, { env });
+
+    // When
+    const error = await errorOf(xCreditsConnector.fetch({ metrics: ALL, params: {}, secret: {}, public: { handle: "xdevelopers" } }, ctx));
+
+    // Then
+    expect(error).toBeInstanceOf(ConnectorError);
+    expect(error!.message).toBe("X is unavailable on Flexwall right now. Your credits aren't spent while it lasts.");
+  });
+
+  test("given a server without an X token, when connecting, then the owner is told the server has no X app", async () => {
+    // Given
+    const ctx = fakeContext({});
+
+    // When
+    const error = await errorOf(xCreditsConnector.connect!({ handle: "jack" }, ctx));
+
+    // Then
+    expect(error!.message).toBe("This Flexwall server has no X app.");
   });
 });

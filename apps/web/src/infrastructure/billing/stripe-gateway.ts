@@ -1,12 +1,18 @@
 import Stripe from "stripe";
 import type { BillingEvent, BillingPlan, CheckoutConsent, PaymentGateway } from "@/application/ports";
+import { CREDIT_PACK_DETAILS, isCreditPack, type CreditPack } from "@/domain/credits";
 import type { Subscription, SubscriptionStatus, User } from "@/domain/user";
 
 export interface StripePrices {
   monthly: string | null;
   yearly: string | null;
   lifetime: string | null;
+  /** One-off prices of the credit packs. */
+  credits?: Partial<Record<CreditPack, string | null>>;
 }
+
+/** Tells credit pack payments apart from plan payments in session metadata. */
+export const CREDITS_METADATA_KIND = "credits";
 
 /** Inline prices used when no Stripe price ids are configured (test mode, self-hosting). Taxes included, like the configured ones. */
 const FALLBACK = {
@@ -86,6 +92,62 @@ export function checkoutSessionParams(input: {
   };
 }
 
+/** The Checkout session for a credit pack: a one-off payment, with the same consent and tax handling as plans. */
+export function creditsSessionParams(input: {
+  customerId: string;
+  userId: string;
+  pack: CreditPack;
+  priceId: string | null;
+  consent: CheckoutConsent;
+  successUrl: string;
+  cancelUrl: string;
+  options: CheckoutOptions;
+}): Stripe.Checkout.SessionCreateParams {
+  const { credits, priceUsd } = CREDIT_PACK_DETAILS[input.pack];
+  const metadata = {
+    userId: input.userId,
+    kind: CREDITS_METADATA_KIND,
+    pack: input.pack,
+    credits: String(credits),
+    terms_version: input.consent.termsVersion,
+    terms_accepted_at: new Date(input.consent.acceptedAt).toISOString(),
+    immediate_start: "requested",
+  };
+  const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = input.priceId
+    ? { price: input.priceId, quantity: 1 }
+    : {
+        quantity: 1,
+        price_data: {
+          currency: "usd",
+          product_data: { name: `${credits} Flexwall credits` },
+          tax_behavior: "inclusive",
+          unit_amount: Math.round(priceUsd * 100),
+        },
+      };
+  return {
+    customer: input.customerId,
+    mode: "payment",
+    line_items: [lineItem],
+    metadata,
+    payment_intent_data: { metadata },
+    invoice_creation: { enabled: true },
+    custom_text: {
+      submit: { message: `${credits} credits land on your account as soon as you pay. Unused credits are refunded on request within 14 days.` },
+    },
+    ...(input.options.automaticTax
+      ? {
+          automatic_tax: { enabled: true },
+          billing_address_collection: "required" as const,
+          customer_update: { address: "auto" as const, name: "auto" as const },
+          tax_id_collection: { enabled: true },
+        }
+      : {}),
+    ...(input.options.collectTermsConsent ? { consent_collection: { terms_of_service: "required" as const } } : {}),
+    success_url: input.successUrl,
+    cancel_url: input.cancelUrl,
+  };
+}
+
 /**
  * Flexwall's own billing (not the Stripe connector): hosted Checkout for the
  * subscription and the lifetime plan, the customer portal, and webhook events
@@ -144,6 +206,24 @@ export class StripeGateway implements PaymentGateway {
     return { url: session.url, customerId };
   }
 
+  async creditsCheckoutUrl(input: { user: User; pack: CreditPack; consent: CheckoutConsent; successUrl: string; cancelUrl: string }) {
+    const customerId = await this.customerFor(input.user);
+    const session = await this.stripe().checkout.sessions.create(
+      creditsSessionParams({
+        customerId,
+        userId: input.user.id,
+        pack: input.pack,
+        priceId: this.config.prices.credits?.[input.pack] ?? null,
+        consent: input.consent,
+        successUrl: input.successUrl,
+        cancelUrl: input.cancelUrl,
+        options: this.config.checkout ?? { automaticTax: false, collectTermsConsent: false, referralCoupon: null },
+      })
+    );
+    if (!session.url) throw new Error("Stripe returned a checkout session without a URL");
+    return { url: session.url, customerId };
+  }
+
   async portalUrl(input: { customerId: string; returnUrl: string }) {
     const portal = await this.stripe().billingPortal.sessions.create({
       customer: input.customerId,
@@ -161,17 +241,32 @@ export class StripeGateway implements PaymentGateway {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object;
-        if (session.mode !== "payment" || session.metadata?.plan !== "lifetime") return null;
+        if (session.mode !== "payment") return null;
         if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") return null;
         const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;
-        if (!customerId || !session.metadata?.userId) return null;
-        return { id: event.id, type: "lifetime", customerId, userId: session.metadata.userId };
+        const userId = session.metadata?.userId;
+        if (!customerId || !userId) return null;
+        if (session.metadata?.kind === CREDITS_METADATA_KIND) {
+          const pack = session.metadata.pack;
+          // The pack decides the amount, never a number carried in metadata.
+          return isCreditPack(pack) ? { id: event.id, type: "credits", customerId, userId, pack, credits: CREDIT_PACK_DETAILS[pack].credits } : null;
+        }
+        if (session.metadata?.plan !== "lifetime") return null;
+        return { id: event.id, type: "lifetime", customerId, userId };
       }
       case "charge.refunded": {
         const charge = event.data.object;
         const customerId = typeof charge.customer === "string" ? charge.customer : charge.customer?.id;
         // Partial refunds keep the purchase, and the referral with it.
         if (!charge.refunded || !customerId) return null;
+        const intentId = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
+        if (intentId) {
+          // Pack payments carry their metadata on the payment intent, not on the charge.
+          const metadata = charge.metadata?.kind ? charge.metadata : (await this.stripe().paymentIntents.retrieve(intentId)).metadata;
+          if (metadata?.kind === CREDITS_METADATA_KIND) {
+            return isCreditPack(metadata.pack) && metadata.userId ? { id: event.id, type: "credits_refund", customerId, userId: metadata.userId, pack: metadata.pack } : null;
+          }
+        }
         return { id: event.id, type: "refund", customerId };
       }
       case "customer.subscription.created":
