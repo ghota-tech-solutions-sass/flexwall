@@ -21,6 +21,8 @@ export interface Resolution {
 /** Connected accounts, managed from the editor and from settings. */
 export interface AccountsGateway {
   connectAccount(connector: string, values: FieldValues): Promise<Outcome<ConnectionView>>;
+  /** Starts signing in at a provider. Resolves to the address to send the browser to; it comes back to `returnTo`. */
+  startSignIn(connector: string, values: FieldValues, returnTo: string): Promise<Outcome<string>>;
   removeAccount(connectionId: string): Promise<Outcome<void>>;
 }
 

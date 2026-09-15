@@ -323,7 +323,7 @@ function AccountPicker({ connector, target, current, own, focusKey }: { connecto
               </div>
             </div>
           ) : null}
-          <ConnectForm connectorId={connector.id} focusKey={focusKey} connect={(values) => actions.connectAccount(connector.id, values, target)} onConnected={() => setAdding(false)} onCancel={own.length ? () => setAdding(false) : undefined} />
+          <ConnectForm connectorId={connector.id} focusKey={focusKey} connect={(values) => actions.connectAccount(connector.id, values, target)} signIn={(values) => actions.signIn(connector.id, values, ROUTES.edit)} onConnected={() => setAdding(false)} onCancel={own.length ? () => setAdding(false) : undefined} />
         </div>
       ) : (
         <button type="button" className="ed-add" onClick={() => setAdding(true)}>
@@ -532,6 +532,7 @@ function Accounts() {
             connectorId={adding.connectorId}
             focusKey={0}
             connect={(values) => actions.connectAccount(adding.connectorId, values)}
+            signIn={(values) => actions.signIn(adding.connectorId, values, ROUTES.edit)}
             onConnected={() => setAdding({ step: "closed" })}
             onCancel={() => setAdding({ step: "choose" })}
           />

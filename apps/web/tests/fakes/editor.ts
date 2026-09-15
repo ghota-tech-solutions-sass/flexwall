@@ -70,6 +70,14 @@ export class FakeEditorGateway implements EditorGateway {
     return this.connectOutcome(connector, values);
   }
 
+  readonly signIns: { connector: string; values: FieldValues; returnTo: string }[] = [];
+  signInOutcome: Outcome<string> = { ok: true, value: "https://provider.test/authorize?state=s" };
+
+  async startSignIn(connector: string, values: FieldValues, returnTo: string): Promise<Outcome<string>> {
+    this.signIns.push({ connector, values, returnTo });
+    return this.signInOutcome;
+  }
+
   async removeAccount(connectionId: string): Promise<Outcome<void>> {
     this.removedAccounts.push(connectionId);
     return this.removeOutcome;

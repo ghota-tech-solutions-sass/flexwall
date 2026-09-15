@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import { ConnectNotice } from "@/components/connections/ConnectNotice";
 import type { EditorInit } from "@/application/editor/state";
 import { catalog } from "@/plugins/registry";
 import { Logo } from "@/components/brand/Logo";
@@ -36,11 +37,13 @@ export function Editor({ init, appUrl }: EditorProps) {
 function EditorShell({ appUrl }: { appUrl: string }) {
   const surface = useEditor((s) => s.surface);
   const actions = useEditorActions();
+  const connections = useEditor((s) => s.connections);
   useShortcuts();
 
   return (
     <div className="editor">
       <EditorBar />
+      <ConnectNotice connections={connections} onConnected={actions.adoptConnection} />
       <div className="editor-body">
         <aside className="editor-side" aria-label="Add a tile">
           <Library />

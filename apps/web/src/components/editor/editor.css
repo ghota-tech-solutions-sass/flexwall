@@ -7,6 +7,9 @@
 
 .editor { --bar: 56px; --panel-pad: 16px; display: grid; grid-template-rows: var(--bar) minmax(0, 1fr); height: 100dvh; background: var(--bg); color: var(--ink); }
 
+/* Back from signing in at a provider: floats over the canvas, out of the editor's grid. */
+.editor .connect-notice { position: fixed; top: calc(var(--bar) + 12px); left: 50%; transform: translateX(-50%); z-index: 40; margin: 0; padding: 10px 14px; max-width: min(560px, calc(100vw - 32px)); border-radius: 10px; background: var(--surface); box-shadow: 0 0 0 1px var(--hairline), 0 8px 24px rgb(0 0 0 / 0.12); }
+
 /* ── Bar ── */
 .ed-bar { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 16px; padding-inline: 12px 14px; border-bottom: 1px solid var(--hairline); background: var(--surface); }
 .ed-bar-start, .ed-bar-end { display: flex; align-items: center; gap: 8px; min-width: 0; }

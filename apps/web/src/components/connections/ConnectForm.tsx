@@ -14,6 +14,8 @@ interface Props {
   connectorId: string;
   /** Tests the credentials and saves them. Injected: the editor's store or settings' gateway. */
   connect: (values: FieldValues) => Promise<Outcome<ConnectionView>>;
+  /** For connectors that sign in at the provider: resolves to the address to leave for. */
+  signIn: (values: FieldValues) => Promise<Outcome<string>>;
   onConnected?: (connection: ConnectionView) => void;
   onCancel?: () => void;
   /** Focuses the first field when mounted with a value, and again each time it changes. */
@@ -21,7 +23,7 @@ interface Props {
 }
 
 /** A connector's declared auth fields, submitted through whatever `connect` it's given. */
-export function ConnectForm({ connectorId, connect, onConnected, onCancel, focusKey }: Props) {
+export function ConnectForm({ connectorId, connect, signIn, onConnected, onCancel, focusKey }: Props) {
   const connector = catalog.connector(connectorId);
   const [values, setValues] = useState<FieldValues>({});
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +45,13 @@ export function ConnectForm({ connectorId, connect, onConnected, onCancel, focus
         e.preventDefault();
         setBusy(true);
         setError(null);
+        if (auth.oauth) {
+          const started = await signIn(values);
+          // Stay busy on success: the browser is leaving for the provider.
+          if (started.ok) return window.location.assign(started.value);
+          setBusy(false);
+          return setError(started.message);
+        }
         const outcome = await connect(values);
         setBusy(false);
         if (outcome.ok) onConnected?.(outcome.value);
@@ -72,7 +81,7 @@ export function ConnectForm({ connectorId, connect, onConnected, onCancel, focus
       ) : null}
       <div className="row">
         <button type="submit" className="btn btn-signal btn-small" disabled={busy}>
-          {busy ? "Checking…" : (auth.label ?? `Connect ${connector.name}`)}
+          {busy ? (auth.oauth ? `Opening ${connector.name}…` : "Checking…") : (auth.label ?? `Connect ${connector.name}`)}
         </button>
         {onCancel ? (
           <button type="button" className="btn btn-small btn-quiet" onClick={onCancel}>

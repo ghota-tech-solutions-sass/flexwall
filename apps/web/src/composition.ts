@@ -1,7 +1,7 @@
 import { RequestSignInLink, SignIn } from "@/application/use-cases/auth";
 import { ApplyBillingEvent, OpenBillingPortal, StartCheckout } from "@/application/use-cases/billing";
 import { ClaimHandle } from "@/application/use-cases/claim-handle";
-import { ConnectAccount, RemoveConnection } from "@/application/use-cases/connections";
+import { ConnectAccount, FinishConnectionSignIn, RemoveConnection, StartConnectionSignIn } from "@/application/use-cases/connections";
 import { ListExplore, ReportWall } from "@/application/use-cases/explore";
 import { GetLockscreen } from "@/application/use-cases/lockscreen";
 import { ResolveWall } from "@/application/use-cases/resolve-wall";
@@ -18,6 +18,25 @@ import { GuardedRuntime, RandomIds, SystemClock } from "@/infrastructure/system"
 import { catalog } from "@/plugins/registry";
 import { RouteLinks } from "@/presentation/links";
 import { LOCAL_APP_URL } from "@/site";
+
+/**
+ * Server configuration plugins may read: keys and app credentials that belong
+ * to this Flexwall server, never the Stripe secret or the encryption key.
+ * Each one is documented in docs/self-hosting.md.
+ */
+const CONNECTOR_ENV = [
+  "GITHUB_TOKEN",
+  "YOUTUBE_API_KEY",
+  "STEAM_API_KEY",
+  "TWITCH_CLIENT_ID",
+  "TWITCH_CLIENT_SECRET",
+  "TIKTOK_CLIENT_KEY",
+  "TIKTOK_CLIENT_SECRET",
+  "INSTAGRAM_APP_ID",
+  "INSTAGRAM_APP_SECRET",
+  "ENABLE_BANKING_APP_ID",
+  "ENABLE_BANKING_PRIVATE_KEY",
+] as const;
 
 /** Where wall reports go when MODERATION_INBOX isn't set. */
 const DEFAULT_MODERATION_INBOX = "report@flexwall.lol";
@@ -62,7 +81,7 @@ function build() {
       referralCoupon: optionalEnv("STRIPE_REFERRAL_COUPON") || null,
     },
   });
-  const runtime = new GuardedRuntime(["GITHUB_TOKEN", "YOUTUBE_API_KEY"]);
+  const runtime = new GuardedRuntime(CONNECTOR_ENV);
 
   const resolveWall = new ResolveWall({ catalog, connections, cache, snapshots, secrets, runtime, clock });
 
@@ -79,6 +98,8 @@ function build() {
     rotateLockscreenLink: new RotateLockscreenLink({ walls, ids, tokens, links, clock }),
     getPublicWall: new GetPublicWall({ walls, users, clock }),
     connectAccount: new ConnectAccount({ users, connections, catalog, runtime, secrets, ids, clock }),
+    startConnectionSignIn: new StartConnectionSignIn({ users, connections, catalog, runtime, secrets, ids, clock, links }),
+    finishConnectionSignIn: new FinishConnectionSignIn({ users, connections, catalog, runtime, secrets, ids, clock, links }),
     removeConnection: new RemoveConnection({ connections }),
     resolveWall,
     getLockscreen: new GetLockscreen({ walls, users, tokens }),

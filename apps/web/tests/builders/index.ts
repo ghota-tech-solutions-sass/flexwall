@@ -217,6 +217,14 @@ export class ConnectionBuilder {
     this.connection.sealed = value;
     return this;
   }
+  withPublic(values: Record<string, string>) {
+    this.connection.public = values;
+    return this;
+  }
+  expiringAt(epochMs: number) {
+    this.connection.expiresAt = epochMs;
+    return this;
+  }
   build(): Connection {
     return structuredClone(this.connection);
   }

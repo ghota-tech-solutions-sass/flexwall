@@ -68,6 +68,13 @@ export interface EditorActions {
   requestConnect(tileId: string): void;
   /** Connects an account; waiting tiles use it, and so does `target` when given. */
   connectAccount(connector: string, values: FieldValues, target?: InputTarget): Promise<Outcome<ConnectionView>>;
+  /**
+   * Saves the draft, then starts signing in at a provider. Resolves to the
+   * address to leave for: the editor comes back to `returnTo` with the new account.
+   */
+  signIn(connector: string, values: FieldValues, returnTo: string): Promise<Outcome<string>>;
+  /** An account connected while the owner was away signing in: tiles waiting for its connector use it. */
+  adoptConnection(connectionId: string): void;
   removeAccount(connection: ConnectionView): Promise<Outcome<void>>;
 
   toggleLockscreen(tileId: string, on: boolean): void;
@@ -206,6 +213,22 @@ export function createEditorStore(deps: EditorDeps, init: EditorInit): EditorSto
         if (target) change((d) => setConnection(d, target.tileId, target.inputKey, connection.id));
         set({ connections: [...known.filter((c) => c.id !== connection.id), connection] });
         return outcome;
+      },
+      signIn: async (connector, values, returnTo) => {
+        // Leaving the page drops a pending autosave: save first, and stay if it fails.
+        if (get().save.kind !== "saved") {
+          cancel.save();
+          await save();
+          const state = get().save;
+          if (state.kind === "error") return { ok: false, message: state.message };
+        }
+        return gateway.startSignIn(connector, values, returnTo);
+      },
+      adoptConnection: (connectionId) => {
+        const connection = get().connections.find((c) => c.id === connectionId);
+        if (!connection) return;
+        const others = get().connections.filter((c) => c.id !== connectionId);
+        change((d) => attachConnection(d, connection, others));
       },
       removeAccount: async (connection) => {
         const outcome = await gateway.removeAccount(connection.id);

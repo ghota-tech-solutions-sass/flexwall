@@ -28,6 +28,18 @@ describe("Editor HTTP gateway", () => {
     expect(calls).toEqual([{ path: API.wall, init: { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(draft) } }]);
   });
 
+  test("given a connector that signs in at its provider, when starting, then the choices and the way back are posted and the address comes back", async () => {
+    // Given
+    const { calls, gateway } = recording(async () => Response.json({ url: "https://id.twitch.tv/oauth2/authorize?state=s" }));
+
+    // When
+    const outcome = await gateway.startSignIn("twitch", {}, "/edit");
+
+    // Then
+    expect(outcome).toEqual({ ok: true, value: "https://id.twitch.tv/oauth2/authorize?state=s" });
+    expect(calls).toEqual([{ path: API.oauthStart, init: { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ connector: "twitch", values: {}, returnTo: "/edit" }) } }]);
+  });
+
   test("given the server explains a refusal, when connecting, then the owner gets its message", async () => {
     // Given
     const { gateway } = recording(async () => Response.json({ error: "connection_failed", message: "Stripe refused that key." }, { status: 422 }));

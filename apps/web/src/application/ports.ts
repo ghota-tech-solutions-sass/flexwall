@@ -122,6 +122,8 @@ export interface AppLinks {
   billingReturn(): string;
   /** Absolute and shareable: an invite from `handle`. */
   referral(handle: string): string;
+  /** Absolute: where a provider sends the owner back after signing in. Registered with each provider. */
+  oauthCallback(): string;
 }
 
 /** What a buyer agreed to before paying: the terms in force, and to start right away despite the withdrawal period. */

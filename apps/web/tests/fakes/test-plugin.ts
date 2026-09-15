@@ -1,4 +1,4 @@
-import { ConnectorError, defineConnector, definePlugin, field, number, type Value } from "@flexwall/sdk";
+import { ConnectorError, defineConnector, definePlugin, ExpiredCredentialsError, field, number, type Value } from "@flexwall/sdk";
 import core from "@flexwall/plugin-core";
 import { createCatalog } from "@/plugins/catalog";
 
@@ -10,6 +10,9 @@ export class ScriptedUpstream {
   calls = 0;
   answer: Record<string, Value | null> = { visitors: number(120), signups: number(8) };
   mode: "ok" | "fail" | "hang" | "owner-error" = "ok";
+  /** Renewals asked of the sign-in connector, and whether its provider still honours them. */
+  refreshes = 0;
+  refreshMode: "ok" | "revoked" = "ok";
 
   async respond(): Promise<Record<string, Value | null>> {
     this.calls++;
@@ -19,6 +22,9 @@ export class ScriptedUpstream {
     return this.answer;
   }
 }
+
+/** When the Social connector's first access token lapses. */
+export const SOCIAL_TOKEN_EXPIRY = Date.UTC(2026, 8, 14, 10, 0, 0);
 
 export function testCatalog(upstream = new ScriptedUpstream()) {
   const analytics = defineConnector({
@@ -88,6 +94,43 @@ export function testCatalog(upstream = new ScriptedUpstream()) {
     sample: { balance: number(1, { unit: "currency", currency: "usd" }) },
   });
 
-  const plugin = definePlugin({ id: "test", name: "Test", description: "Test connectors", author: { name: "tests" }, connectors: [analytics, billing, brokerage, wallet] });
+  const social = defineConnector({
+    id: "social",
+    name: "Social",
+    description: "Connects by signing in at the provider, with tokens that expire.",
+    tier: "free",
+    verified: true,
+    ttl: 600,
+    ttlFor: (pub) => Number(pub.refreshHours) * 3600,
+    auth: {
+      help: "Sign in to allow reading your followers.",
+      fields: [],
+      oauth: {
+        async authorize({ redirectUri, state }) {
+          return { url: `https://social.test/authorize?${new URLSearchParams({ state, redirect_uri: redirectUri })}`, carry: { verifier: "v1" } };
+        },
+        async complete({ query, carry }) {
+          if (query.error) throw new ConnectorError("You declined to connect Social.");
+          if (query.code !== "good" || carry.verifier !== "v1") throw new ConnectorError("Social refused the sign-in.");
+          return { secret: { access: "a1", refresh: "r1" }, public: { handle: "ada", refreshHours: "6" }, label: "@ada", accountId: "s1", expiresAt: SOCIAL_TOKEN_EXPIRY };
+        },
+        async refresh({ secret }) {
+          upstream.refreshes++;
+          if (upstream.refreshMode === "revoked") throw new ConnectorError("Reconnect Social: access was revoked.");
+          return { secret: { access: `a${upstream.refreshes + 1}`, refresh: `${secret.refresh}+` }, expiresAt: SOCIAL_TOKEN_EXPIRY + upstream.refreshes * 3600_000 };
+        },
+      },
+    },
+    metrics: [{ id: "followers", name: "Followers", type: "number", unit: "count", leaderboard: "audience" }],
+    cacheKey: () => "profile",
+    fetch: async ({ secret }) => {
+      if (secret?.access === "expired") throw new ExpiredCredentialsError();
+      await upstream.respond();
+      return { followers: number(1613, { unit: "count" }) };
+    },
+    sample: { followers: number(1, { unit: "count" }) },
+  });
+
+  const plugin = definePlugin({ id: "test", name: "Test", description: "Test connectors", author: { name: "tests" }, connectors: [analytics, billing, brokerage, wallet, social] });
   return { catalog: createCatalog([core, plugin], "night"), upstream };
 }

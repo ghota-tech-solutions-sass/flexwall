@@ -30,6 +30,10 @@ export class HttpEditorGateway implements EditorGateway {
     return this.call("POST", API.connections, { connector, values }, (body) => (body as { connection: ConnectionView }).connection);
   }
 
+  startSignIn(connector: string, values: FieldValues, returnTo: string): Promise<Outcome<string>> {
+    return this.call("POST", API.oauthStart, { connector, values, returnTo }, (body) => (body as { url: string }).url);
+  }
+
   removeAccount(connectionId: string): Promise<Outcome<void>> {
     return this.call("DELETE", API.connection(connectionId), undefined, () => undefined);
   }

@@ -32,4 +32,8 @@ export class RouteLinks implements AppLinks {
   referral(handle: string) {
     return this.origin + ROUTES.referral(handle);
   }
+
+  oauthCallback() {
+    return this.origin + API.oauthCallback;
+  }
 }

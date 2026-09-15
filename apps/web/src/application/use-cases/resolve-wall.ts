@@ -1,6 +1,6 @@
-import { ConnectorError, defaultCacheKey, isValue, series, type ConnectorDef, type FieldValues, type InputValue, type Surface, type Value } from "@flexwall/sdk";
+import { ConnectorError, defaultCacheKey, ExpiredCredentialsError, isValue, series, type ConnectorDef, type FieldValues, type InputValue, type Surface, type Value } from "@flexwall/sdk";
 import type { Catalog } from "@/domain/catalog";
-import type { Connection } from "@/domain/connection";
+import { needsRenewal, type Connection } from "@/domain/connection";
 import { entitlementsOf, type Entitlements, type User } from "@/domain/user";
 import { shiftDay, todayIn } from "@/domain/time";
 import { HISTORY_DAYS, type Binding, type Tile } from "@/domain/wall";
@@ -42,6 +42,12 @@ interface Group {
 
 class Deadline extends Error {}
 
+/** How long a group's values stay fresh: the connector's ttl, or longer when the connection asks for it (an owner paying per call). */
+export function freshnessSeconds(connector: ConnectorDef, connection: Connection | null): number {
+  const own = connection && connector.ttlFor ? connector.ttlFor(connection.public) : connector.ttl;
+  return Number.isFinite(own) ? Math.max(connector.ttl, own) : connector.ttl;
+}
+
 function withDeadline<T>(promise: Promise<T>, ms: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   return Promise.race([
@@ -79,6 +85,8 @@ export function seriesKey(binding: Extract<Binding, { kind: "metric" }>): string
 export class ResolveWall {
   private readonly memory = new Map<string, CachedValues>();
   private readonly flights = new Map<string, Promise<CachedValues>>();
+  /** One renewal per connection at a time: providers that rotate refresh tokens accept each one once. */
+  private readonly renewals = new Map<string, Promise<{ connection: Connection; secret: Record<string, string> }>>();
   private readonly recorded = new Set<string>();
 
   constructor(
@@ -170,7 +178,7 @@ export class ResolveWall {
     group: Group,
     opts: { today: string; now: number; persist: boolean; cacheOnly: boolean }
   ): Promise<{ entry: CachedValues | null; stale: boolean; error: string | null }> {
-    const ttlMs = group.connector.ttl * 1000;
+    const ttlMs = freshnessSeconds(group.connector, group.connection) * 1000;
     const known = [this.memory.get(group.key), await this.deps.cache.get(group.key)]
       .filter((e): e is CachedValues => Boolean(e))
       .sort((a, b) => b.at - a.at)[0];
@@ -203,18 +211,27 @@ export class ResolveWall {
   }
 
   private async fetchGroup(group: Group, today: string): Promise<CachedValues> {
+    let connection = group.connection;
     let secret: Record<string, string> | null = null;
-    if (group.connection) {
+    if (connection) {
       try {
-        secret = this.deps.secrets.open(group.connection.sealed);
+        secret = this.deps.secrets.open(connection.sealed);
       } catch {
         throw new ConnectorError(`Reconnect ${group.connector.name}: its credentials can't be read anymore.`);
       }
+      if (needsRenewal(connection, this.deps.clock.now())) ({ connection, secret } = await this.renew(group.connector, connection, secret, today));
     }
-    const values = await group.connector.fetch(
-      { metrics: [...group.metrics], params: group.params, secret, public: group.connection?.public ?? null },
-      this.deps.runtime.context(today)
-    );
+    const run = () =>
+      group.connector.fetch({ metrics: [...group.metrics], params: group.params, secret, public: connection?.public ?? null }, this.deps.runtime.context(today));
+    let values;
+    try {
+      values = await run();
+    } catch (error) {
+      // The provider says the token lapsed before we thought: renew once and try again.
+      if (!(error instanceof ExpiredCredentialsError) || !connection || !secret) throw error;
+      ({ connection, secret } = await this.renew(group.connector, connection, secret, today));
+      values = await run();
+    }
     const clean: Record<string, Value | null> = {};
     for (const m of group.metrics) {
       const v = values[m];
@@ -259,6 +276,31 @@ export class ResolveWall {
       }
     }
     return { status: "ready", inputs };
+  }
+
+  /**
+   * Trades a connection's credentials for fresh ones and saves them sealed.
+   * Without a way to renew, the owner has to sign in again.
+   */
+  private renew(connector: ConnectorDef, connection: Connection, secret: Record<string, string>, today: string) {
+    let renewal = this.renewals.get(connection.id);
+    if (!renewal) {
+      renewal = (async () => {
+        const refresh = connector.auth?.oauth?.refresh;
+        if (!refresh) throw new ConnectorError(`Reconnect ${connector.name}: its sign-in expired.`);
+        const renewed = await refresh({ secret, public: connection.public }, this.deps.runtime.context(today));
+        const next: Connection = {
+          ...connection,
+          sealed: this.deps.secrets.seal(renewed.secret),
+          public: renewed.public ?? connection.public,
+          expiresAt: renewed.expiresAt ?? null,
+        };
+        await this.deps.connections.save(next);
+        return { connection: next, secret: renewed.secret };
+      })().finally(() => this.renewals.delete(connection.id));
+      this.renewals.set(connection.id, renewal);
+    }
+    return renewal;
   }
 
   /** At most one write an hour per series: the day's point ends up as its latest reading. */
