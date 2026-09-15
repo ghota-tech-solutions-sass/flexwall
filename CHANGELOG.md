@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.8.0...v0.9.0) (2026-09-15)
+
+
+### Features
+
+* **web:** a back office to look after accounts and offer Pro without payment ([#25](https://github.com/ghota-tech-solutions-sass/flexwall/issues/25)) ([848ba86](https://github.com/ghota-tech-solutions-sass/flexwall/commit/848ba86031797ecc821237325d1cd68312676caf))
+
 ## [0.8.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.7.0...v0.8.0) (2026-09-15)
 
 
