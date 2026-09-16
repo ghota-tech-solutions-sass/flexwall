@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.15.0...v0.16.0) (2026-09-16)
+
+
+### Features
+
+* **editor:** build a wall with a finger, on a phone as on a desktop ([#42](https://github.com/ghota-tech-solutions-sass/flexwall/issues/42)) ([29d6e68](https://github.com/ghota-tech-solutions-sass/flexwall/commit/29d6e68e0f26b05085156b71080b7021a4357df0))
+
 ## [0.15.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.14.0...v0.15.0) (2026-09-16)
 
 
