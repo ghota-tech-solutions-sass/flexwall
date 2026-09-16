@@ -289,8 +289,8 @@ resource "google_secret_manager_secret_version" "stripe_webhook_secret" {
 
 output "stripe_prices" {
   value = {
-    monthly  = stripe_price.monthly.id
-    yearly   = stripe_price.yearly.id
+    monthly      = stripe_price.monthly.id
+    yearly       = stripe_price.yearly.id
     lifetime     = stripe_price.lifetime.id
     paid_account = stripe_price.paid_account.id
   }
