@@ -79,6 +79,37 @@ describe("Editor store: saving", () => {
     expect(store.getState().save).toEqual({ kind: "error", message: "The Number tile at row 1, column 1: that Billing connection isn't yours." });
   });
 
+  test("given a refused save, when the owner tries again, then the wall is sent once more and the error clears", async () => {
+    // Given
+    const { store, gateway, scheduler, actions } = anEditor();
+    gateway.saveOutcome = { ok: false, message: "The store is unavailable." };
+    actions.setBio("Building things");
+    await scheduler.advance(EDITOR_TIMINGS.autosaveMs);
+    gateway.saveOutcome = { ok: true, value: undefined };
+
+    // When
+    const retry = await actions.saveNow();
+
+    // Then
+    expect(retry).toEqual({ ok: true, value: undefined });
+    expect(gateway.saved.map((d) => d.bio)).toEqual(["Building things", "Building things"]);
+    expect(store.getState().save).toEqual({ kind: "saved" });
+  });
+
+  test("given a wall saved a moment ago, when something asks to save now, then nothing is sent again", async () => {
+    // Given
+    const { gateway, scheduler, actions } = anEditor();
+    actions.setBio("Building things");
+    await scheduler.advance(EDITOR_TIMINGS.autosaveMs);
+
+    // When
+    const again = await actions.saveNow();
+
+    // Then
+    expect(again.ok).toBe(true);
+    expect(gateway.saved).toHaveLength(1);
+  });
+
   test("given an edit that changes nothing, when applied, then the wall isn't marked dirty or saved", async () => {
     // Given
     const { store, gateway, scheduler, actions } = anEditor({ wall: aWall().unpublished() });

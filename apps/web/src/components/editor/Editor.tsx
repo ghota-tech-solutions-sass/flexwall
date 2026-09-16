@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ConnectNotice } from "@/components/connections/ConnectNotice";
 import type { EditorInit } from "@/application/editor/state";
 import { catalog } from "@/plugins/registry";
@@ -49,6 +49,7 @@ function EditorShell({ appUrl }: { appUrl: string }) {
           <Library />
         </aside>
         <main className="canvas" onMouseDown={(e) => e.target === e.currentTarget && actions.select(null)}>
+          <SaveError />
           {surface === "wall" ? <WallCanvas /> : <LockscreenPanel appUrl={appUrl} />}
           <UndoToast />
         </main>
@@ -70,6 +71,8 @@ function useShortcuts() {
       const action = shortcutFor(event);
       if (!action) return;
       if (action === "deselect") return actions.select(null);
+      if (action === "save") return (event.preventDefault(), void actions.saveNow());
+      // Everything below acts on a tile.
       if (action === "undo") return (event.preventDefault(), actions.undoRemove());
       if (!selected) return;
       event.preventDefault();
@@ -121,12 +124,47 @@ function EditorBar() {
             <span className="ed-dot" /> Live
           </span>
         ) : (
-          <button type="button" className="btn btn-signal btn-small" onClick={() => actions.setPublished(true)}>
+          <button
+            type="button"
+            className="btn btn-signal btn-small"
+            onClick={async () => {
+              actions.setPublished(true);
+              // Publishing a draft that never reached the server would show yesterday's wall.
+              await actions.saveNow();
+            }}
+          >
             Publish
           </button>
         )}
       </div>
     </header>
+  );
+}
+
+/**
+ * A refused save, said out loud and recoverable. The pill in the bar is easy to
+ * miss on a phone, and the wall keeps taking edits that nobody is storing.
+ */
+function SaveError() {
+  const save = useEditor((s) => s.save);
+  const actions = useEditorActions();
+  const [retrying, setRetrying] = useState(false);
+  if (save.kind !== "error") return null;
+  return (
+    <div className="ed-save-error" role="alert">
+      <span>{save.message}</span>
+      <button
+        type="button"
+        disabled={retrying}
+        onClick={async () => {
+          setRetrying(true);
+          await actions.saveNow();
+          setRetrying(false);
+        }}
+      >
+        {retrying ? "Saving…" : "Try again"}
+      </button>
+    </div>
   );
 }
 

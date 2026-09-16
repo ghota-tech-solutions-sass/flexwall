@@ -43,6 +43,19 @@ describe("SaveWall", () => {
     expect(saved.tiles[0].options).toMatchObject({ label: "MRR" });
   });
 
+  test("given a Link tile added before it has an address, when the wall saves, then it's kept", async () => {
+    // Given
+    const { saveWall, walls } = await setup();
+    const draft = aWall().with(aTile().withId("link").widget("link").at(0, 0, 1, 1)).draft();
+
+    // When
+    await saveWall.execute({ userId: "u1", draft });
+
+    // Then
+    const saved = (await walls.byOwner("u1"))!;
+    expect(saved.tiles.map((t) => t.widget)).toEqual(["link"]);
+  });
+
   test("given two tiles on the same cells, when the owner saves, then the overlap is named", async () => {
     // Given
     const { saveWall } = await setup();

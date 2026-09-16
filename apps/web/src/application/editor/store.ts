@@ -44,6 +44,8 @@ export interface EditorActions {
 
   select(tileId: string | null): void;
   showSurface(surface: EditorSurface): void;
+  /** Saves at once instead of waiting for the autosave: retrying an error, ⌘S, and before publishing or leaving. */
+  saveNow(): Promise<Outcome<void>>;
 
   addTile(widgetId: string): void;
   /** The owner started dragging a widget out of the library, or stopped. */
@@ -144,6 +146,13 @@ export function createEditorStore(deps: EditorDeps, init: EditorInit): EditorSto
       },
 
       select: (tileId) => set((s) => ({ selected: tileId, connectRequest: s.connectRequest?.tileId === tileId ? s.connectRequest : null })),
+      saveNow: async () => {
+        if (get().save.kind === "saved") return { ok: true as const, value: undefined };
+        cancel.save();
+        await save();
+        const state = get().save;
+        return state.kind === "error" ? { ok: false as const, message: state.message } : { ok: true as const, value: undefined };
+      },
       showSurface: (surface) => set({ surface }),
 
       addTile: (widgetId) => {
@@ -236,12 +245,8 @@ export function createEditorStore(deps: EditorDeps, init: EditorInit): EditorSto
       },
       signIn: async (connector, values, returnTo) => {
         // Leaving the page drops a pending autosave: save first, and stay if it fails.
-        if (get().save.kind !== "saved") {
-          cancel.save();
-          await save();
-          const state = get().save;
-          if (state.kind === "error") return { ok: false, message: state.message };
-        }
+        const saved = await actions.saveNow();
+        if (!saved.ok) return saved;
         return gateway.startSignIn(connector, values, returnTo);
       },
       adoptConnection: (connectionId) => {

@@ -21,6 +21,11 @@
 .ed-save { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 2px 8px; border-radius: 999px; color: var(--muted); font-size: 13px; white-space: nowrap; transition: color 0.3s var(--spring); }
 .ed-save[data-kind="saved"] svg { color: var(--accent-text); }
 .ed-save[data-kind="error"] { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); max-width: 28ch; overflow: hidden; text-overflow: ellipsis; }
+
+/* A refused save, where the owner is looking: above the wall, with the way out. */
+.ed-save-error { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 16px; padding: 10px 12px; border-radius: var(--r-field); background: color-mix(in srgb, var(--danger) 10%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger) 30%, transparent); color: var(--danger); font-size: 14px; }
+.ed-save-error button { min-height: 36px; padding: 6px 14px; border: 0; border-radius: 999px; background: var(--danger); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.ed-save-error button:disabled { opacity: 0.7; cursor: default; }
 .ed-live { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 6px 14px; border-radius: 999px; background: var(--accent-wash); color: var(--accent-text); font-size: 14px; font-weight: 550; }
 .ed-live .ed-dot { background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
 .ed-bar .btn-small svg { margin-right: -2px; color: var(--muted); }
@@ -305,7 +310,9 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; height: 22px; 
   .editor { height: auto; min-height: 100dvh; grid-template-rows: auto auto; }
   .ed-bar { position: sticky; top: 0; z-index: 20; grid-template-columns: minmax(0, 1fr) auto; row-gap: 8px; padding-block: 8px; }
   .ed-surface { grid-column: 1 / -1; grid-row: 2; }
-  .ed-save { display: none; }
+  /* Saving state stays visible on a phone: a failed save must never be silent. */
+  .ed-save { margin-left: 0; padding: 6px 10px; min-height: 32px; }
+  .ed-save[data-kind="error"] { max-width: 14ch; }
   .editor-body { grid-template-columns: minmax(0, 1fr); }
   .editor-side { overflow: visible; }
   .editor-side:not(.right) { border-right: 0; border-bottom: 1px solid var(--hairline); }
