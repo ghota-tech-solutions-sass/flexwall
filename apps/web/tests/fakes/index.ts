@@ -198,7 +198,7 @@ export class FakeTokens implements TokenService {
 /** Addresses on a test origin, shaped like the real ones but without depending on the app's routes. */
 export class FakeLinks implements AppLinks {
   constructor(private readonly origin = "https://flexwall.test") {}
-  signIn = (token: string) => `${this.origin}/api/auth/verify?token=${encodeURIComponent(token)}`;
+  signIn = (token: string, handle?: string) => `${this.origin}/api/auth/verify?token=${encodeURIComponent(token)}${handle ? `&handle=${encodeURIComponent(handle)}` : ""}`;
   lockscreen = (wallId: string, key: string) => `/l/${wallId}/${key}`;
   checkoutSucceeded = () => `${this.origin}/settings?upgraded=1`;
   checkoutCancelled = () => `${this.origin}/pricing`;

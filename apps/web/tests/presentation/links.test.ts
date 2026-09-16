@@ -19,6 +19,17 @@ describe("App links", () => {
     ]);
   });
 
+  test("given a handle asked for before signing in, when the sign-in link is built, then it travels in the link rather than in the browser that asked", () => {
+    // Given
+    const links = new RouteLinks("https://flexwall.test");
+
+    // When
+    const link = links.signIn("magic:ada@example.com", "ada-builds");
+
+    // Then
+    expect(link).toBe("https://flexwall.test/api/auth/verify?token=magic%3Aada%40example.com&handle=ada-builds");
+  });
+
   test("given a wall and its key, when the lock screen link is built, then it stays relative so the editor can put its own origin in front", () => {
     // Given
     const links = new RouteLinks("https://flexwall.test");

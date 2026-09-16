@@ -4,7 +4,8 @@ import { useState } from "react";
 import { postJson } from "@/presentation/json";
 import { API, SIGN_IN_PARAMS } from "@/presentation/routes";
 
-export function SignInForm() {
+/** `handle` is what was typed on the way here; it rides the emailed link so it is still there after the trip through the inbox. */
+export function SignInForm({ handle }: { handle?: string }) {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<{ kind: "idle" | "sending" | "sent" | "error"; message?: string; devLink?: string }>({ kind: "idle" });
 
@@ -13,7 +14,7 @@ export function SignInForm() {
       onSubmit={async (e) => {
         e.preventDefault();
         setState({ kind: "sending" });
-        const res = await postJson<{ devLink?: string }>(API.signInRequest, { email });
+        const res = await postJson<{ devLink?: string }>(API.signInRequest, { email, handle });
         if (!res.ok) return setState({ kind: "error", message: res.body.message ?? "Couldn't send the link." });
         // The browser's time zone travels with the link, so the new account's "today" is right.
         const devLink = res.body.devLink ? `${res.body.devLink}&${new URLSearchParams({ [SIGN_IN_PARAMS.timeZone]: Intl.DateTimeFormat().resolvedOptions().timeZone })}` : undefined;

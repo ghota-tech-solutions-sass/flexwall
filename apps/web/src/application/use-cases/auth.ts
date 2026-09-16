@@ -13,10 +13,12 @@ export class RequestSignInLink {
     private readonly deps: { tokens: TokenService; mailer: Mailer; links: AppLinks }
   ) {}
 
-  async execute(input: { email: string }): Promise<{ link: string }> {
+  /** `handle` is what they typed before signing in; an unusable one is dropped rather than refused, since the link is about the address. */
+  async execute(input: { email: string; handle?: string }): Promise<{ link: string }> {
     const email = input.email.trim().toLowerCase();
     if (!EMAIL.test(email)) throw invalid("That doesn't look like an email address.");
-    const link = this.deps.links.signIn(this.deps.tokens.magic(email));
+    const wanted = input.handle && Handle.isValid(input.handle) ? Handle.parse(input.handle) : undefined;
+    const link = this.deps.links.signIn(this.deps.tokens.magic(email), wanted);
     await this.deps.mailer.send({
       to: email,
       subject: "Your Flexwall sign-in link",

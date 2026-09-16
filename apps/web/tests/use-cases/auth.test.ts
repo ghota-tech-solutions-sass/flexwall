@@ -18,6 +18,31 @@ describe("RequestSignInLink", () => {
     expect(mailer.sent[0].text).toContain("https://flexwall.test/api/auth/verify?token=magic%3Aada%40example.com");
   });
 
+  test("given a handle typed before signing in, when a link is requested, then the link carries it", async () => {
+    // Given
+    const mailer = new RecordingMailer();
+    const requestLink = new RequestSignInLink({ tokens: new FakeTokens(), mailer, links: new FakeLinks() });
+
+    // When
+    await requestLink.execute({ email: "ada@example.com", handle: "Ada Builds-" });
+
+    // Then
+    expect(mailer.sent[0].text).toContain("&handle=ada-builds");
+  });
+
+  test("given a handle nobody could claim, when a link is requested, then the link is mailed without it", async () => {
+    // Given
+    const mailer = new RecordingMailer();
+    const requestLink = new RequestSignInLink({ tokens: new FakeTokens(), mailer, links: new FakeLinks() });
+
+    // When
+    await requestLink.execute({ email: "ada@example.com", handle: "settings" });
+
+    // Then
+    expect(mailer.sent).toHaveLength(1);
+    expect(mailer.sent[0].text).not.toContain("handle=");
+  });
+
   test("given something that isn't an email, when a link is requested, then nothing is sent", async () => {
     // Given
     const mailer = new RecordingMailer();

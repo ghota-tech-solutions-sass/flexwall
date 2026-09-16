@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { container } from "@/composition";
+import { Handle } from "@/domain/handle";
 import { REFERRAL_COOKIE } from "@/domain/referral";
 import { setSession } from "@/presentation/http";
 import { ROUTES, SIGN_IN_PARAMS } from "@/presentation/routes";
@@ -13,7 +14,10 @@ export async function GET(req: NextRequest) {
       timeZone: req.nextUrl.searchParams.get(SIGN_IN_PARAMS.timeZone) ?? undefined,
       referralHandle: req.cookies.get(REFERRAL_COOKIE)?.value,
     });
-    const response = NextResponse.redirect(`${c.appUrl}${user.handle ? ROUTES.edit : ROUTES.onboarding}`);
+    // A wall already has its address; only an account still picking one cares about the handle that came along.
+    const wanted = req.nextUrl.searchParams.get(SIGN_IN_PARAMS.handle) ?? "";
+    const next = user.handle ? ROUTES.edit : ROUTES.onboardingToClaim(Handle.isValid(wanted) ? Handle.parse(wanted) : "");
+    const response = NextResponse.redirect(`${c.appUrl}${next}`);
     setSession(response, session);
     // Used once: the invite only ever applies to the account it created.
     response.cookies.delete(REFERRAL_COOKIE);

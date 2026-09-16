@@ -7,19 +7,24 @@ import { postJson } from "@/presentation/json";
 import { API, ROUTES } from "@/presentation/routes";
 import { STORAGE_KEYS } from "@/presentation/storage-keys";
 
-export function HandleForm() {
+/** A handle that arrives from elsewhere gets the same treatment as one being typed, minus the hyphen left for the next word. */
+const clean = (raw: string) => Handle.slugify(raw).replace(/-+$/, "");
+
+/** `suggested` is the handle that travelled on the sign-in link; it wins over the one this browser happens to remember. */
+export function HandleForm({ suggested }: { suggested?: string }) {
   const router = useRouter();
-  const [handle, setHandle] = useState("");
+  const [handle, setHandle] = useState(clean(suggested ?? ""));
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    if (suggested) return;
     try {
-      setHandle(Handle.slugify(sessionStorage.getItem(STORAGE_KEYS.wantedHandle) ?? ""));
+      setHandle(clean(sessionStorage.getItem(STORAGE_KEYS.wantedHandle) ?? ""));
     } catch {
       /* nothing remembered */
     }
-  }, []);
+  }, [suggested]);
 
   return (
     <form

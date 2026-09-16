@@ -20,9 +20,9 @@ export function ClaimForm() {
         try {
           if (clean) sessionStorage.setItem(STORAGE_KEYS.wantedHandle, clean);
         } catch {
-          /* private mode: they'll type it again */
+          /* private mode: the address carries it anyway */
         }
-        router.push(ROUTES.login);
+        router.push(ROUTES.loginToClaim(clean));
       }}
     >
       <span>flexwall.lol/@</span>

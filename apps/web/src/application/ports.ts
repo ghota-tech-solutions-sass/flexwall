@@ -131,8 +131,8 @@ export type { BillingPlan } from "@/domain/pricing";
  * application never spells a path.
  */
 export interface AppLinks {
-  /** Absolute: opened from an email. */
-  signIn(token: string): string;
+  /** Absolute: opened from an email, carrying the handle that was asked for so it survives the trip. */
+  signIn(token: string, handle?: string): string;
   /** Relative to the app: the lock screen image of a wall, keyed so it can be revoked. */
   lockscreen(wallId: string, key: string): string;
   /** Absolute: where the payment provider sends a buyer after paying. */

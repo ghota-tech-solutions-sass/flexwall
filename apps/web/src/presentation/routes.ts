@@ -6,8 +6,16 @@
 
 const segment = (value: string) => encodeURIComponent(value);
 
+/**
+ * The handle someone typed before they had an account. It travels on the
+ * sign-in link, because the link is opened wherever the mail is read — another
+ * tab, another browser, another phone — and nothing stored in the first tab
+ * survives that trip.
+ */
+export const HANDLE_PARAM = "handle";
+
 /** Query parameters of the sign-in link. The browser adds its time zone so a new account starts on the owner's day. */
-export const SIGN_IN_PARAMS = { token: "token", timeZone: "tz" } as const;
+export const SIGN_IN_PARAMS = { token: "token", timeZone: "tz", handle: HANDLE_PARAM } as const;
 
 /** Query parameters /settings reads. */
 export const SETTINGS_PARAMS = { upgraded: "upgraded", seats: "seats" } as const;
@@ -19,7 +27,10 @@ export const PAID_ACCOUNTS_ANCHOR = "accounts";
 export const CONNECT_PARAMS = { connected: "connected", error: "connect_error" } as const;
 
 /** Query parameters /login reads. */
-export const LOGIN_PARAMS = { expired: "expired" } as const;
+export const LOGIN_PARAMS = { expired: "expired", handle: HANDLE_PARAM } as const;
+
+/** Query parameters /onboarding reads. */
+export const ONBOARDING_PARAMS = { handle: HANDLE_PARAM } as const;
 
 /** A query flag's "on" value. */
 const FLAG_ON = "1";
@@ -34,7 +45,11 @@ export const ROUTES = {
   login: "/login",
   /** After a sign-in link that expired. */
   loginExpired: `/login?${new URLSearchParams({ [LOGIN_PARAMS.expired]: FLAG_ON })}`,
+  /** Signing in to claim the handle that was typed on the way here. */
+  loginToClaim: (handle: string) => (handle ? `/login?${new URLSearchParams({ [LOGIN_PARAMS.handle]: handle })}` : "/login"),
   onboarding: "/onboarding",
+  /** Picking a handle with the one already typed filled in. */
+  onboardingToClaim: (handle: string) => (handle ? `/onboarding?${new URLSearchParams({ [ONBOARDING_PARAMS.handle]: handle })}` : "/onboarding"),
   edit: "/edit",
   settings: "/settings",
   /** The back office: accounts, offered Pro, moderation. Answers 404 to anyone but administrators. */
@@ -94,8 +109,9 @@ export const API = {
   billingPaidAccounts: "/api/billing/paid-accounts",
   report: "/api/report",
   signInVerify: SIGN_IN_VERIFY,
-  /** The link mailed to sign in. */
-  signInLink: (token: string) => `${SIGN_IN_VERIFY}?${new URLSearchParams({ [SIGN_IN_PARAMS.token]: token })}`,
+  /** The link mailed to sign in, carrying the handle it was asked for, if any. */
+  signInLink: (token: string, handle?: string) =>
+    `${SIGN_IN_VERIFY}?${new URLSearchParams({ [SIGN_IN_PARAMS.token]: token, ...(handle ? { [SIGN_IN_PARAMS.handle]: handle } : {}) })}`,
 } as const;
 
 /** Path prefixes of screens and links that must stay out of search engines. */

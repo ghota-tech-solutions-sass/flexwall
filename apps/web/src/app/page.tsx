@@ -286,7 +286,14 @@ export default async function Home() {
             Stripe revenue, GitHub streaks and any API, live on one public page
             and on your lock screen. Set it up once, it stays up to date.
           </p>
-          <ClaimForm />
+          {/* Someone who already has a wall has nothing to claim: the address bar of the page they own is the point. */}
+          {signedIn ? (
+            <Link href={ROUTES.edit} className="btn btn-signal">
+              Edit my wall
+            </Link>
+          ) : (
+            <ClaimForm />
+          )}
           <ul className="trust">
             <li>
               <CheckIcon size={16} weight="bold" />
