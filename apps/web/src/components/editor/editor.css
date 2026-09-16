@@ -110,9 +110,9 @@
 .react-grid-item.react-grid-placeholder { background: var(--accent); opacity: 0.14; border-radius: 18px; }
 .react-grid-item.react-draggable-dragging .tile-tools { opacity: 0; }
 
-.tile-tools { position: absolute; top: -18px; right: 10px; z-index: 4; display: flex; align-items: center; gap: 1px; padding: 3px; border-radius: 11px; background: var(--surface); box-shadow: 0 0 0 1px var(--hairline-strong), 0 8px 24px -8px rgba(12, 13, 16, 0.25); opacity: 0; transform: translateY(4px) scale(0.96); transform-origin: top right; pointer-events: none; cursor: default; transition: opacity 0.18s ease-out, transform 0.3s var(--spring); }
+.tile-tools { position: absolute; top: -18px; right: 10px; max-width: calc(100% + 24px); z-index: 4; display: flex; align-items: center; gap: 1px; padding: 3px; border-radius: 11px; background: var(--surface); box-shadow: 0 0 0 1px var(--hairline-strong), 0 8px 24px -8px rgba(12, 13, 16, 0.25); opacity: 0; transform: translateY(4px) scale(0.96); transform-origin: top right; pointer-events: none; cursor: default; transition: opacity 0.18s ease-out, transform 0.3s var(--spring); }
 .grid-item:hover .tile-tools, .grid-item.selected .tile-tools, .grid-item:focus-within .tile-tools { opacity: 1; transform: none; pointer-events: auto; }
-.tile-tools button { display: grid; place-items: center; width: 30px; height: 28px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--ink-2); cursor: pointer; transition: background-color 0.15s ease-out, color 0.15s ease-out; }
+.tile-tools button { display: grid; place-items: center; width: 34px; height: 32px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--ink-2); cursor: pointer; transition: background-color 0.15s ease-out, color 0.15s ease-out; }
 .tile-tools button:hover { background: var(--surface-2); color: var(--ink); }
 .tile-tools button.danger:hover { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }
 .tile-tools > span { width: 1px; height: 16px; margin-inline: 2px; background: var(--hairline); }
@@ -120,6 +120,19 @@
 .tile-tools > small { display: inline-flex; align-items: center; gap: 5px; max-width: 150px; padding: 0 6px 0 7px; color: var(--ink-2); font-size: 12px; font-weight: 500; }
 .tile-tools > small svg { flex: none; }
 .tile-tools > small > i { flex: none; color: var(--muted); font-style: normal; }
+
+/* The first row has nothing above it: the toolbar tucks inside the tile instead of being clipped. */
+.tile-tools[data-inside="true"] { top: 8px; right: 8px; }
+
+/*
+ * Touch: the body scrolls the page, this handle moves the tile, and the corner
+ * resizes it. Both are 44px of target around a small mark.
+ */
+.tile-grab { position: absolute; top: 4px; left: 4px; z-index: 4; display: grid; place-items: center; width: 44px; height: 44px; color: var(--ink-2); opacity: 0; transition: opacity 0.18s ease-out; touch-action: none; }
+.grid-item.selected .tile-grab { opacity: 1; }
+.tile-grab > svg { padding: 3px; border-radius: 9px; background: var(--surface); box-shadow: 0 0 0 1px var(--hairline-strong); box-sizing: content-box; }
+.grid-item .react-resizable-handle.tile-resize { display: grid; place-items: center; width: 44px; height: 44px; right: -8px; bottom: -8px; padding: 0; color: var(--ink-2); background: none; touch-action: none; }
+.react-resizable-handle.tile-resize > svg { padding: 3px; border-radius: 9px; background: var(--surface); box-shadow: 0 0 0 1px var(--hairline-strong); box-sizing: content-box; }
 
 .tile-connect { position: absolute; left: 50%; top: 50%; z-index: 2; display: inline-flex; align-items: center; gap: 7px; max-width: calc(100% - 16px); padding: 7px 13px; border: 0; border-radius: 999px; background: var(--primary); color: var(--primary-ink); font: inherit; font-size: 13px; font-weight: 550; white-space: nowrap; cursor: pointer; transform: translate(-50%, -50%); box-shadow: 0 6px 20px -6px rgba(12, 13, 16, 0.4); transition: transform 0.3s var(--spring); }
 .tile-connect:hover { transform: translate(-50%, -50%) scale(1.03); }
@@ -306,6 +319,13 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; height: 22px; 
   .ed-toast { left: calc(236px + (100vw - 236px - 312px) / 2); }
   .ed-surface button { min-width: 0; }
 }
+@media (pointer: coarse) {
+  /* Fingers: every tile control is a 44px target, and the toolbar never leaves the tile. */
+  .tile-tools { top: 8px; right: 8px; padding: 2px; border-radius: 13px; }
+  .tile-tools button { width: 44px; height: 44px; }
+  .tile-tools > small { display: none; }
+}
+
 @media (max-width: 900px) {
   .editor { height: auto; min-height: 100dvh; grid-template-rows: auto auto; }
   .ed-bar { position: sticky; top: 0; z-index: 20; grid-template-columns: minmax(0, 1fr) auto; row-gap: 8px; padding-block: 8px; }

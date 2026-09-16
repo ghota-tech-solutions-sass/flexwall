@@ -50,6 +50,25 @@ export const PlusIcon = (p: P) => (
     <path d="M10 4v12M4 10h12" />
   </Icon>
 );
+/** Six dots: the universal "hold me to move this". */
+export const GrabIcon = (p: P) => (
+  <Icon {...p}>
+    <circle cx="7.5" cy="5" r="1.1" fill="currentColor" stroke="none" />
+    <circle cx="12.5" cy="5" r="1.1" fill="currentColor" stroke="none" />
+    <circle cx="7.5" cy="10" r="1.1" fill="currentColor" stroke="none" />
+    <circle cx="12.5" cy="10" r="1.1" fill="currentColor" stroke="none" />
+    <circle cx="7.5" cy="15" r="1.1" fill="currentColor" stroke="none" />
+    <circle cx="12.5" cy="15" r="1.1" fill="currentColor" stroke="none" />
+  </Icon>
+);
+
+/** The corner chevron of a resize handle. */
+export const ResizeIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M16 9v7h-7M16 16l-5.5-5.5" />
+  </Icon>
+);
+
 export const SearchIcon = (p: P) => (
   <Icon {...p}>
     <circle cx="9" cy="9" r="5.5" />

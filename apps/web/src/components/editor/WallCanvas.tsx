@@ -1,5 +1,5 @@
 // Rendered inside the Editor client boundary.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ReactGridLayout, { useContainerWidth, verticalCompactor, type Layout } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import { CELL_UNITS, GAP_UNITS, gridUnits, themeBackground, type Size, type Theme } from "@flexwall/sdk";
@@ -14,16 +14,41 @@ import { ConnectionTitle } from "@/components/connections/ConnectionTitle";
 import { displayNameText } from "@/domain/connection";
 import { TileBody } from "@/rendering/tile";
 import { useConnectionNames, useEditor, useEditorActions } from "./EditorContext";
-import { CopyIcon, EyeIcon, EyeOffIcon, KeyIcon, PlusIcon, TrashIcon } from "./icons";
+import { CopyIcon, EyeIcon, EyeOffIcon, GrabIcon, KeyIcon, PlusIcon, ResizeIcon, TrashIcon } from "./icons";
 
 /** Controls drawn on a tile. Pointer events on them never start a drag. */
 const NO_DRAG = ".tile-tools, .tile-connect";
+/** With a finger, the tile body scrolls the page and only this handle moves the tile. */
+const TOUCH_DRAG_HANDLE = ".tile-grab";
 
 /** Resize limits for a tile whose widget is gone: one cell up to the full width. */
 const FALLBACK_SIZE: { min: Size; max: Size } = { min: [1, 1], max: [WALL_COLUMNS, WALL_COLUMNS] };
 
 /** Offered on an empty wall, in this order, when installed. */
 const QUICK_ADD_WIDGETS = ["stat", "sparkline", "note"] as const;
+
+/**
+ * True where the finger is the pointer. Read once per editor: the grid takes
+ * its drag handle as a prop, so this can't be a media query in CSS.
+ */
+export function useCoarsePointer(): boolean {
+  const [coarse, setCoarse] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(pointer: coarse)");
+    const read = () => setCoarse(query.matches);
+    read();
+    query.addEventListener("change", read);
+    return () => query.removeEventListener("change", read);
+  }, []);
+  return coarse;
+}
+
+/** A corner big enough for a thumb, with the chevron still small. */
+const resizeHandle = (_axis: unknown, ref: React.Ref<HTMLElement>) => (
+  <span ref={ref as React.Ref<HTMLSpanElement>} className="react-resizable-handle react-resizable-handle-se tile-resize" aria-hidden="true">
+    <ResizeIcon size={14} />
+  </span>
+);
 
 export function useEditorTheme(): Theme {
   return useEditor((s) => editorTheme(s, catalog));
@@ -44,6 +69,7 @@ export function WallCanvas() {
   const dragged = libraryDrag ? catalog.widget(libraryDrag) : null;
   const [dropW, dropH] = dragged?.size.default ?? [1, 1];
 
+  const coarse = useCoarsePointer();
   const { width, containerRef, mounted } = useContainerWidth();
   const px = width / gridUnits(WALL_COLUMNS);
   const pitch = (CELL_UNITS + GAP_UNITS) * px;
@@ -120,8 +146,8 @@ export function WallCanvas() {
             layout={layout}
             gridConfig={{ cols: WALL_COLUMNS, rowHeight: CELL_UNITS * px, margin: [GAP_UNITS * px, GAP_UNITS * px], containerPadding: [0, 0] }}
             compactor={verticalCompactor}
-            dragConfig={{ cancel: NO_DRAG }}
-            resizeConfig={{ enabled: true, handles: ["se"] }}
+            dragConfig={{ cancel: NO_DRAG, handle: coarse ? TOUCH_DRAG_HANDLE : undefined, threshold: coarse ? 6 : 3 }}
+            resizeConfig={{ enabled: true, handles: ["se"], handleComponent: resizeHandle }}
             // Commit on stop too: onLayoutChange can be skipped when a drag ends outside the grid.
             onLayoutChange={actions.moveTiles}
             onDragStop={actions.moveTiles}
@@ -137,13 +163,18 @@ export function WallCanvas() {
                 onFocus={(e) => e.target === e.currentTarget && actions.select(tile.id)}
               >
                 <TileBody tile={tile} state={states[tile.id]} box={{ w: tile.layout.w, h: tile.layout.h }} theme={theme} surface="editor" u={(n) => n * px} today={today} catalog={catalog} />
+                {coarse ? (
+                  <span className="tile-grab" aria-hidden="true" title="Drag to move">
+                    <GrabIcon size={16} />
+                  </span>
+                ) : null}
                 <ConnectButton tile={tile} state={states[tile.id]} theme={theme} />
                 {tile.visibility === "private" ? (
                   <span className="tile-private" title="Only you see this tile">
                     <EyeOffIcon size={12} /> Only me
                   </span>
                 ) : null}
-                <TileTools tile={tile} />
+                <TileTools tile={tile} inside={tile.layout.y === 0} />
               </div>
             ))}
           </ReactGridLayout>
@@ -172,7 +203,7 @@ function EmptyWall({ theme }: { theme: Theme }) {
 }
 
 /** Hover toolbar, the way Bento and Framer do it: the most common actions without opening anything. */
-function TileTools({ tile }: { tile: Tile }) {
+function TileTools({ tile, inside }: { tile: Tile; inside: boolean }) {
   const actions = useEditorActions();
   const connections = useEditor((s) => s.connections);
   const names = useConnectionNames();
@@ -183,7 +214,7 @@ function TileTools({ tile }: { tile: Tile }) {
   });
   const first = feeding[0];
   return (
-    <div className="tile-tools" role="toolbar" aria-label="Tile actions">
+    <div className="tile-tools" data-inside={inside} role="toolbar" aria-label="Tile actions">
       {first ? (
         <>
           <small aria-label={`From ${feeding.map((f) => displayNameText(f.shown ?? { name: f.connection.label, number: null })).join(", ")}`}>
