@@ -148,7 +148,7 @@ export function createEditorStore(deps: EditorDeps, init: EditorInit): EditorSto
 
       addTile: (widgetId) => {
         if (!canAddTile(get())) return;
-        const result = addTile(get().draft, widgetId, catalog, get().connections, newTileId);
+        const result = addTile(get().draft, widgetId, catalog, get().connections, newTileId, undefined, get().allowedConnectors);
         if (!result) return;
         change(() => result.draft);
         set({ selected: result.tileId, surface: "wall", connectRequest: null });
@@ -158,7 +158,7 @@ export function createEditorStore(deps: EditorDeps, init: EditorInit): EditorSto
       dropTile: (widgetId, at) => {
         set({ libraryDrag: null });
         if (!canAddTile(get())) return;
-        const result = addTile(get().draft, widgetId, catalog, get().connections, newTileId, at);
+        const result = addTile(get().draft, widgetId, catalog, get().connections, newTileId, at, get().allowedConnectors);
         if (!result) return;
         const tile = result.draft.tiles.find((t) => t.id === result.tileId)!;
         const others = get().draft.tiles.map((t) => ({ i: t.id, ...t.layout }));

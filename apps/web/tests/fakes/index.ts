@@ -1,7 +1,9 @@
 import type { ConnectorContext, SeriesPoint } from "@flexwall/sdk";
 import { fakeContext } from "@flexwall/sdk/testing";
-import type { AppLinks, BillingEvent, BillingPlan, CachedValues, CheckoutConsent, Clock, ConnectionRepository, ConnectorRuntime, CreditAccounts, EventLog, HandleRegistry, IdGenerator, Mail, Mailer, PaymentGateway, ReferralRepository, SecretBox, SnapshotStore, TokenService, UserRepository, ValueCache, WallRepository } from "@/application/ports";
+import type { AppLinks, BillingEvent, BillingPlan, CachedValues, CheckoutConsent, Clock, ConnectionRepository, ConnectorAvailability, ConnectorPolicies, ConnectorRuntime, CreditAccounts, EventLog, HandleRegistry, IdGenerator, Mail, Mailer, PaymentGateway, ReferralRepository, SecretBox, SnapshotStore, TokenService, UserRepository, ValueCache, WallRepository } from "@/application/ports";
 import type { Connection } from "@/domain/connection";
+import { DEFAULT_AVAILABILITY, visibleTo, type Availability, type ConnectorPolicy } from "@/domain/connector-policy";
+import type { BrowsableCatalog } from "@/domain/catalog";
 import type { CreditEntry, CreditPack, SpendOutcome } from "@/domain/credits";
 import type { Handle } from "@/domain/handle";
 import type { Referral } from "@/domain/referral";
@@ -98,6 +100,9 @@ export class InMemoryConnections implements ConnectionRepository {
   async byOwner(ownerId: string) {
     return structuredClone([...this.items.values()].filter((c) => c.ownerId === ownerId));
   }
+  async list(limit: number) {
+    return structuredClone([...this.items.values()].slice(0, limit));
+  }
   async save(connection: Connection) {
     this.items.set(connection.id, structuredClone(connection));
   }
@@ -166,6 +171,38 @@ export class InMemoryCredits implements CreditAccounts {
   }
   async history(userId: string, limit: number) {
     return [...this.entries.values()].filter((e) => e.userId === userId).sort((a, b) => b.at - a.at).slice(0, limit);
+  }
+}
+
+/** Who may use which connector, without a store or a catalog scan. */
+export class FakeAvailability implements ConnectorAvailability {
+  constructor(
+    private value: Record<string, Availability> = {},
+    private readonly catalog?: BrowsableCatalog
+  ) {}
+  /** Lets a test change its mind mid-render, the way an administrator would. */
+  set(connectorId: string, availability: Availability) {
+    this.value[connectorId] = availability;
+  }
+  async all() {
+    return this.value;
+  }
+  async allowedFor(viewer: { administrator: boolean }) {
+    return (this.catalog?.connectors() ?? []).filter((c) => visibleTo(this.value[c.id] ?? DEFAULT_AVAILABILITY, viewer)).map((c) => c.id);
+  }
+}
+
+/** What administrators decided about connectors, kept in memory. */
+export class InMemoryConnectorPolicies implements ConnectorPolicies {
+  readonly items = new Map<string, ConnectorPolicy>();
+  constructor(initial: Record<string, Availability> = {}, at = Date.UTC(2026, 8, 14, 9, 0, 0)) {
+    for (const [id, availability] of Object.entries(initial)) this.items.set(id, { availability, by: "boss@flexwall.lol", at });
+  }
+  async all() {
+    return Object.fromEntries(this.items);
+  }
+  async save(connectorId: string, policy: ConnectorPolicy) {
+    this.items.set(connectorId, policy);
   }
 }
 

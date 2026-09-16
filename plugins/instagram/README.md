@@ -114,6 +114,10 @@ account is far below Meta's per-account call budget for the Instagram API.
    (they differ from the Meta app's own ID and secret) into `INSTAGRAM_APP_ID`
    and `INSTAGRAM_APP_SECRET`.
 4. The only permission needed is `instagram_business_basic`.
+5. `INSTAGRAM_ENV`: `sandbox` (the default) or `production`. Set it to
+   `production` only once the app is Live with Advanced Access; with Standard
+   Access only testers can sign in. Anything but `production` counts as
+   sandbox, and sandbox connectors stay with administrators.
 
 **Before other people can connect:** with Standard Access, only Instagram
 accounts that have a role on the app (added under **App roles → Roles** as

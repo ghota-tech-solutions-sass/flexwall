@@ -77,6 +77,10 @@ const githubConnector = defineConnector({
   tier: "free",
   verified: false,
   ttl: 3600,
+
+  // GITHUB_TOKEN only raises the rate limit, so this connector works without one.
+  server: (ctx) => ({ configured: true, environment: "production", detail: ctx.env("GITHUB_TOKEN") ? "GITHUB_TOKEN set: 5,000 requests an hour" : "no GITHUB_TOKEN: 60 requests an hour" }),
+
   metrics: [
     { id: "streak", name: "Commit streak", type: "number", unit: "count", params: [user], defaults: { label: "day streak" }, leaderboard: "streak" },
     { id: "contributions", name: "Contributions, last 12 months", type: "number", unit: "count", params: [user], defaults: { label: "contributions this year" } },

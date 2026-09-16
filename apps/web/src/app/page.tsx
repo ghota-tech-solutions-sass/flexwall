@@ -13,6 +13,8 @@ import { asType, currencySymbol, formatNumber } from "@flexwall/sdk";
 import { stripeConnector } from "@flexwall/plugin-stripe";
 import { sparkPoints } from "@flexwall/sdk/ui";
 import { BrandMark, hasMark } from "@/components/brand/Logos";
+import { container } from "@/composition";
+import { visibleConnectors } from "@/presentation/connections";
 import { MotionScope } from "@/components/motion/MotionScope";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Footer, TopBar } from "@/components/site/Chrome";
@@ -233,7 +235,7 @@ export default async function Home() {
   const dark = catalog.theme("midnight") ?? light;
   const states = sampleStates(wall.tiles, catalog);
   const signedIn = Boolean(await sessionUserId());
-  const connectors = catalog.connectors();
+  const connectors = visibleConnectors(catalog.connectors(), await container().publicConnectors.execute());
   const revenueState = states.revenue;
   const revenue =
     revenueState?.status === "ready"

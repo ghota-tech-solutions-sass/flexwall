@@ -385,4 +385,17 @@ describe("disconnect", () => {
       expect([ACCESS, REFRESH, CLIENT_SECRET].filter((s) => message.includes(s))).toEqual([]);
     }
   });
+
+  test("given the server's Twitch app, when the back office asks what it points at, then it is production once both keys are set", () => {
+    // Given
+    const missing = fakeContext({}, { env: { TWITCH_CLIENT_ID: CLIENT_ID } });
+    const set = fakeContext({}, { env });
+
+    // When
+    const [a, b] = [missing, set].map((ctx) => twitchConnector.server!(ctx));
+
+    // Then
+    expect(a.configured).toBe(false);
+    expect(b).toEqual({ configured: true, environment: "production", detail: "client id and secret set" });
+  });
 });

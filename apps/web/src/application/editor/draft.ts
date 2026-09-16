@@ -46,12 +46,15 @@ function option(ref: SourceRef, label: string, group: string, pro: boolean): Sou
 }
 
 /** Every way to feed an input: a typed value, a metric, or a number's history. */
-export function sourcesFor(input: WidgetInputDef, catalog: BrowsableCatalog): SourceOption[] {
+export function sourcesFor(input: WidgetInputDef, catalog: BrowsableCatalog, allowed?: readonly string[]): SourceOption[] {
   const options: SourceOption[] = [];
   for (const type of TYPEABLE_VALUE_TYPES) {
     if (input.accepts.includes(type)) options.push(option({ kind: "static", type }, TYPED_LABELS[type], TYPED_SOURCE_GROUP, false));
   }
+  const open = allowed ? new Set(allowed) : null;
   for (const connector of catalog.connectors()) {
+    // A connector paused or kept to administrators feeds no new tile.
+    if (open && !open.has(connector.id)) continue;
     const pro = connector.tier === "pro";
     for (const metric of connector.metrics) {
       if (input.accepts.includes(metric.type)) options.push(option({ kind: "metric", connector: connector.id, metric: metric.id }, metric.name, connector.name, pro));
@@ -96,7 +99,8 @@ export function addTile(
   catalog: BrowsableCatalog,
   connections: readonly ConnectionView[],
   newId: NewTileId,
-  at?: { x: number; y: number }
+  at?: { x: number; y: number },
+  allowed?: readonly string[]
 ): { draft: WallDraft; tileId: string } | null {
   const widget = catalog.widget(widgetId);
   if (!widget) return null;
@@ -112,7 +116,7 @@ export function addTile(
   const inputs: Record<string, Binding> = {};
   for (const input of widget.inputs) {
     if (input.optional) continue;
-    const sources = sourcesFor(input, catalog);
+    const sources = sourcesFor(input, catalog, allowed);
     const first = sources.find((s) => !s.pro) ?? sources[0];
     const binding = first ? bindingFor(first.ref, catalog, connections) : undefined;
     if (binding) inputs[input.key] = binding;

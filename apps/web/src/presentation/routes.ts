@@ -44,6 +44,8 @@ export const ROUTES = {
     return params.size ? `${PREFIX.admin}?${params}` : PREFIX.admin;
   },
   adminAccount: (id: string) => `${PREFIX.admin}/accounts/${segment(id)}`,
+  /** The back office page for connectors: environments and who may use them. */
+  adminConnectors: `${PREFIX.admin}/connectors`,
   pricing: "/pricing",
   explore: "/explore",
   exploreSorted: (sort: string) => `/explore?${new URLSearchParams({ sort })}`,
@@ -81,6 +83,7 @@ export const API = {
   adminPro: (accountId: string) => `/api/admin/accounts/${segment(accountId)}/pro`,
   adminWall: (accountId: string) => `/api/admin/accounts/${segment(accountId)}/wall`,
   adminCredits: (accountId: string) => `/api/admin/accounts/${segment(accountId)}/credits`,
+  adminConnectors: "/api/admin/connectors",
   /** Where providers send the owner back. Registered with each provider, so never rename it. */
   oauthCallback: "/api/connections/oauth/callback",
   handle: "/api/me/handle",

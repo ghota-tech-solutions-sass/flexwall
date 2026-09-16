@@ -26,6 +26,8 @@ export type SaveStatus = { kind: "saved" } | { kind: "dirty" } | { kind: "saving
 export interface EditorState {
   handle: Handle;
   entitlements: Entitlements;
+  /** Connector ids this owner may connect: the rest are paused or kept to administrators. */
+  allowedConnectors: string[];
   draft: WallDraft;
   selected: string | null;
   surface: EditorSurface;
@@ -47,7 +49,7 @@ export interface EditorState {
 }
 
 /** What the page hands the editor on load. */
-export type EditorInit = Pick<EditorState, "handle" | "entitlements" | "draft" | "connections" | "lockscreenPath" | "today">;
+export type EditorInit = Pick<EditorState, "handle" | "entitlements" | "allowedConnectors" | "draft" | "connections" | "lockscreenPath" | "today">;
 
 export function initialState(init: EditorInit): EditorState {
   return {

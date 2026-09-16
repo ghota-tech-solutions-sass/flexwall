@@ -177,7 +177,11 @@ has no SnapTrade app.", before any request.
 3. Server environment:
    - `SNAPTRADE_CLIENT_ID`: the client id.
    - `SNAPTRADE_CONSUMER_KEY`: the consumer key. Server only; it signs every call.
-   Both must be in the variables plugins may read (`CONNECTOR_ENV` in
+   - `SNAPTRADE_ENV`: `sandbox` (the default) or `production`. The keys don't
+     say which kind they are, so this is what the back office reports; anything
+     but `production` counts as sandbox, and sandbox connectors stay with
+     administrators.
+   All three must be in the variables plugins may read (`CONNECTOR_ENV` in
    `apps/web/src/composition.ts`), in `connector_secrets` in Terraform, and in
    `docs/self-hosting.md`.
 4. Redirect: the connector passes `https://<your origin>/api/connections/oauth/callback?state=…`

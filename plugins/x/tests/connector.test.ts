@@ -461,4 +461,18 @@ describe("x-credits connector", () => {
     // Then
     expect(error!.message).toBe("This Flexwall server has no X app.");
   });
+
+  test("given the server's bearer token, when the back office asks what it points at, then it is production and configured only with a token", () => {
+    // Given
+    const missing = fakeContext({}, { env: {} });
+    const set = fakeContext({}, { env });
+
+    // When
+    const [a, b] = [missing, set].map((ctx) => xCreditsConnector.server!(ctx));
+
+    // Then
+    expect(a).toEqual({ configured: false, environment: "production", detail: "X_BEARER_TOKEN unset" });
+    expect(b).toEqual({ configured: true, environment: "production", detail: "bearer token set" });
+    expect(b.detail).not.toContain(SERVER_TOKEN);
+  });
 });

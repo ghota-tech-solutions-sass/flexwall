@@ -618,4 +618,20 @@ describe("currency rule", () => {
     expect(sum).toEqual({ total: 35, currency: "GBP", skipped: 1 });
     expect(sumInLargestCurrency([])).toBeNull();
   });
+
+  test("given the server's API key, when the back office asks what it points at, then it hints at the client id and never guesses production", () => {
+    // Given
+    const missing = fakeContext({}, { env: {} });
+    const live = fakeContext({}, { env: { ...ENV, SNAPTRADE_ENV: "production" } });
+    const unset = fakeContext({}, { env: ENV });
+
+    // When
+    const [a, b, c] = [missing, live, unset].map((ctx) => snaptradeConnector.server!(ctx));
+
+    // Then
+    expect(a.configured).toBe(false);
+    expect(b).toEqual({ configured: true, environment: "production", detail: `client ${CLIENT_ID.slice(0, 6)}…` });
+    expect(c.environment).toBe("sandbox");
+    expect(b.detail).not.toContain(CONSUMER_KEY);
+  });
 });

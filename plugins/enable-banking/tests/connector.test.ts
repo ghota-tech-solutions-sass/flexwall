@@ -510,4 +510,19 @@ describe("disconnect", () => {
       expect(message).not.toContain(PEM_BODY);
     }
   });
+
+  test("given the server's application, when the back office asks what it points at, then it names the API host and never guesses production", () => {
+    // Given
+    const missing = fakeContext({}, { env: {} });
+    const live = fakeContext({}, { env: { ...ENV, ENABLE_BANKING_ENV: "production" } });
+    const unset = fakeContext({}, { env: ENV });
+
+    // When
+    const [a, b, c] = [missing, live, unset].map((ctx) => enableBankingConnector.server!(ctx));
+
+    // Then
+    expect(a.configured).toBe(false);
+    expect(b).toEqual({ configured: true, environment: "production", detail: "api.enablebanking.com" });
+    expect(c.environment).toBe("sandbox");
+  });
 });

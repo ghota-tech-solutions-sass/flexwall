@@ -4,7 +4,8 @@ import { DomainError, notFound } from "@/domain/errors";
 import { Handle } from "@/domain/handle";
 import { entitlementsOf, paidPlanOf, type Entitlements, type Plan, type User } from "@/domain/user";
 import { applyDraft, publicTiles, type Wall, type WallDraft } from "@/domain/wall";
-import type { AppLinks, Clock, ConnectionRepository, IdGenerator, TokenService, UserRepository, WallRepository } from "../ports";
+import type { AppLinks, Clock, ConnectionRepository, ConnectorAvailability, IdGenerator, TokenService, UserRepository, WallRepository } from "../ports";
+import { administrates } from "./connector-policy";
 
 export interface OwnerWall {
   /** The plan paid for, ignoring referral rewards: whether upgrading still makes sense. */
@@ -13,6 +14,8 @@ export interface OwnerWall {
   wall: Wall;
   entitlements: Entitlements;
   connections: ConnectionView[];
+  /** Ids of the connectors this owner may connect: the rest are paused or kept to administrators. */
+  allowedConnectors: string[];
   lockscreenPath: string;
 }
 
@@ -31,7 +34,16 @@ async function ownerContext(
 /** Everything the editor loads. */
 export class GetOwnerWall {
   constructor(
-    private readonly deps: { users: UserRepository; walls: WallRepository; connections: ConnectionRepository; tokens: TokenService; links: AppLinks; clock: Clock }
+    private readonly deps: {
+      users: UserRepository;
+      walls: WallRepository;
+      connections: ConnectionRepository;
+      tokens: TokenService;
+      links: AppLinks;
+      clock: Clock;
+      access: ConnectorAvailability;
+      administrators: readonly string[];
+    }
   ) {}
 
   async execute(input: { userId: string }): Promise<OwnerWall> {
@@ -40,6 +52,8 @@ export class GetOwnerWall {
       user,
       wall,
       entitlements: entitlementsOf(user, this.deps.clock.now()),
+      // What this owner may connect: the editor and settings only show these.
+      allowedConnectors: await this.deps.access.allowedFor({ administrator: administrates(user, this.deps.administrators) }),
       paidPlan: paidPlanOf(user, this.deps.clock.now()),
       connections: connections.map(viewOf),
       lockscreenPath: this.deps.links.lockscreen(wall.id, this.deps.tokens.lockKey(wall.id, wall.lockNonce)),

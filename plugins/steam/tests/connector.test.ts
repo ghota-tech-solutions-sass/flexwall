@@ -181,4 +181,17 @@ describe("steam connector", () => {
     expect(values).toEqual([0, 1, 1.5, 274.7]);
     expect(redact(`${OWNED}?key=${KEY}&steamid=${GABE}`)).toBe(`${OWNED}?key=redacted&steamid=${GABE}`);
   });
+
+  test("given the server's API key, when the back office asks what it points at, then it is production and configured only with a key", () => {
+    // Given
+    const missing = fakeContext({}, { env: {} });
+    const set = fakeContext({}, { env: ENV });
+
+    // When
+    const [a, b] = [missing, set].map((ctx) => steamConnector.server!(ctx));
+
+    // Then
+    expect(a).toEqual({ configured: false, environment: "production", detail: "STEAM_API_KEY unset" });
+    expect(b).toEqual({ configured: true, environment: "production", detail: "API key set" });
+  });
 });

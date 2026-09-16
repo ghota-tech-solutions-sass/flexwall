@@ -1,10 +1,12 @@
 import { BlockedRequestError, ConnectorError, HttpError, splitSecrets, validateFields, type ConnectorDef, type ConnectResult, type FieldValues } from "@flexwall/sdk";
 import type { Catalog } from "@/domain/catalog";
 import { normalizeNickname, OAUTH_PENDING_TTL_MS, safeReturnPath, viewOf, type Connection, type ConnectionView } from "@/domain/connection";
+import { DEFAULT_AVAILABILITY, visibleTo } from "@/domain/connector-policy";
 import { DomainError, forbidden, invalid, notFound } from "@/domain/errors";
 import { todayIn } from "@/domain/time";
 import type { User } from "@/domain/user";
-import type { AppLinks, Clock, ConnectionRepository, ConnectorRuntime, IdGenerator, SecretBox, UserRepository } from "../ports";
+import type { AppLinks, Clock, ConnectionRepository, ConnectorAvailability, ConnectorRuntime, IdGenerator, SecretBox, UserRepository } from "../ports";
+import { administrates } from "./connector-policy";
 
 export const MAX_CONNECTIONS = 20;
 
@@ -16,6 +18,9 @@ interface ConnectionDeps {
   secrets: SecretBox;
   ids: IdGenerator;
   clock: Clock;
+  /** Who may use each connector: a connector kept to administrators, or taken off, refuses new accounts. */
+  access: ConnectorAvailability;
+  administrators: readonly string[];
 }
 
 /** The owner, the connector and room for one more connection, or the reason not. */
@@ -25,6 +30,11 @@ async function prepare(deps: ConnectionDeps, userId: string, connectorId: string
   const connector = deps.catalog.connector(connectorId);
   if (!connector) throw notFound(`Connector "${connectorId}"`);
   if (!connector.auth) throw invalid(`${connector.name} doesn't need an account.`);
+  // Checked here, so it covers pasting a key, leaving for a provider and coming back from one.
+  const availability = (await deps.access.all())[connector.id] ?? DEFAULT_AVAILABILITY;
+  if (!visibleTo(availability, { administrator: administrates(user, deps.administrators) })) {
+    throw forbidden(`${connector.name} isn't available on this Flexwall right now.`);
+  }
   const existing = await deps.connections.byOwner(user.id);
   if (existing.length >= MAX_CONNECTIONS) throw new DomainError("plan_limit", `You can keep ${MAX_CONNECTIONS} connections.`);
   return { user, connector, existing };

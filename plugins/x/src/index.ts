@@ -255,6 +255,12 @@ const xCreditsConnector = defineConnector({
       "No X developer account needed: Flexwall reads the profile with its own X app. Each account costs one credit per day it refreshes, whatever the number of tiles showing it; days nobody views your wall cost nothing. Buy credits in settings.",
     fields: [HANDLE_FIELD],
   },
+  // X has one API: the server's bearer token reads the real x.com.
+  server(ctx) {
+    const token = ctx.env("X_BEARER_TOKEN");
+    return { configured: Boolean(token), environment: "production", detail: token ? "bearer token set" : "X_BEARER_TOKEN unset" };
+  },
+
   metrics: [...METRICS],
   cacheKey: () => "profile",
 

@@ -27,9 +27,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       <TopBar signedIn />
       <main className="admin">
         <div className="settings-head">
-          <Link href={ROUTES.settings} className="link">
-            Back to settings
-          </Link>
+          <div className="row">
+            <Link href={ROUTES.settings} className="link">
+              Back to settings
+            </Link>
+            <Link href={ROUTES.adminConnectors} className="link">
+              Connectors
+            </Link>
+          </div>
           <h1 className="display">Accounts</h1>
           <p className="hint">
             {result.accounts.length} shown of {result.total}

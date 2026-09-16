@@ -1,4 +1,4 @@
-import { ConnectorError, defineConnector, definePlugin, HttpError, money, number, type ConnectorContext, type FetchResult } from "@flexwall/sdk";
+import { ConnectorError, defineConnector, definePlugin, HttpError, money, number, type ConnectorContext, type FetchResult, type ServerStatus } from "@flexwall/sdk";
 
 /**
  * French (and Spanish) bank accounts, savings, PEA, brokerage, life insurance
@@ -115,6 +115,18 @@ export function powensHost(domain: string): string | null {
     .replace(/\/.*$/, "")
     .replace(/\.biapi\.pro$/, "");
   return /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(name) ? `${name}.biapi.pro` : null;
+}
+
+/**
+ * What the domain and POWENS_ENV say this server points at. A `-sandbox`
+ * domain is a Powens sandbox whatever POWENS_ENV says: the domain is the
+ * truth. Otherwise only `production` is production, so an unset or misspelled
+ * POWENS_ENV reads as sandbox rather than guessing.
+ */
+function environment(ctx: ConnectorContext): ServerStatus["environment"] {
+  const domain = ctx.env("POWENS_DOMAIN")?.trim().toLowerCase() ?? "";
+  if (domain.includes("-sandbox")) return "sandbox";
+  return ctx.env("POWENS_ENV")?.trim().toLowerCase() === "production" ? "production" : "sandbox";
 }
 
 function app(ctx: ConnectorContext): App {
@@ -333,6 +345,14 @@ export const powensConnector = defineConnector({
       await deleteUser(ctx, secret.token);
     },
   },
+
+  server(ctx) {
+    const domain = ctx.env("POWENS_DOMAIN")?.trim();
+    const host = domain ? powensHost(domain) : null;
+    const configured = Boolean(host && ctx.env("POWENS_CLIENT_ID")?.trim() && ctx.env("POWENS_CLIENT_SECRET")?.trim());
+    return { configured, environment: environment(ctx), detail: host ?? "POWENS_DOMAIN unset or not a Powens domain" };
+  },
+
   metrics: [
     {
       id: "net-worth",

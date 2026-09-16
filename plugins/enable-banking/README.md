@@ -150,8 +150,12 @@ RSA pair generated when they start.
      (PKCS#8), with real newlines or `\n` escapes. A PKCS#1 key
      (`BEGIN RSA PRIVATE KEY`, what OpenSSL 1.x `genrsa` writes) is refused with
      the conversion command.
-   Missing either: "This Flexwall server has no Enable Banking application."
-   Both are in the variables plugins may read (`CONNECTOR_ENV` in
+   - `ENABLE_BANKING_ENV`: `sandbox` (the default) or `production`. Sandbox and
+     production applications share one API address, so this is what the back
+     office reports; anything but `production` counts as sandbox, and sandbox
+     connectors stay with administrators.
+   Missing either of the first two: "This Flexwall server has no Enable Banking
+   application." All three must be in the variables plugins may read (`CONNECTOR_ENV` in
    `apps/web/src/composition.ts`), in `connector_secrets` in Terraform, and in
    `docs/self-hosting.md`.
 6. **Activation.** Until a contract is signed and KYB is done, a production app

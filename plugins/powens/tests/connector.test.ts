@@ -471,4 +471,21 @@ describe("disconnect", () => {
     expect(error).toBeInstanceOf(HttpError);
     expect(leaks((error as Error).message)).toBe(false);
   });
+
+  test("given the server's Powens app, when the back office asks what it points at, then the domain outranks POWENS_ENV", () => {
+    // Given
+    const missing = fakeContext({}, { env: {} });
+    const live = fakeContext({}, { env: { ...ENV, POWENS_DOMAIN: "flexwall", POWENS_ENV: "production" } });
+    const unset = fakeContext({}, { env: { ...ENV, POWENS_DOMAIN: "flexwall" } });
+    const sandboxDomain = fakeContext({}, { env: { ...ENV, POWENS_ENV: "production" } });
+
+    // When
+    const [a, b, c, d] = [missing, live, unset, sandboxDomain].map((ctx) => powensConnector.server!(ctx));
+
+    // Then
+    expect(a.configured).toBe(false);
+    expect(b).toEqual({ configured: true, environment: "production", detail: "flexwall.biapi.pro" });
+    expect(c.environment).toBe("sandbox");
+    expect(d.environment).toBe("sandbox");
+  });
 });

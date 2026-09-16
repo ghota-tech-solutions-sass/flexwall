@@ -69,7 +69,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           hasCustomer={Boolean(owner.user.stripeCustomerId)}
         />
         {showCredits ? <CreditsPanel view={credits} justBought={Boolean(query[SETTINGS_PARAMS.credits])} /> : null}
-        <ConnectionsManager initial={owner.connections} paid={owner.entitlements.paid} usage={usage} now={now} />
+        <ConnectionsManager initial={owner.connections} paid={owner.entitlements.paid} allowed={owner.allowedConnectors} usage={usage} now={now} />
         {program ? <ReferralPanel program={program} /> : null}
         <section className="panel" aria-labelledby="account">
           <h2 id="account">Account</h2>

@@ -1,5 +1,6 @@
 import type { ConnectorContext, FieldValues, SeriesPoint, Value } from "@flexwall/sdk";
 import type { Connection } from "@/domain/connection";
+import type { Availability, ConnectorPolicy } from "@/domain/connector-policy";
 import type { Handle } from "@/domain/handle";
 import type { Referral } from "@/domain/referral";
 import type { Subscription, User } from "@/domain/user";
@@ -45,6 +46,8 @@ export interface WallRepository {
 export interface ConnectionRepository {
   byId(id: string): Promise<Connection | null>;
   byOwner(ownerId: string): Promise<Connection[]>;
+  /** Every connection, at most `limit`, for the administration's counts. */
+  list(limit: number): Promise<Connection[]>;
   save(connection: Connection): Promise<void>;
   delete(id: string): Promise<void>;
 }
@@ -80,6 +83,22 @@ export interface CreditAccounts {
   adjust(input: { userId: string; entryId: string; amount: number; reason: Exclude<CreditEntry["reason"], "spend">; detail: string }): Promise<boolean>;
   /** The latest entries, newest first. */
   history(userId: string, limit: number): Promise<CreditEntry[]>;
+}
+
+/**
+ * What administrators decided about each connector, by connector id. One
+ * document for all of them: a wall render needs the lot or none.
+ */
+/** Who may use each connector right now, by connector id. The application decides it; use cases only read it. */
+export interface ConnectorAvailability {
+  all(): Promise<Record<string, Availability>>;
+  /** The connector ids this viewer may see and connect. */
+  allowedFor(viewer: { administrator: boolean }): Promise<string[]>;
+}
+
+export interface ConnectorPolicies {
+  all(): Promise<Record<string, ConnectorPolicy>>;
+  save(connectorId: string, policy: ConnectorPolicy): Promise<void>;
 }
 
 /** Remembers processed webhook events. */

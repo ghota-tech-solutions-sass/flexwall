@@ -177,6 +177,17 @@ const twitchConnector = defineConnector({
       );
     },
   },
+
+  // Twitch has one API: an app registered there is always live.
+  server(ctx) {
+    const id = ctx.env("TWITCH_CLIENT_ID");
+    return {
+      configured: Boolean(id && ctx.env("TWITCH_CLIENT_SECRET")),
+      environment: "production",
+      detail: id ? "client id and secret set" : "TWITCH_CLIENT_ID or TWITCH_CLIENT_SECRET unset",
+    };
+  },
+
   metrics: [
     { id: "followers", name: "Followers", type: "number", unit: "count", defaults: { label: "followers" }, leaderboard: "audience" },
     { id: "subscribers", name: "Subscribers", description: "Paid and gifted subscriptions to your channel. Affiliates and Partners only.", type: "number", unit: "count", defaults: { label: "subs" } },

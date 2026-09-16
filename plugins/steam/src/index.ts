@@ -95,6 +95,13 @@ const steamConnector = defineConnector({
   verified: false,
   // The key allows 100,000 calls a day for the whole server; these numbers move slowly.
   ttl: 3600,
+
+  // Steam's Web API has one environment: a key reads real profiles.
+  server(ctx) {
+    const key = ctx.env("STEAM_API_KEY");
+    return { configured: Boolean(key), environment: "production", detail: key ? "API key set" : "STEAM_API_KEY unset" };
+  },
+
   metrics: [
     { id: "games", name: "Games owned", description: "Games in the library, played free games included.", type: "number", unit: "count", params: [profile], defaults: { label: "games on Steam" } },
     { id: "hours-played", name: "Hours played", description: "Total time played across the library, in hours.", type: "number", unit: "count", params: [profile], defaults: { label: "hours played" } },

@@ -13,7 +13,7 @@ import { ConnectForm } from "@/components/connections/ConnectForm";
 import { ConnectionTitle } from "@/components/connections/ConnectionTitle";
 import { RenameField } from "@/components/connections/RenameField";
 import { FieldInput } from "@/components/forms/FieldInput";
-import { removalWarning, usageLine } from "@/presentation/connections";
+import { removalWarning, usageLine, visibleConnectors } from "@/presentation/connections";
 import { SHORTCUTS } from "@/presentation/editor/shortcuts";
 import { tileStatus } from "@/presentation/editor/tile-status";
 import { ROUTES } from "@/presentation/routes";
@@ -125,7 +125,8 @@ function InputEditor({ tile, input, paid }: { tile: Tile; input: WidgetInputDef;
   const actions = useEditorActions();
   const connections = useEditor((s) => s.connections);
   const request = useEditor((s) => s.connectRequest);
-  const sources = useMemo(() => sourcesFor(input, catalog), [input]);
+  const allowed = useEditor((s) => s.allowedConnectors);
+  const sources = useMemo(() => sourcesFor(input, catalog, allowed), [input, allowed]);
   const target: InputTarget = { tileId: tile.id, inputKey: input.key };
   const binding = tile.inputs[input.key];
   const source = sourceOfBinding(binding);
@@ -458,7 +459,8 @@ function Accounts() {
   const [adding, setAdding] = useState<AddAccount>({ step: "closed" });
   const [editing, setEditing] = useState<AccountEdit>(null);
   const [error, setError] = useState<string | null>(null);
-  const authConnectors = catalog.connectors().filter((c) => c.auth);
+  const allowedConnectors = useEditor((s) => s.allowedConnectors);
+  const authConnectors = visibleConnectors(catalog.connectors(), allowedConnectors).filter((c) => c.auth);
 
   const remove = async (connection: ConnectionView) => {
     setError(null);
