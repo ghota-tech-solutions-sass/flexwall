@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { checkoutSessionParams, CREDITS_METADATA_KIND, creditsSessionParams } from "@/infrastructure/billing/stripe-gateway";
+import { checkoutSessionParams, PAID_ACCOUNTS_ROLE, paidAccountsSessionParams, roleOf } from "@/infrastructure/billing/stripe-gateway";
+import { PAID_ACCOUNT_PRICE_USD } from "@/domain/pricing";
 
 const base = {
   customerId: "cus_1",
@@ -100,35 +101,49 @@ describe("Checkout session", () => {
   });
 });
 
-describe("Credits checkout session", () => {
-  const credits = { customerId: "cus_1", userId: "u1", consent: base.consent, successUrl: "https://flexwall.test/settings?credits=1", cancelUrl: "https://flexwall.test/settings" };
+describe("Connected accounts subscription", () => {
+  const accounts = { customerId: "cus_1", userId: "u1", consent: base.consent, successUrl: "https://flexwall.test/settings?seats=1", cancelUrl: "https://flexwall.test/settings" };
 
-  test("given a pack, when its checkout is built, then it's a one-off payment with an invoice and the pack in the metadata", () => {
+  test("given a first account, when its checkout is built, then it's a monthly subscription carrying the role and the quantity", () => {
     // Given
-    const input = { ...credits, pack: "regular" as const, priceId: "price_credits_regular", options: { automaticTax: true, collectTermsConsent: false, referralCoupon: "coupon_ref" } };
+    const input = { ...accounts, quantity: 1, priceId: "price_account", options: { automaticTax: true, collectTermsConsent: false, referralCoupon: "coupon_ref" } };
 
     // When
-    const params = creditsSessionParams(input);
+    const params = paidAccountsSessionParams(input);
 
     // Then
-    expect(params.mode).toBe("payment");
-    expect(params.line_items).toEqual([{ price: "price_credits_regular", quantity: 1 }]);
-    expect(params.metadata).toMatchObject({ userId: "u1", kind: CREDITS_METADATA_KIND, pack: "regular", terms_version: "2026-09-14", immediate_start: "requested" });
-    expect(params.payment_intent_data?.metadata).toEqual(params.metadata);
-    expect(params.invoice_creation).toEqual({ enabled: true });
+    expect(params.mode).toBe("subscription");
+    expect(params.line_items).toEqual([{ price: "price_account", quantity: 1 }]);
+    expect(params.metadata).toMatchObject({ userId: "u1", role: PAID_ACCOUNTS_ROLE, terms_version: "2026-09-14", immediate_start: "requested" });
+    expect(params.subscription_data?.metadata).toEqual(params.metadata);
     expect(params.automatic_tax).toEqual({ enabled: true });
-    // The referral discount is for plans only.
+    // The invitee's once-only discount belongs to Pro, not to a $5 line.
     expect(params.discounts).toBeUndefined();
+    expect(params.allow_promotion_codes).toBe(false);
   });
 
-  test("given no configured price, when a pack checkout is built, then the inline price is the pack's, taxes included", () => {
+  test("given no configured price, when the checkout is built, then the inline price is monthly and includes taxes", () => {
     // Given
-    const input = { ...credits, pack: "starter" as const, priceId: null, options: { automaticTax: false, collectTermsConsent: false, referralCoupon: null } };
+    const input = { ...accounts, quantity: 2, priceId: null, options: { automaticTax: false, collectTermsConsent: false, referralCoupon: null } };
 
     // When
-    const params = creditsSessionParams(input);
+    const params = paidAccountsSessionParams(input);
 
     // Then
-    expect(params.line_items?.[0]?.price_data).toMatchObject({ currency: "usd", unit_amount: 399, tax_behavior: "inclusive" });
+    expect(params.line_items?.[0]).toMatchObject({ quantity: 2 });
+    expect(params.line_items?.[0]?.price_data).toMatchObject({ currency: "usd", unit_amount: PAID_ACCOUNT_PRICE_USD * 100, tax_behavior: "inclusive", recurring: { interval: "month" } });
+  });
+
+  test("given a subscription, when its role is read, then metadata wins, then the price, and anything else is a plan", () => {
+    // Given
+    const withRole = { metadata: { role: PAID_ACCOUNTS_ROLE }, items: { data: [{ price: { id: "price_other" } }] } };
+    const byPrice = { metadata: {}, items: { data: [{ price: { id: "price_account" } }] } };
+    const older = { metadata: {}, items: { data: [{ price: { id: "price_monthly" } }] } };
+
+    // When
+    const roles = [withRole, byPrice, older].map((s) => roleOf(s as never, "price_account"));
+
+    // Then
+    expect(roles).toEqual([PAID_ACCOUNTS_ROLE, PAID_ACCOUNTS_ROLE, "pro"]);
   });
 });

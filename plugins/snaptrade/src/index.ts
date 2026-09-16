@@ -271,6 +271,8 @@ export function makeSnaptradeConnector(deps: { now?: () => number; newUserId?: (
     homepage: "https://snaptrade.com",
     // SnapTrade bills the server's operator for every connected user, every month.
     tier: "pro",
+    // Every connection here is a paying link at the provider, billed monthly: the owner pays for it by the account.
+    serverCost: "per-account",
     verified: true,
     // `GET /accounts` serves Daily data on every SnapTrade plan: cached and
     // refreshed once a day. Reading it every 6 hours catches that refresh the

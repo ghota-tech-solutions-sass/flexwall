@@ -138,21 +138,22 @@ export function testCatalog(upstream = new ScriptedUpstream()) {
     sample: { followers: number(1, { unit: "count" }) },
   });
 
-  const metered = defineConnector({
-    id: "metered",
-    name: "Metered",
-    description: "Reads with the server's paid key: owners pay a credit a day per account.",
-    tier: "free",
-    verified: false,
+  const bank = defineConnector({
+    id: "bank",
+    name: "Bank",
+    description: "A provider link Flexwall pays for every month, so the owner pays by the account.",
+    tier: "pro",
+    verified: true,
     ttl: 600,
-    creditsPerDay: 1,
+    serverCost: "per-account",
     auth: { help: "Type a handle.", fields: [field.text("handle", "Handle")] },
     metrics: [
       { id: "followers", name: "Followers", type: "number", unit: "count" },
       { id: "posts", name: "Posts", type: "number", unit: "count" },
     ],
     async connect(input) {
-      return { secret: {}, public: { handle: String(input.handle) }, label: `@${String(input.handle)}` };
+      // Like the real ones: the provider names the account, so reconnecting replaces it instead of adding one.
+      return { secret: {}, public: { handle: String(input.handle) }, label: `@${String(input.handle)}`, accountId: String(input.handle) };
     },
     fetch: async ({ metrics }) => {
       const out = await upstream.respond();
@@ -179,6 +180,6 @@ export function testCatalog(upstream = new ScriptedUpstream()) {
     sample: { balance: number(1, { unit: "currency", currency: "usd" }) },
   });
 
-  const plugin = definePlugin({ id: "test", name: "Test", description: "Test connectors", author: { name: "tests" }, connectors: [analytics, billing, brokerage, wallet, social, metered, sandboxed] });
+  const plugin = definePlugin({ id: "test", name: "Test", description: "Test connectors", author: { name: "tests" }, connectors: [analytics, billing, brokerage, wallet, social, bank, sandboxed] });
   return { catalog: createCatalog([core, plugin], "night"), upstream };
 }

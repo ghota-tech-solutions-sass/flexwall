@@ -267,6 +267,8 @@ export const powensConnector = defineConnector({
   description: "Verified net worth, cash and investments across French bank accounts, PEA, brokerage and life insurance, through Powens.",
   homepage: "https://www.powens.com",
   tier: "pro",
+  // Every connection here is a paying link at the provider, billed monthly: the owner pays for it by the account.
+  serverCost: "per-account",
   verified: true,
   // Powens syncs each connection in the background every 24 hours by default.
   ttl: 6 * 3600,

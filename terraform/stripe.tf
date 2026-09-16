@@ -7,7 +7,7 @@
 #
 #   Pro       $6 a month or $48 a year   subscription
 #   Lifetime  $99 once                   payment
-#   Credits   100 $3.99 or 400 $11.99, once each   payment
+#   Accounts  $5 a month each   subscription, quantity driven by the app
 #
 # Prices include taxes (tax_behavior inclusive): with Stripe Tax on, the VAT of
 # the buyer's country comes out of the price instead of being added to it.
@@ -133,42 +133,36 @@ resource "stripe_price" "lifetime" {
   }
 }
 
-# One credit keeps one metered connection (X without a developer app) fresh for
-# a UTC day. Packs are one-off payments; the app adds the credits on
-# checkout.session.completed.
-resource "stripe_product" "credits" {
-  name        = "Flexwall credits"
-  description = "Credits for connectors Flexwall reads with its own paid key, such as X. One credit per account per day."
+# A connected bank or brokerage account costs Flexwall a fee at the provider
+# every month, so owners pay for it by the account: one monthly subscription
+# whose quantity the app keeps in step with what they have connected.
+resource "stripe_product" "paid_accounts" {
+  name        = "Flexwall connected account"
+  description = "One connected bank or brokerage account, billed monthly for as long as it stays connected."
   tax_code    = local.stripe_tax_code
 
   metadata = {
     app     = "flexwall"
-    kind    = "credits"
+    kind    = "paid_account"
     managed = "terraform"
   }
 }
 
-locals {
-  credit_packs = {
-    starter = { credits = 100, cents = var.credits_starter_cents }
-    regular = { credits = 400, cents = var.credits_regular_cents }
-  }
-}
-
-resource "stripe_price" "credits" {
-  for_each = local.credit_packs
-
-  product      = stripe_product.credits.id
+resource "stripe_price" "paid_account" {
+  product      = stripe_product.paid_accounts.id
   currency     = "usd"
-  unit_amount  = each.value.cents
-  nickname     = "${each.value.credits} credits"
+  unit_amount  = var.price_paid_account_cents
+  nickname     = "Connected account"
   tax_behavior = "inclusive"
+
+  recurring {
+    interval       = "month"
+    interval_count = 1
+  }
 
   metadata = {
     app     = "flexwall"
-    kind    = "credits"
-    pack    = each.key
-    credits = tostring(each.value.credits)
+    kind    = "paid_account"
     managed = "terraform"
   }
 }
@@ -258,7 +252,7 @@ resource "stripe_portal_configuration" "billing" {
 
 resource "stripe_webhook_endpoint" "billing" {
   url         = "${local.app_url}/api/webhooks/stripe"
-  description = "Flexwall billing: lifetime and credit payments, subscription changes"
+  description = "Flexwall billing: plan and connected-account subscriptions, lifetime payments, refunds"
 
   enabled_events = [
     "checkout.session.completed",
@@ -295,10 +289,10 @@ resource "google_secret_manager_secret_version" "stripe_webhook_secret" {
 
 output "stripe_prices" {
   value = {
-    monthly  = stripe_price.monthly.id
-    yearly   = stripe_price.yearly.id
-    lifetime = stripe_price.lifetime.id
-    credits  = { for pack, price in stripe_price.credits : pack => price.id }
+    monthly      = stripe_price.monthly.id
+    yearly       = stripe_price.yearly.id
+    lifetime     = stripe_price.lifetime.id
+    paid_account = stripe_price.paid_account.id
   }
   description = "Price ids the app sells."
 }

@@ -420,3 +420,81 @@ describe("Connectors an owner may not use", () => {
     await expect(attempt).rejects.toMatchObject({ code: "forbidden" });
   });
 });
+
+describe("Connections that cost a monthly fee", () => {
+  async function bankSetup(owner: ReturnType<typeof aUser>) {
+    const users = new InMemoryUsers();
+    const connections = new InMemoryConnections();
+    const { catalog } = testCatalog();
+    const clock = new FixedClock();
+    await users.save(owner.withId("u1").build());
+    const deps = {
+      users,
+      connections,
+      catalog,
+      runtime: new FakeRuntime(),
+      secrets: new TransparentSecretBox(),
+      ids: new SequentialIds(),
+      clock,
+      links: new FakeLinks(),
+      access: new FakeAvailability({}, catalog),
+      administrators: [],
+    };
+    const reconciled: string[] = [];
+    return {
+      connections,
+      reconciled,
+      connect: new ConnectAccount(deps),
+      remove: new RemoveConnection({ ...deps, reconcile: { execute: async ({ userId }) => void reconciled.push(userId) } }),
+    };
+  }
+
+  test("given an owner who pays for no account, when they connect a bank, then they're asked to pay for it first", async () => {
+    // Given
+    const { connect, connections } = await bankSetup(aUser().pro());
+
+    // When
+    const attempt = connect.execute({ userId: "u1", connector: "bank", values: { handle: "ada" } });
+
+    // Then
+    await expect(attempt).rejects.toMatchObject({ code: "paid_account_required" });
+    expect(connections.items.size).toBe(0);
+  });
+
+  test("given an account paid for, when the owner connects a bank, then it's stored", async () => {
+    // Given
+    const { connect } = await bankSetup(aUser().pro().withPaidAccounts(1));
+
+    // When
+    const connection = await connect.execute({ userId: "u1", connector: "bank", values: { handle: "ada" } });
+
+    // Then
+    expect(connection).toMatchObject({ connector: "bank" });
+  });
+
+  test("given one account paid for and connected, when the owner reconnects that same one, then no second account is asked for", async () => {
+    // Given
+    const { connect, connections } = await bankSetup(aUser().pro().withPaidAccounts(1));
+    const first = await connect.execute({ userId: "u1", connector: "bank", values: { handle: "ada" } });
+
+    // When
+    const again = await connect.execute({ userId: "u1", connector: "bank", values: { handle: "ada" }, replacing: first.id });
+
+    // Then
+    expect(again.id).toBeDefined();
+    expect(connections.items.size).toBe(1);
+  });
+
+  test("given a bank an owner removes, when it's gone, then what Stripe bills is brought back in step", async () => {
+    // Given
+    const { connect, remove, reconciled, connections } = await bankSetup(aUser().pro().withPaidAccounts(1));
+    const connection = await connect.execute({ userId: "u1", connector: "bank", values: { handle: "ada" } });
+
+    // When
+    await remove.execute({ userId: "u1", connectionId: connection.id });
+
+    // Then
+    expect(connections.items.size).toBe(0);
+    expect(reconciled).toEqual(["u1"]);
+  });
+});

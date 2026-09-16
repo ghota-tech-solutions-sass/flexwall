@@ -6,7 +6,7 @@ import type { BillingEvent } from "@/application/ports";
 import { REFERRAL_REWARD_CAP } from "@/domain/referral";
 import type { Subscription } from "@/domain/user";
 import { aReferral, aSubscription, aUser, NOW } from "../builders";
-import { FakeLinks, FakePayments, FakeTokens, FixedClock, InMemoryCredits, InMemoryEventLog, InMemoryHandles, InMemoryReferrals, InMemoryUsers, SequentialIds } from "../fakes";
+import { FakeLinks, FakePayments, FakeTokens, FixedClock, InMemoryEventLog, InMemoryHandles, InMemoryReferrals, InMemoryUsers, SequentialIds } from "../fakes";
 
 const DAY = 86_400_000;
 
@@ -24,7 +24,7 @@ function world() {
     payments,
     signIn: new SignIn({ tokens: new FakeTokens(), users, handles, referrals, ids: new SequentialIds(), clock }),
     checkout: new StartCheckout({ users, referrals, payments, clock, links: new FakeLinks() }),
-    apply: new ApplyBillingEvent({ users, events: new InMemoryEventLog(), referrals, credits: new InMemoryCredits(), clock }),
+    apply: new ApplyBillingEvent({ users, events: new InMemoryEventLog(), referrals, clock }),
     program: new GetReferralProgram({ users, referrals, clock, links: new FakeLinks() }),
   };
 }
@@ -42,6 +42,7 @@ async function withInvitee(w: ReturnType<typeof world>, id = "bob") {
 const subscriptionEvent = (eventId: string, status: Subscription["status"] = "active"): BillingEvent => ({
   id: eventId,
   type: "subscription",
+    role: "pro" as const,
   customerId: "cus_bob",
   userId: null,
   subscription: aSubscription().with({ status }).build(),
@@ -127,7 +128,7 @@ describe("The invitee discount", () => {
     await w.referrals.save(aReferral().from("ada").to("bob").converted(NOW).build());
 
     // When
-    await w.checkout.execute({ userId: "bob", plan: "lifetime", acceptedTerms: true });
+    await w.checkout.execute({ userId: "bob", plan: "yearly", acceptedTerms: true });
 
     // Then
     expect(w.payments.checkouts[0].referralDiscount).toBe(false);
@@ -227,7 +228,7 @@ describe("Rewarding the referrer", () => {
     w.clock.advance(3 * DAY);
 
     // When
-    await w.apply.execute({ id: "evt_refund", type: "refund", customerId: "cus_bob" });
+    await w.apply.execute({ id: "evt_refund", type: "refund", role: "pro" as const, customerId: "cus_bob" });
 
     // Then
     expect(await w.referrals.byReferee("bob")).toMatchObject({ status: "refunded", rewarded: false });
@@ -243,7 +244,7 @@ describe("Rewarding the referrer", () => {
     w.clock.advance(20 * DAY);
 
     // When
-    await w.apply.execute({ id: "evt_refund", type: "refund", customerId: "cus_bob" });
+    await w.apply.execute({ id: "evt_refund", type: "refund", role: "pro" as const, customerId: "cus_bob" });
 
     // Then
     expect((await w.referrals.byReferee("bob"))!.status).toBe("converted");

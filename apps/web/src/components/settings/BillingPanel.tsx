@@ -52,7 +52,6 @@ export function BillingPanel({
             <div className="row">
               <UpgradeButton plan="monthly" label={`Go Pro, $${PLAN_PRICES_USD.monthly}/month`} signedIn primary />
               <UpgradeButton plan="yearly" label={`$${PLAN_PRICES_USD.yearly}/year`} signedIn />
-              <UpgradeButton plan="lifetime" label={`Lifetime, $${PLAN_PRICES_USD.lifetime}`} signedIn />
             </div>
           </CheckoutConsentScope>
         ) : null}

@@ -1,8 +1,8 @@
 import { isAdministrator, offerPro, withdrawPro, type ComplimentaryTerm } from "@/domain/admin";
-import { CREDIT_NOTE_MAX, MAX_CREDIT_ADJUSTMENT } from "@/domain/credits";
+import { MAX_PAID_ACCOUNTS } from "@/domain/pricing";
 import { DomainError, notFound } from "@/domain/errors";
 import { entitlementsOf, planSourceOf, type Complimentary, type Plan, type PlanSource, type Subscription, type User } from "@/domain/user";
-import type { Clock, ConnectionRepository, CreditAccounts, IdGenerator, UserRepository, WallRepository } from "../ports";
+import type { Clock, ConnectionRepository, UserRepository, WallRepository } from "../ports";
 
 /** Accounts the administration reads at most: enough for Flexwall's size, and a bound on a slow page. */
 export const ADMIN_LIST_LIMIT = 2000;
@@ -145,30 +145,23 @@ export class WithdrawPro {
 }
 
 /**
- * Adds credits to an account, or takes some back (down to zero), with a note
- * for the record. Nothing goes through Stripe: refunds are made there by hand.
+ * Gives an account connected bank or brokerage accounts for nothing, or takes
+ * some back. Nothing goes through Stripe: what an owner pays for is their
+ * subscription, and this sits beside it.
  */
-export class AdjustCredits {
-  constructor(private readonly deps: Pick<AdminDeps, "users" | "administrators"> & { credits: CreditAccounts; ids: IdGenerator }) {}
+export class GrantPaidAccounts {
+  constructor(private readonly deps: Pick<AdminDeps, "users" | "administrators" | "clock">) {}
 
-  async execute(input: { userId: string | null; accountId: string; amount: number; note: string }): Promise<{ balance: number }> {
-    const admin = await administrator(this.deps, input.userId);
+  async execute(input: { userId: string | null; accountId: string; accounts: number }): Promise<{ granted: number }> {
+    await administrator(this.deps, input.userId);
     const user = await this.deps.users.byId(input.accountId);
     if (!user) throw notFound("This account");
-    const amount = Number(input.amount);
-    if (!Number.isInteger(amount) || amount === 0 || Math.abs(amount) > MAX_CREDIT_ADJUSTMENT) {
-      throw new DomainError("invalid_input", `Give a whole number of credits between -${MAX_CREDIT_ADJUSTMENT} and ${MAX_CREDIT_ADJUSTMENT}, other than 0.`);
+    const granted = Number(input.accounts);
+    if (!Number.isInteger(granted) || granted < 0 || granted > MAX_PAID_ACCOUNTS) {
+      throw new DomainError("invalid_input", `Give a whole number of accounts between 0 and ${MAX_PAID_ACCOUNTS}.`);
     }
-    const note = String(input.note ?? "").trim();
-    if (note.length > CREDIT_NOTE_MAX) throw new DomainError("invalid_input", `Keep the note under ${CREDIT_NOTE_MAX} characters.`);
-    await this.deps.credits.adjust({
-      userId: user.id,
-      entryId: this.deps.ids.next(),
-      amount,
-      reason: amount > 0 ? "grant" : "refund",
-      detail: [admin.email, note].filter(Boolean).join(": "),
-    });
-    return { balance: await this.deps.credits.balance(user.id) };
+    await this.deps.users.save({ ...user, paidAccountsGranted: granted });
+    return { granted };
   }
 }
 

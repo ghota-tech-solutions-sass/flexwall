@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LEGAL_PATHS, LegalDocument, legalMetadata, MediatorBlock } from "@/components/legal/LegalDocument";
-import { CREDIT_PACK_DETAILS, CREDIT_PACKS } from "@/domain/credits";
-import { PLAN_PRICES_USD } from "@/domain/pricing";
+import { PAID_ACCOUNT_PRICE_USD, PLAN_PRICES_USD } from "@/domain/pricing";
 import { REFERRAL_DISCOUNT_PERCENT, REFERRAL_REWARD_CAP, REFERRAL_REWARD_DAYS } from "@/domain/referral";
 import { FREE_TILE_LIMIT } from "@/domain/user";
 import { PUBLISHER } from "@/domain/publisher";
@@ -34,8 +33,8 @@ export default function CgvPage() {
           <strong>Pro :</strong> tuiles illimitées, tous les connecteurs et thèmes, l&apos;historique des valeurs, sans marque. Abonnement mensuel ou annuel.
         </li>
         <li>
-          <strong>Lifetime :</strong> les fonctionnalités Pro pour la durée de vie du service, en un paiement unique. Offre limitée qui peut être retirée de la
-          vente à tout moment, sans effet sur les achats déjà faits.
+          <strong>Lifetime :</strong> les fonctionnalités Pro pour la durée de vie du service, en un paiement unique. Cette offre n&apos;est plus vendue ; les
+          comptes qui l&apos;ont achetée la conservent.
         </li>
       </ul>
       <p>Le détail des offres en vigueur est celui de la page Tarifs au moment de la commande.</p>
@@ -66,9 +65,11 @@ export default function CgvPage() {
       <h2>6. Prix</h2>
       <p>
         Les prix sont indiqués en dollars américains, toutes taxes comprises : la TVA applicable dans le pays de l&apos;acheteur est incluse et détaillée sur
-        la facture. Pro : {PLAN_PRICES_USD.monthly} $ par mois ou {PLAN_PRICES_USD.yearly} $ par an. Lifetime : {PLAN_PRICES_USD.lifetime} $ en une fois. Une éventuelle conversion de devise par la banque de l&apos;acheteur reste
-        à sa charge. Un changement de prix d&apos;abonnement est annoncé par e-mail au moins 30 jours avant de s&apos;appliquer, à l&apos;échéance suivante ;
-        l&apos;abonné peut résilier avant.
+        la facture. Pro : {PLAN_PRICES_USD.monthly} $ par mois ou {PLAN_PRICES_USD.yearly} $ par an. Comptes bancaires et de courtage connectés :{" "}
+        {PAID_ACCOUNT_PRICE_USD} $ par mois et par compte, dans les conditions de l&apos;article 17. Lifetime n&apos;est plus vendue ; les comptes qui
+        l&apos;ont achetée la conservent sans frais supplémentaires. Une éventuelle conversion de devise par la banque de l&apos;acheteur reste à sa charge. Un
+        changement de prix d&apos;abonnement est annoncé par e-mail au moins 30 jours avant de s&apos;appliquer, à l&apos;échéance suivante ; l&apos;abonné
+        peut résilier avant.
       </p>
 
       <h2>7. Commande et paiement</h2>
@@ -152,18 +153,16 @@ export default function CgvPage() {
         {PUBLISHER.companyName} peut modifier ou arrêter le programme pour l&apos;avenir ; les récompenses déjà acquises sont conservées.
       </p>
 
-      <h2>17. Crédits</h2>
+      <h2>17. Comptes payants</h2>
       <p>
-        Certains connecteurs, X aujourd&apos;hui, lisent avec une clé payante détenue par {PUBLISHER.companyName} et se paient en crédits, vendus par
-        packs :{" "}
-        {CREDIT_PACKS.map((p) => `${CREDIT_PACK_DETAILS[p].credits} crédits pour ${String(CREDIT_PACK_DETAILS[p].priceUsd).replace(".", ",")} $`).join(", ")},
-        toutes taxes comprises. Un crédit est consommé par compte connecté pour chaque jour UTC où il est actualisé auprès du fournisseur ; les
-        actualisations suivantes du même jour, et les jours sans actualisation, ne coûtent rien. Une actualisation qui échoue rend son crédit. Les crédits sont
-        livrés dès l&apos;acceptation du paiement, n&apos;expirent pas tant que le service existe, n&apos;ont aucune valeur monétaire et ne sont pas cessibles.
-        En cochant la case avant le paiement, vous demandez leur livraison avant la fin du délai de rétractation ; les crédits non consommés sont remboursés sur
-        demande écrite dans les 14 jours suivant l&apos;achat. Sans crédits, ces connecteurs continuent d&apos;afficher leurs dernières valeurs. Si un
-        fournisseur cesse de servir la clé ou change ses prix, {PUBLISHER.companyName} peut retirer le connecteur ; les crédits non consommés sont alors
-        remboursés sur demande.
+        Certains connecteurs lisent par un accès que {PUBLISHER.companyName} paie à un fournisseur, mois après mois : les banques et les courtiers
+        aujourd&apos;hui. Chaque compte connecté par l&apos;un d&apos;eux coûte {PAID_ACCOUNT_PRICE_USD} $ par mois, toutes taxes comprises, facturé
+        mensuellement en plus de l&apos;offre et sur la même facture. L&apos;ajout ou le retrait d&apos;un compte est calculé au prorata, et la facturation
+        s&apos;arrête dès que le compte est déconnecté. En cochant la case avant le paiement, vous demandez que
+        le compte démarre avant la fin du délai de rétractation ; un compte qui n&apos;a pas servi est remboursé sur demande écrite dans les 14 jours suivant
+        son premier paiement. Un compte qui n&apos;est pas payé cesse d&apos;être actualisé et continue d&apos;afficher ses dernières valeurs jusqu&apos;à ce
+        qu&apos;il le soit. Si un fournisseur cesse de servir un connecteur ou change ses prix, {PUBLISHER.companyName} peut retirer le connecteur ; les
+        comptes connectés par ce connecteur ne sont plus facturés.
       </p>
 
       <h2>18. Réclamations, médiation et droit applicable</h2>

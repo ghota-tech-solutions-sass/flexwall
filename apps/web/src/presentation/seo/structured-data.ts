@@ -1,4 +1,4 @@
-import { PLAN_PRICES_USD, PRICE_CURRENCY } from "@/domain/pricing";
+import { PAID_ACCOUNT_PRICE_USD, PLAN_PRICES_USD, PRICE_CURRENCY } from "@/domain/pricing";
 import { PUBLISHER } from "@/domain/publisher";
 import { ROUTES } from "../routes";
 
@@ -84,7 +84,8 @@ export function softwareApplicationLd(origin: string): JsonLdObject {
       offer("Free", 0),
       offer("Pro, monthly", PLAN_PRICES_USD.monthly, "P1M"),
       offer("Pro, yearly", PLAN_PRICES_USD.yearly, "P1Y"),
-      offer("Lifetime", PLAN_PRICES_USD.lifetime),
+      // Lifetime is no longer sold; owners keep theirs, and search engines shouldn't offer it.
+      offer("Connected bank or brokerage account", PAID_ACCOUNT_PRICE_USD, "P1M"),
     ],
   };
 }

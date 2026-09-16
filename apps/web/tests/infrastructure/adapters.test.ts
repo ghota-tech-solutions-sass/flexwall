@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { BlockedRequestError } from "@flexwall/sdk";
 import { guardedFetch, isPrivateAddress, validateTarget } from "@/infrastructure/net/guarded-fetch";
 import { db, resetMemoryDb } from "@/infrastructure/persistence/db";
-import { DbCredits, DbEventLog, DbHandles, DbReferrals, DbSnapshots, DbUsers, DbValueCache, DbWalls } from "@/infrastructure/persistence/repositories";
+import { DbEventLog, DbHandles, DbReferrals, DbSnapshots, DbUsers, DbValueCache, DbWalls } from "@/infrastructure/persistence/repositories";
 import { AesSecretBox } from "@/infrastructure/security/secret-box";
 import { HmacTokenService } from "@/infrastructure/security/tokens";
 import { aReferral, aTile, aUser, aWall } from "../builders";
@@ -18,28 +18,6 @@ beforeEach(() => {
 });
 
 describe("Repositories", () => {
-  test("given a balance, when the same connection's day is spent twice, released, and credits are added once per entry, then the ledger stays consistent", async () => {
-    // Given
-    const credits = new DbCredits(db());
-    const userId = `c-${crypto.randomUUID()}`;
-    expect(await credits.adjust({ userId, entryId: "evt_1", amount: 2, reason: "purchase", detail: "starter" })).toBe(true);
-    expect(await credits.adjust({ userId, entryId: "evt_1", amount: 2, reason: "purchase", detail: "starter" })).toBe(false);
-
-    // When
-    const spends = [
-      await credits.spend({ userId, key: "conn-1", day: "2026-09-16", amount: 1, detail: "@ada" }),
-      await credits.spend({ userId, key: "conn-1", day: "2026-09-16", amount: 1, detail: "@ada" }),
-      await credits.spend({ userId, key: "conn-2", day: "2026-09-16", amount: 1, detail: "@bob" }),
-      await credits.spend({ userId, key: "conn-3", day: "2026-09-16", amount: 1, detail: "@cy" }),
-    ];
-    await credits.release({ userId, key: "conn-2", day: "2026-09-16" });
-
-    // Then
-    expect(spends).toEqual(["charged", "already_paid", "charged", "insufficient"]);
-    expect(await credits.balance(userId)).toBe(1);
-    expect((await credits.history(userId, 10)).map((e) => e.reason).sort()).toEqual(["purchase", "spend"]);
-  });
-
   test("given a saved user, when looked up by email or Stripe customer, then the same user comes back", async () => {
     // Given
     const users = new DbUsers(db());

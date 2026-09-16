@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LEGAL_PATHS, LegalDocument, legalMetadata, MediatorBlock } from "@/components/legal/LegalDocument";
-import { CREDIT_PACK_DETAILS, CREDIT_PACKS } from "@/domain/credits";
-import { PLAN_PRICES_USD } from "@/domain/pricing";
+import { PAID_ACCOUNT_PRICE_USD, PLAN_PRICES_USD } from "@/domain/pricing";
 import { REFERRAL_DISCOUNT_PERCENT, REFERRAL_REWARD_CAP, REFERRAL_REWARD_DAYS } from "@/domain/referral";
 import { FREE_TILE_LIMIT } from "@/domain/user";
 import { PUBLISHER } from "@/domain/publisher";
@@ -33,8 +32,7 @@ export default function TermsPage() {
           <strong>Pro:</strong> unlimited tiles, every connector and theme, value history, no mark. Monthly or yearly subscription.
         </li>
         <li>
-          <strong>Lifetime:</strong> Pro features for the life of the service, in one payment. A limited offer that may stop being sold at any time, without
-          affecting past purchases.
+          <strong>Lifetime:</strong> Pro features for the life of the service, in one payment. No longer sold; accounts that bought it keep it.
         </li>
       </ul>
       <p>The plans in force are those on the pricing page when you order.</p>
@@ -63,8 +61,9 @@ export default function TermsPage() {
       <h2>6. Prices</h2>
       <p>
         Prices are in US dollars, all taxes included: VAT due in the buyer&apos;s country is included and itemized on the invoice. Pro: ${PLAN_PRICES_USD.monthly} a month or ${PLAN_PRICES_USD.yearly} a
-        year. Lifetime: ${PLAN_PRICES_USD.lifetime} once. Currency conversion by the buyer&apos;s bank is theirs to bear. A subscription price change is announced by email at least 30
-        days before it applies, at the next renewal; subscribers can cancel before then.
+        year. Connected bank and brokerage accounts: ${PAID_ACCOUNT_PRICE_USD} a month each, as set out in section 17. Lifetime is no longer sold; accounts that
+        bought it keep it at no further charge. Currency conversion by the buyer&apos;s bank is theirs to bear. A subscription price change is announced by
+        email at least 30 days before it applies, at the next renewal; subscribers can cancel before then.
       </p>
 
       <h2>7. Ordering and payment</h2>
@@ -145,16 +144,14 @@ export default function TermsPage() {
         are withdrawn. {PUBLISHER.companyName} may change or end the program for the future; rewards already earned are kept.
       </p>
 
-      <h2>17. Credits</h2>
+      <h2>17. Paid accounts</h2>
       <p>
-        Some connectors, X today, read with a paid key held by {PUBLISHER.companyName} and are paid for with credits, sold in packs:{" "}
-        {CREDIT_PACKS.map((p) => `${CREDIT_PACK_DETAILS[p].credits} credits for $${CREDIT_PACK_DETAILS[p].priceUsd}`).join(", ")}, all taxes included. One
-        credit is spent for each connected account on each UTC day it is refreshed from the provider; further refreshes that day, and days it isn&apos;t
-        refreshed, cost nothing. A refresh that fails gives its credit back. Credits are delivered as soon as payment is accepted, don&apos;t expire while the
-        service runs, have no cash value and can&apos;t be transferred. By ticking the box before payment, you ask for delivery before the withdrawal period
-        ends; credits not yet spent are refunded on written request within 14 days of purchase. Without credits, these connectors keep showing their last
-        values. If a provider stops serving the key or changes its prices, {PUBLISHER.companyName} may retire the connector; unspent credits are then
-        refunded on request.
+        Some connectors read through a link {PUBLISHER.companyName} pays a provider for, month by month: banks and brokerages today. Each account connected
+        through one of them costs ${PAID_ACCOUNT_PRICE_USD} a month, all taxes included, billed monthly on top of the plan and shown on the same invoice.
+        Adding or removing an account is prorated, and billing stops when the account is disconnected. By ticking the box before payment, you ask for the account to start before the withdrawal period ends; an account you haven&apos;t used
+        is refunded on written request within 14 days of its first payment. An account that isn&apos;t paid for stops refreshing and keeps showing its last
+        values until it is. If a provider stops serving a connector or changes its prices, {PUBLISHER.companyName} may retire the connector; the accounts
+        connected through it stop being billed.
       </p>
 
       <h2>18. Complaints, mediation and governing law</h2>

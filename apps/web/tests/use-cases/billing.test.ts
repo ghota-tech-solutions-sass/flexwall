@@ -1,11 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { ApplyBillingEvent, OpenBillingPortal, StartCheckout, StartCreditsCheckout } from "@/application/use-cases/billing";
-import { CREDIT_PACK_DETAILS } from "@/domain/credits";
+import { ApplyBillingEvent, OpenBillingPortal, StartCheckout } from "@/application/use-cases/billing";
 import type { BillingEvent } from "@/application/ports";
 import { TERMS_VERSION } from "@/domain/publisher";
 import { planOf } from "@/domain/user";
 import { aSubscription, aUser, NOW } from "../builders";
-import { FakeLinks, FakePayments, FixedClock, InMemoryCredits, InMemoryEventLog, InMemoryReferrals, InMemoryUsers } from "../fakes";
+import { FakeLinks, FakePayments, FixedClock, InMemoryEventLog, InMemoryReferrals, InMemoryUsers } from "../fakes";
 
 describe("StartCheckout", () => {
   test("given a free user, when they pick yearly, then they're sent to checkout and remembered as a customer", async () => {
@@ -66,52 +65,6 @@ describe("StartCheckout", () => {
   });
 });
 
-describe("StartCreditsCheckout", () => {
-  test("given a free user who accepted the terms, when they buy a pack, then checkout opens for that pack with their consent", async () => {
-    // Given
-    const users = new InMemoryUsers();
-    const payments = new FakePayments();
-    await users.save(aUser().withId("u1").build());
-    const checkout = new StartCreditsCheckout({ users, payments, clock: new FixedClock(), links: new FakeLinks() });
-
-    // When
-    const { url } = await checkout.execute({ userId: "u1", pack: "regular", acceptedTerms: true });
-
-    // Then
-    expect(url).toBe("https://pay.test/credits/regular");
-    expect(payments.creditCheckouts).toEqual([{ userId: "u1", pack: "regular", consent: { termsVersion: TERMS_VERSION, acceptedAt: NOW } }]);
-    expect((await users.byId("u1"))!.stripeCustomerId).toBe("cus_u1");
-  });
-
-  test("given a Lifetime owner, when they buy credits, then checkout opens: credits aren't part of any plan", async () => {
-    // Given
-    const users = new InMemoryUsers();
-    await users.save(aUser().withId("u1").lifetime().build());
-    const checkout = new StartCreditsCheckout({ users, payments: new FakePayments(), clock: new FixedClock(), links: new FakeLinks() });
-
-    // When
-    const { url } = await checkout.execute({ userId: "u1", pack: "starter", acceptedTerms: true });
-
-    // Then
-    expect(url).toBe("https://pay.test/credits/starter");
-  });
-
-  test("given a buyer who hasn't accepted the terms, when they buy credits, then checkout doesn't open", async () => {
-    // Given
-    const users = new InMemoryUsers();
-    const payments = new FakePayments();
-    await users.save(aUser().withId("u1").build());
-    const checkout = new StartCreditsCheckout({ users, payments, clock: new FixedClock(), links: new FakeLinks() });
-
-    // When
-    const attempt = checkout.execute({ userId: "u1", pack: "starter", acceptedTerms: false });
-
-    // Then
-    await expect(attempt).rejects.toMatchObject({ code: "invalid_input" });
-    expect(payments.creditCheckouts).toEqual([]);
-  });
-});
-
 describe("OpenBillingPortal", () => {
   test("given no billing history, when the portal is requested, then there's nothing to open", async () => {
     // Given
@@ -127,9 +80,10 @@ describe("OpenBillingPortal", () => {
 });
 
 describe("ApplyBillingEvent", () => {
-  const subscriptionEvent = (id: string, over: Parameters<ReturnType<typeof aSubscription>["with"]>[0]): BillingEvent => ({
+  const subscriptionEvent = (id: string, over: Parameters<ReturnType<typeof aSubscription>["with"]>[0], role: "pro" | "paid_accounts" = "pro"): BillingEvent => ({
     id,
     type: "subscription",
+    role,
     customerId: "cus_1",
     userId: null,
     subscription: aSubscription().with(over).build(),
@@ -138,48 +92,45 @@ describe("ApplyBillingEvent", () => {
   async function setup() {
     const users = new InMemoryUsers();
     await users.save(aUser().withId("u1").withStripeCustomer("cus_1").build());
-    const credits = new InMemoryCredits();
-    return { users, credits, apply: new ApplyBillingEvent({ users, events: new InMemoryEventLog(), referrals: new InMemoryReferrals(), credits, clock: new FixedClock() }) };
+    return { users, apply: new ApplyBillingEvent({ users, events: new InMemoryEventLog(), referrals: new InMemoryReferrals(), clock: new FixedClock() }) };
   }
 
-  test("given a paid credit pack, when its event is applied twice, then the pack's credits are added once", async () => {
-    // Given
-    const { credits, apply } = await setup();
-    const event: BillingEvent = { id: "evt_c", type: "credits", customerId: "cus_1", userId: "u1", pack: "regular", credits: 400 };
-
-    // When
-    const first = await apply.execute(event);
-    const replay = await apply.execute(event);
-
-    // Then
-    expect([first, replay]).toEqual(["applied", "duplicate"]);
-    expect(await credits.balance("u1")).toBe(CREDIT_PACK_DETAILS.regular.credits);
-    expect((await credits.history("u1", 5)).map((e) => [e.reason, e.amount, e.detail])).toEqual([["purchase", 400, "regular"]]);
-  });
-
-  test("given a pack partly spent, when its payment is refunded in full, then its credits leave the balance down to zero", async () => {
-    // Given
-    const { credits, apply } = await setup();
-    await apply.execute({ id: "evt_c", type: "credits", customerId: "cus_1", userId: "u1", pack: "starter", credits: 100 });
-    await credits.spend({ userId: "u1", key: "conn-1", day: "2026-09-14", amount: 1, detail: "@ada" });
-
-    // When
-    await apply.execute({ id: "evt_r", type: "credits_refund", customerId: "cus_1", userId: "u1", pack: "starter" });
-
-    // Then
-    expect(await credits.balance("u1")).toBe(0);
-  });
-
-  test("given a credit pack bought on a Pro account, when applied, then the plan is left alone", async () => {
+  test("given an accounts subscription event, when applied, then it's stored beside the plan and changes neither", async () => {
     // Given
     const { users, apply } = await setup();
-    await apply.execute(subscriptionEvent("evt_1", { status: "active" }));
+    await apply.execute(subscriptionEvent("evt_pro", { status: "active" }));
 
     // When
-    await apply.execute({ id: "evt_c", type: "credits", customerId: "cus_1", userId: "u1", pack: "starter", credits: 100 });
+    await apply.execute(subscriptionEvent("evt_accounts", { id: "sub_accounts", status: "active", quantity: 3 }, "paid_accounts"));
 
     // Then
-    expect(planOf((await users.byId("u1"))!, NOW)).toBe("pro");
+    const user = (await users.byId("u1"))!;
+    expect(user.subscription?.id).toBe("sub_1");
+    expect(user.paidAccounts).toMatchObject({ id: "sub_accounts", quantity: 3 });
+    expect(planOf(user, NOW)).toBe("pro");
+  });
+
+  test("given an owner on nothing but accounts, when the event is applied, then they're still on the free plan", async () => {
+    // Given
+    const { users, apply } = await setup();
+
+    // When
+    await apply.execute(subscriptionEvent("evt_accounts", { id: "sub_accounts", status: "active", quantity: 2 }, "paid_accounts"));
+
+    // Then
+    expect(planOf((await users.byId("u1"))!, NOW)).toBe("free");
+  });
+
+  test("given a quantity raised then an older event arriving late, when both are applied, then the newer state stays", async () => {
+    // Given
+    const { users, apply } = await setup();
+    await apply.execute(subscriptionEvent("evt_new", { id: "sub_accounts", status: "active", quantity: 3, updatedAt: NOW + 1000 }, "paid_accounts"));
+
+    // When
+    await apply.execute(subscriptionEvent("evt_old", { id: "sub_accounts", status: "active", quantity: 1, updatedAt: NOW }, "paid_accounts"));
+
+    // Then
+    expect((await users.byId("u1"))!.paidAccounts?.quantity).toBe(3);
   });
 
   test("given an active subscription event, when applied, then the customer becomes Pro", async () => {
@@ -211,10 +162,10 @@ describe("ApplyBillingEvent", () => {
   test("given an older period arriving after a newer one, when applied, then the newer state is kept", async () => {
     // Given
     const { users, apply } = await setup();
-    await apply.execute(subscriptionEvent("evt_new", { status: "active", currentPeriodEnd: NOW + 60 * 86_400_000 }));
+    await apply.execute(subscriptionEvent("evt_new", { status: "active", currentPeriodEnd: NOW + 60 * 86_400_000, updatedAt: NOW + 1000 }));
 
     // When
-    await apply.execute(subscriptionEvent("evt_old", { status: "incomplete", currentPeriodEnd: NOW + 30 * 86_400_000 }));
+    await apply.execute(subscriptionEvent("evt_old", { status: "incomplete", currentPeriodEnd: NOW + 30 * 86_400_000, updatedAt: NOW }));
 
     // Then
     expect((await users.byId("u1"))!.subscription!.status).toBe("active");

@@ -61,8 +61,13 @@ Free is generous, because every public wall is distribution.
 | "Made with Flexwall" footer removable | | ✓ | ✓ |
 | Custom domain (next) | | ✓ | ✓ |
 
-The lifetime plan funds the launch and rewards the first believers. It's
-capped and will close; MRR comes from the subscription.
+Connected bank and brokerage accounts (Plaid, Powens, SnapTrade, Enable
+Banking) cost a fee at the provider every month, so they are paid for by the
+account: **$5 a month each**, on top of Pro, prorated, for as long as the
+account stays connected.
+
+The lifetime plan funded the launch and is no longer sold; owners keep theirs.
+MRR comes from the subscription.
 
 Later revenue, once Explore has traffic: sponsored placements on Explore,
 the way TrustMRR sells sponsor slots.

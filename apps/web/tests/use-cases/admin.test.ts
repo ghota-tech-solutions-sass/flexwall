@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { AdjustCredits, GetAccount, IsAdministrator, ListAccounts, ModerateWall, OfferPro, WithdrawPro } from "@/application/use-cases/admin";
+import { GetAccount, GrantPaidAccounts, IsAdministrator, ListAccounts, ModerateWall, OfferPro, WithdrawPro } from "@/application/use-cases/admin";
 import { aConnection, aUser, aWall, NOW } from "../builders";
-import { FixedClock, InMemoryConnections, InMemoryCredits, InMemoryUsers, InMemoryWalls, SequentialIds } from "../fakes";
+import { FixedClock, InMemoryConnections, InMemoryUsers, InMemoryWalls } from "../fakes";
 
 async function setup() {
   const users = new InMemoryUsers();
@@ -14,12 +14,10 @@ async function setup() {
   for (const u of [boss, ada, eve]) await users.save(u);
   await walls.save(aWall().withId("w-ada").ownedBy(ada).listed().build());
   await connections.save(aConnection().withId("c-ada").ownedBy(ada).forConnector("stripe").build());
-  const credits = new InMemoryCredits();
   return {
     users,
     walls,
-    credits,
-    adjust: new AdjustCredits({ ...deps, credits, ids: new SequentialIds() }),
+    grant: new GrantPaidAccounts(deps),
     list: new ListAccounts(deps),
     get: new GetAccount(deps),
     offer: new OfferPro(deps),
@@ -104,41 +102,37 @@ describe("The back office", () => {
   });
 });
 
-describe("Credits in the back office", () => {
-  test("given an administrator, when they add credits then take more back than are left, then the balance stops at zero and both are on record", async () => {
+describe("Paid accounts in the back office", () => {
+  test("given an administrator, when they give an account connected accounts, then it may connect that many", async () => {
     // Given
-    const { adjust, credits } = await setup();
-    await adjust.execute({ userId: "boss", accountId: "ada", amount: 50, note: "Beta tester" });
+    const { grant, users } = await setup();
 
     // When
-    const { balance } = await adjust.execute({ userId: "boss", accountId: "ada", amount: -80, note: "Refunded in Stripe" });
+    const result = await grant.execute({ userId: "boss", accountId: "ada", accounts: 2 });
 
     // Then
-    expect(balance).toBe(0);
-    expect((await credits.history("ada", 5)).map((e) => [e.reason, e.amount, e.detail]).sort()).toEqual([
-      ["grant", 50, "boss@flexwall.lol: Beta tester"],
-      ["refund", -50, "boss@flexwall.lol: Refunded in Stripe"],
-    ]);
+    expect(result).toEqual({ granted: 2 });
+    expect((await users.byId("ada"))!.paidAccountsGranted).toBe(2);
   });
 
-  test("given someone who isn't an administrator, when they add credits, then nothing is added", async () => {
+  test("given someone who isn't an administrator, when they give themselves accounts, then nothing is given", async () => {
     // Given
-    const { adjust, credits } = await setup();
+    const { grant, users } = await setup();
 
     // When
-    const attempt = adjust.execute({ userId: "eve", accountId: "eve", amount: 1000, note: "" });
+    const attempt = grant.execute({ userId: "eve", accountId: "eve", accounts: 5 });
 
     // Then
     await expect(attempt).rejects.toMatchObject({ code: "not_found" });
-    expect(await credits.balance("eve")).toBe(0);
+    expect((await users.byId("eve"))!.paidAccountsGranted ?? 0).toBe(0);
   });
 
-  test("given an amount that isn't a sensible whole number, when an administrator adjusts credits, then it's refused", async () => {
+  test("given a number that isn't a sensible count, when an administrator sends it, then it's refused", async () => {
     // Given
-    const { adjust } = await setup();
+    const { grant } = await setup();
 
     // When
-    const attempts = [0, 2.5, Number.NaN, 1_000_000].map((amount) => () => adjust.execute({ userId: "boss", accountId: "ada", amount, note: "" }));
+    const attempts = [-1, 2.5, Number.NaN, 99].map((accounts) => () => grant.execute({ userId: "boss", accountId: "ada", accounts }));
 
     // Then
     for (const attempt of attempts) await expect(attempt()).rejects.toMatchObject({ code: "invalid_input" });

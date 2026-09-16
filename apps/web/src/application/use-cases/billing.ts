@@ -1,9 +1,9 @@
-import { CREDIT_PACK_DETAILS, type CreditPack } from "@/domain/credits";
 import { DomainError } from "@/domain/errors";
 import { TERMS_VERSION } from "@/domain/publisher";
 import { convert, grantMonth, refundable, takeMonthBack } from "@/domain/referral";
 import { paidPlanOf } from "@/domain/user";
-import type { AppLinks, BillingEvent, BillingPlan, Clock, CreditAccounts, EventLog, PaymentGateway, ReferralRepository, UserRepository } from "../ports";
+import { SELLABLE_BILLING_PLANS } from "@/domain/pricing";
+import type { AppLinks, BillingEvent, BillingPlan, Clock, EventLog, PaymentGateway, ReferralRepository, UserRepository } from "../ports";
 
 export class StartCheckout {
   constructor(
@@ -16,6 +16,9 @@ export class StartCheckout {
     const user = await this.deps.users.byId(input.userId);
     if (!user) throw new DomainError("unauthenticated", "Sign in again.");
     // Referral Pro time doesn't count here: someone on a free month can still subscribe.
+    if (!SELLABLE_BILLING_PLANS.includes(input.plan as (typeof SELLABLE_BILLING_PLANS)[number])) {
+      throw new DomainError("invalid_input", "That plan isn't on sale any more.");
+    }
     const plan = paidPlanOf(user, this.deps.clock.now());
     if (plan === "lifetime") throw new DomainError("invalid_input", "You already have Flexwall for life.");
     if (plan === "pro" && input.plan !== "lifetime") throw new DomainError("invalid_input", "You're already Pro. Manage your plan from billing.");
@@ -39,27 +42,6 @@ export class StartCheckout {
   }
 }
 
-/** Opens the payment of a credit pack. Any account can buy credits, free or Pro. */
-export class StartCreditsCheckout {
-  constructor(private readonly deps: { users: UserRepository; payments: PaymentGateway; clock: Clock; links: AppLinks }) {}
-
-  async execute(input: { userId: string; pack: CreditPack; acceptedTerms: boolean }): Promise<{ url: string }> {
-    if (!this.deps.payments.enabled()) throw new DomainError("payments_unavailable", "Payments aren't switched on yet.");
-    if (input.acceptedTerms !== true) throw new DomainError("invalid_input", "Accept the terms and ask for your credits to be delivered now to continue.");
-    const user = await this.deps.users.byId(input.userId);
-    if (!user) throw new DomainError("unauthenticated", "Sign in again.");
-    const { url, customerId } = await this.deps.payments.creditsCheckoutUrl({
-      user,
-      pack: input.pack,
-      consent: { termsVersion: TERMS_VERSION, acceptedAt: this.deps.clock.now() },
-      successUrl: this.deps.links.creditsPurchased(),
-      cancelUrl: this.deps.links.billingReturn(),
-    });
-    if (customerId !== user.stripeCustomerId) await this.deps.users.save({ ...user, stripeCustomerId: customerId });
-    return { url };
-  }
-}
-
 export class OpenBillingPortal {
   constructor(private readonly deps: { users: UserRepository; payments: PaymentGateway; links: AppLinks }) {}
 
@@ -76,26 +58,16 @@ export class OpenBillingPortal {
  * payment earns their referrer a month; a refund soon after takes it back.
  */
 export class ApplyBillingEvent {
-  constructor(private readonly deps: { users: UserRepository; events: EventLog; referrals: ReferralRepository; credits: CreditAccounts; clock: Clock }) {}
+  constructor(private readonly deps: { users: UserRepository; events: EventLog; referrals: ReferralRepository; clock: Clock }) {}
 
   async execute(event: BillingEvent): Promise<"applied" | "duplicate" | "unknown_user"> {
     const user = ("userId" in event && event.userId ? await this.deps.users.byId(event.userId) : null) ?? (await this.deps.users.byStripeCustomer(event.customerId));
     if (!user) return "unknown_user";
     if (!(await this.deps.events.firstTime(event.id))) return "duplicate";
 
-    if (event.type === "credits") {
-      // Keyed by the event: a replay past the event log still adds the pack once.
-      await this.deps.credits.adjust({ userId: user.id, entryId: event.id, amount: CREDIT_PACK_DETAILS[event.pack].credits, reason: "purchase", detail: event.pack });
-      if (user.stripeCustomerId !== event.customerId) await this.deps.users.save({ ...user, stripeCustomerId: event.customerId });
-      return "applied";
-    }
-    if (event.type === "credits_refund") {
-      // What was already spent stays spent: the balance stops at zero.
-      await this.deps.credits.adjust({ userId: user.id, entryId: event.id, amount: -CREDIT_PACK_DETAILS[event.pack].credits, reason: "refund", detail: `${event.pack} refunded` });
-      return "applied";
-    }
     if (event.type === "refund") {
-      await this.refund(user.id);
+      // A refunded connected account is nothing to do with the referral that paid for Pro.
+      if (event.role !== "paid_accounts") await this.refund(user.id);
       return "applied";
     }
     if (event.type === "lifetime") {
@@ -103,11 +75,13 @@ export class ApplyBillingEvent {
       await this.firstPayment(user.id);
       return "applied";
     }
-    // Subscription events can arrive out of order; the one describing the same subscription wins by its period end.
-    const current = user.subscription;
-    if (current && current.id === event.subscription.id && current.currentPeriodEnd > event.subscription.currentPeriodEnd) return "applied";
-    await this.deps.users.save({ ...user, subscription: event.subscription, stripeCustomerId: event.customerId });
-    if (event.subscription.status === "active" || event.subscription.status === "trialing") await this.firstPayment(user.id);
+    // Events can arrive out of order, and a quantity change doesn't move the period end: the newer event wins.
+    const current = event.role === "paid_accounts" ? (user.paidAccounts ?? null) : user.subscription;
+    if (current && current.id === event.subscription.id && current.updatedAt > event.subscription.updatedAt) return "applied";
+    const changed = event.role === "paid_accounts" ? { paidAccounts: event.subscription } : { subscription: event.subscription };
+    await this.deps.users.save({ ...user, ...changed, stripeCustomerId: event.customerId });
+    // Only a plan converts a referral: a $5 account isn't the invitee's first payment.
+    if (event.role === "pro" && (event.subscription.status === "active" || event.subscription.status === "trialing")) await this.firstPayment(user.id);
     return "applied";
   }
 

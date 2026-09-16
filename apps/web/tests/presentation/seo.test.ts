@@ -53,7 +53,7 @@ describe("Structured data", () => {
       ["Free", "0.00"],
       ["Pro, monthly", "6.00"],
       ["Pro, yearly", "48.00"],
-      ["Lifetime", "99.00"],
+      ["Connected bank or brokerage account", "5.00"],
     ]);
     expect(ld.offers.every((o) => o.priceCurrency === "USD" && o.priceSpecification.valueAddedTaxIncluded)).toBe(true);
     expect(ld.offers[2]!.priceSpecification.billingDuration).toBe("P1Y");

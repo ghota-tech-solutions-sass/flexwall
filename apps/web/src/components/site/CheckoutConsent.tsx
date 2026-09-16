@@ -17,10 +17,10 @@ export function useCheckoutConsent() {
 
 /**
  * The terms box every checkout goes through: acceptance of the terms, and the
- * express request for Pro, or credits, to be delivered before the 14-day
+ * express request for Pro, or a paid account, to start before the 14-day
  * withdrawal period ends.
  */
-export function CheckoutConsentScope({ signedIn, children, purchase = "pro" }: { signedIn: boolean; children: ReactNode; purchase?: "pro" | "credits" }) {
+export function CheckoutConsentScope({ signedIn, children, purchase = "pro" }: { signedIn: boolean; children: ReactNode; purchase?: "pro" | "paid-account" }) {
   const [accepted, setAccepted] = useState(false);
   const [missing, setMissing] = useState(false);
   const id = useId();
@@ -37,10 +37,10 @@ export function CheckoutConsentScope({ signedIn, children, purchase = "pro" }: {
             aria-invalid={missing && !accepted}
           />
           <span>
-            {purchase === "credits" ? (
+            {purchase === "paid-account" ? (
               <>
-                I accept the <Link href={ROUTES.terms}>terms of service</Link> and the <Link href={ROUTES.privacy}>privacy policy</Link>, and I ask for my credits to be
-                delivered as soon as I pay, before the 14-day withdrawal period ends. Credits I haven&apos;t used are refunded on request within those 14 days.
+                I accept the <Link href={ROUTES.terms}>terms of service</Link> and the <Link href={ROUTES.privacy}>privacy policy</Link>, and I ask for the account to
+                start as soon as I pay, before the 14-day withdrawal period ends. An account I haven&apos;t used is refunded on request within those 14 days.
               </>
             ) : (
               <>

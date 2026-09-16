@@ -1,5 +1,5 @@
 import { FREE_TILE_LIMIT } from "@/domain/user";
-import { PLAN_PRICES_USD } from "@/domain/pricing";
+import { PAID_ACCOUNT_PRICE_USD, PLAN_PRICES_USD } from "@/domain/pricing";
 import { ROUTES } from "../routes";
 import { SITE_DESCRIPTION } from "./structured-data";
 import type { IntegrationPage } from "./integrations";
@@ -18,7 +18,7 @@ export function llmsTxt(origin: string, integrations: readonly IntegrationPage[]
     "",
     `- Free: one public wall, ${FREE_TILE_LIMIT} tiles, basic connectors, a small flexwall.lol mark on images.`,
     `- Pro: $${PLAN_PRICES_USD.monthly} a month or $${PLAN_PRICES_USD.yearly} a year, taxes included. Unlimited tiles, every connector and theme, value history, no mark.`,
-    `- Lifetime: $${PLAN_PRICES_USD.lifetime} once. Pro for the life of the service.`,
+    `- Connected bank or brokerage account: $${PAID_ACCOUNT_PRICE_USD} a month each, on top of Pro, for as long as the account stays connected.`,
     "",
     "## Main pages",
     "",

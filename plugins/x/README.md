@@ -5,15 +5,15 @@ X API v2, two ways:
 
 - `x`: with **the owner's own X developer app**. X bills every read to the
   owner's developer account; Flexwall pays nothing.
-- `x-credits`: with **Flexwall's X app**. The owner types a handle and spends
-  one Flexwall credit per account per UTC day it refreshes.
+- `x-credits`: with **Flexwall's X app**. The owner types a handle; Flexwall
+  pays X for the reads, which is why it refreshes every six hours.
 
 ## What it adds
 
 | Kind | Id | What |
 |---|---|---|
-| Connector | `x-credits` | Shown as **X**: Flexwall's `X_BEARER_TOKEN`, `creditsPerDay: 1`. |
-| Connector | `x` | Shown as **X with your own key**: the owner's Bearer Token, no credits. |
+| Connector | `x-credits` | Shown as **X**: read with Flexwall's `X_BEARER_TOKEN`. |
+| Connector | `x` | Shown as **X with your own key**: the owner's Bearer Token; X bills them. |
 
 | Metric | Type | Where it comes from |
 |---|---|---|
@@ -39,14 +39,13 @@ connection shares one cache group and one read.
 app-only Bearer Token of Flexwall's X app, in a project, on a developer account
 with prepaid credits (set it through `connector_secrets`).
 
-What a credit costs: X bills a profile read $0.010 and counts the same profile
-once per UTC day, so at most one cent per credit, less when several owners
-track the same account. `x-credits` refreshes every 6 hours; if X ever bills
-repeated reads, the worst case is four cents a credit-day. The host charges the
-credit just before the first read of the day and gives it back if the read
-fails, including when Flexwall's own X account is out of credits (the owner
-sees "X is unavailable on Flexwall right now"). Connecting reads nothing: an
-unknown handle shows on the first refresh, which costs nothing.
+What it costs the host: X bills a profile read $0.010 and counts the same
+profile once per UTC day, so about $0.30 a month per tracked account at worst,
+less when several owners follow the same one. `x-credits` refreshes every 6
+hours to keep that bounded if X ever bills repeated reads. When Flexwall's own
+X account runs out of credits, owners read "X is unavailable on Flexwall right
+now" and nothing else about it. Connecting reads nothing: an unknown handle
+shows on the first refresh.
 
 ## Owner setup
 

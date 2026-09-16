@@ -14,7 +14,9 @@ export type DomainErrorCode =
   | "forbidden"
   | "unauthenticated"
   | "connection_failed"
-  | "payments_unavailable";
+  | "payments_unavailable"
+  /** A connected account of this connector is paid for monthly, and this owner has none spare. */
+  | "paid_account_required";
 
 export class DomainError extends Error {
   constructor(

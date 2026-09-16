@@ -213,6 +213,8 @@ export const plaidConnector = defineConnector({
   description: "Verified cash, investments and net worth from your US or Canadian bank and brokerage accounts, read through Plaid.",
   homepage: "https://plaid.com",
   tier: "pro",
+  // Every connection here is a paying link at the provider, billed monthly: the owner pays for it by the account.
+  serverCost: "per-account",
   verified: true,
   // Cached balances move about once a day; /accounts/get is free but limited to 15 calls a minute per Item.
   ttl: 6 * 3600,

@@ -181,11 +181,11 @@ export interface ConnectorDef {
    */
   ttlFor?(connection: Record<string, string>): number;
   /**
-   * Credits a connection costs its owner per UTC day in which it reaches the
-   * upstream, for connectors that read with a paid server key. Refreshes on a
-   * day already paid for are free; days nobody views the wall cost nothing.
+   * Each connection of this connector costs the host a fee every month at the
+   * provider (a connected bank, a brokerage link), so the owner pays for it by
+   * the account. Omit when a connection costs the host nothing.
    */
-  creditsPerDay?: number;
+  serverCost?: "per-account";
   /**
    * Metrics with the same key are fetched together. Default: one group per
    * metric and params. Return a constant when one call answers every metric.

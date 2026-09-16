@@ -1,8 +1,8 @@
 import { RequestSignInLink, SignIn } from "@/application/use-cases/auth";
-import { ApplyBillingEvent, OpenBillingPortal, StartCheckout, StartCreditsCheckout } from "@/application/use-cases/billing";
+import { ApplyBillingEvent, OpenBillingPortal, StartCheckout } from "@/application/use-cases/billing";
 import { ConnectorAccess, GetConnectorControls, ListPublicConnectors, SetConnectorAvailability } from "@/application/use-cases/connector-policy";
-import { GetCredits } from "@/application/use-cases/credits";
-import { AdjustCredits, GetAccount, IsAdministrator, ListAccounts, ModerateWall, OfferPro, WithdrawPro } from "@/application/use-cases/admin";
+import { AddPaidAccount, GetPaidAccounts, ReconcilePaidAccounts } from "@/application/use-cases/paid-accounts";
+import { GetAccount, GrantPaidAccounts, IsAdministrator, ListAccounts, ModerateWall, OfferPro, WithdrawPro } from "@/application/use-cases/admin";
 import { ClaimHandle } from "@/application/use-cases/claim-handle";
 import { ConnectAccount, FinishConnectionSignIn, RemoveConnection, RenameConnection, StartConnectionSignIn } from "@/application/use-cases/connections";
 import { ListExplore, ReportWall } from "@/application/use-cases/explore";
@@ -15,7 +15,7 @@ import { isProduction, optionalEnv } from "@/infrastructure/env";
 import { ConsoleMailer, GmailMailer } from "@/infrastructure/mail/mailers";
 import { db } from "@/infrastructure/persistence/db";
 import { parseAdministrators } from "@/domain/admin";
-import { DbConnections, DbConnectorPolicies, DbCredits, DbEventLog, DbHandles, DbReferrals, DbSnapshots, DbUsers, DbValueCache, DbWalls } from "@/infrastructure/persistence/repositories";
+import { DbConnections, DbConnectorPolicies, DbEventLog, DbHandles, DbReferrals, DbSnapshots, DbUsers, DbValueCache, DbWalls } from "@/infrastructure/persistence/repositories";
 import { AesSecretBox } from "@/infrastructure/security/secret-box";
 import { HmacTokenService } from "@/infrastructure/security/tokens";
 import { GuardedRuntime, RandomIds, SystemClock } from "@/infrastructure/system";
@@ -80,7 +80,6 @@ function build() {
   const snapshots = new DbSnapshots(store);
   const events = new DbEventLog(store);
   const referrals = new DbReferrals(store);
-  const credits = new DbCredits(store);
   const connectorPolicies = new DbConnectorPolicies(store);
   const tokens = new HmacTokenService(optionalEnv("FLEXWALL_SECRET") || undefined, production, clock);
   const secrets = new AesSecretBox(optionalEnv("FLEXWALL_ENCRYPTION_KEY") || undefined, production);
@@ -93,10 +92,7 @@ function build() {
       monthly: optionalEnv("STRIPE_PRICE_MONTHLY") || null,
       yearly: optionalEnv("STRIPE_PRICE_YEARLY") || null,
       lifetime: optionalEnv("STRIPE_PRICE_LIFETIME") || null,
-      credits: {
-        starter: optionalEnv("STRIPE_PRICE_CREDITS_STARTER") || null,
-        regular: optionalEnv("STRIPE_PRICE_CREDITS_REGULAR") || null,
-      },
+      paidAccount: optionalEnv("STRIPE_PRICE_PAID_ACCOUNT") || null,
     },
     portalConfiguration: optionalEnv("STRIPE_PORTAL_CONFIGURATION") || null,
     checkout: {
@@ -112,7 +108,9 @@ function build() {
   const admin = { users, walls, connections, clock, administrators };
   const connectorAdmin = { users, connections, policies: connectorPolicies, access, catalog, clock, administrators };
 
-  const resolveWall = new ResolveWall({ catalog, connections, cache, snapshots, secrets, runtime, credits, access, administrators, clock });
+  const paidAccountDeps = { users, connections, catalog, payments, clock, links };
+  const reconcilePaidAccounts = new ReconcilePaidAccounts(paidAccountDeps);
+  const resolveWall = new ResolveWall({ catalog, connections, cache, snapshots, secrets, runtime, access, administrators, clock });
 
   return {
     catalog,
@@ -129,7 +127,7 @@ function build() {
     connectAccount: new ConnectAccount({ users, connections, catalog, runtime, secrets, ids, clock, access, administrators }),
     startConnectionSignIn: new StartConnectionSignIn({ users, connections, catalog, runtime, secrets, ids, clock, links, access, administrators }),
     finishConnectionSignIn: new FinishConnectionSignIn({ users, connections, catalog, runtime, secrets, ids, clock, links, access, administrators }),
-    removeConnection: new RemoveConnection({ connections, catalog, secrets, runtime, clock }),
+    removeConnection: new RemoveConnection({ connections, catalog, secrets, runtime, clock, reconcile: reconcilePaidAccounts }),
     renameConnection: new RenameConnection({ connections }),
     resolveWall,
     getLockscreen: new GetLockscreen({ walls, users, tokens }),
@@ -137,16 +135,17 @@ function build() {
     reportWall: new ReportWall({ walls, mailer, moderationInbox: optionalEnv("MODERATION_INBOX", DEFAULT_MODERATION_INBOX) }),
     startCheckout: new StartCheckout({ users, referrals, payments, clock, links }),
     openBillingPortal: new OpenBillingPortal({ users, payments, links }),
-    applyBillingEvent: new ApplyBillingEvent({ users, events, referrals, credits, clock }),
-    startCreditsCheckout: new StartCreditsCheckout({ users, payments, clock, links }),
-    getCredits: new GetCredits({ credits, connections, catalog }),
+    applyBillingEvent: new ApplyBillingEvent({ users, events, referrals, clock }),
+    addPaidAccount: new AddPaidAccount(paidAccountDeps),
+    getPaidAccounts: new GetPaidAccounts(paidAccountDeps),
+    reconcilePaidAccounts,
     getReferralProgram: new GetReferralProgram({ users, referrals, clock, links }),
     isAdministrator: new IsAdministrator(admin),
     listAccounts: new ListAccounts(admin),
     getAccount: new GetAccount(admin),
     offerPro: new OfferPro(admin),
     withdrawPro: new WithdrawPro(admin),
-    adjustCredits: new AdjustCredits({ ...admin, credits, ids }),
+    grantPaidAccounts: new GrantPaidAccounts(admin),
     publicConnectors: new ListPublicConnectors({ access }),
     getConnectorControls: new GetConnectorControls(connectorAdmin),
     setConnectorAvailability: new SetConnectorAvailability(connectorAdmin),
