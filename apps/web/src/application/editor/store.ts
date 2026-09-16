@@ -200,7 +200,7 @@ export function createEditorStore(deps: EditorDeps, init: EditorInit): EditorSto
         const template = templateById(templateId);
         if (!template) return;
         const before = get().draft;
-        change((d) => applyTemplate(d, template, newTileId, get().entitlements.maxTiles));
+        change((d) => applyTemplate(d, template, { newId: newTileId, maxTiles: get().entitlements.maxTiles, catalog, today: get().today }));
         if (get().draft === before) return;
         set({ restorePoint: before, selected: null, removed: null });
         cancel.undo();

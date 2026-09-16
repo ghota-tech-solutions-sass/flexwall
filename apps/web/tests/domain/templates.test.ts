@@ -8,6 +8,8 @@ import { SequentialIds } from "../fakes";
 import { catalog } from "@/plugins/registry";
 import { entitlementsOf } from "@/domain/user";
 
+const TODAY = "2026-09-16";
+
 const ids = () => {
   const gen = new SequentialIds();
   return () => gen.next();
@@ -44,7 +46,7 @@ describe("Walls to start from", () => {
     const draft = aWall().draft();
 
     // When
-    const applied = TEMPLATES.map((template) => applyTemplate({ ...draft }, template, ids(), FREE_TILE_LIMIT));
+    const applied = TEMPLATES.map((template) => applyTemplate({ ...draft }, template, { newId: ids(), maxTiles: FREE_TILE_LIMIT, catalog, today: TODAY }));
 
     // Then: the server's own rules, the ones the autosave runs into a second later
     const rules = { catalog, entitlements: entitlementsOf(aUser().pro().build(), NOW), connections: [] };
@@ -59,7 +61,7 @@ describe("Walls to start from", () => {
     const template = TEMPLATES.find((t) => t.tiles.length > 2)!;
 
     // When
-    const applied = applyTemplate(aWall().draft(), template, ids(), 2);
+    const applied = applyTemplate(aWall().draft(), template, { newId: ids(), maxTiles: 2, catalog, today: TODAY });
 
     // Then
     expect(applied.tiles).toHaveLength(2);
@@ -70,7 +72,7 @@ describe("Walls to start from", () => {
     const draft = aWall().draft();
 
     // When
-    const applied = applyTemplate(draft, TEMPLATES[0], ids(), FREE_TILE_LIMIT);
+    const applied = applyTemplate(draft, TEMPLATES[0], { newId: ids(), maxTiles: FREE_TILE_LIMIT, catalog, today: TODAY });
 
     // Then
     expect(applied.lockscreen.placements).toEqual([]);

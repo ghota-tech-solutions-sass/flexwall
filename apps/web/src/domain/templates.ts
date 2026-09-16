@@ -1,3 +1,5 @@
+import { defaultsFor } from "@flexwall/sdk";
+import type { Catalog } from "./catalog";
 import { WALL_COLUMNS, type Box } from "./layout";
 import { DEFAULT_VISIBILITY, type Binding, type Tile, type Visibility, type WallDraft } from "./wall";
 
@@ -91,12 +93,13 @@ export function templateById(id: string): WallTemplate | null {
  * walk past the plan's tile limit. The editor keeps the wall it replaced, so
  * one tap undoes it.
  */
-export function applyTemplate(draft: WallDraft, template: WallTemplate, newId: () => string, maxTiles: number): WallDraft {
-  const tiles: Tile[] = template.tiles.slice(0, Math.max(0, maxTiles)).map((t) => ({
-    id: newId(),
+export function applyTemplate(draft: WallDraft, template: WallTemplate, input: { newId: () => string; maxTiles: number; catalog: Catalog; today: string }): WallDraft {
+  const tiles: Tile[] = template.tiles.slice(0, Math.max(0, input.maxTiles)).map((t) => ({
+    id: input.newId(),
     widget: t.widget,
     inputs: startingInputs(t),
-    options: { ...t.options },
+    // The widget's own defaults first: a countdown without a date counts towards nothing.
+    options: { ...defaultsFor(input.catalog.widget(t.widget)?.options ?? [], input.today), ...t.options },
     visibility: t.visibility ?? DEFAULT_VISIBILITY,
     layout: { ...t.layout, w: Math.min(t.layout.w, WALL_COLUMNS) },
   }));
