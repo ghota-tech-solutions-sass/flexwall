@@ -1,24 +1,70 @@
-#!/bin/bash
-# Build, push and deploy the flexwall image by hand. CI does the same on every
-# release (.github/workflows/ci.yml); use this only when CI can't.
+#!/usr/bin/env bash
 #
-# Terraform owns the service's configuration (env vars, secret references,
-# scaling): this script only ships a new image. No --set-env-vars, no
-# --update-env-vars, no --allow-unauthenticated (the service is public through
-# invoker_iam_disabled; an allUsers binding is refused by the organization).
+# Deploys the current commit to Cloud Run without GitHub Actions.
+#
+# The CI workflow does the same three things (build the image, push it to
+# Artifact Registry, point the service at it) and stays the normal path. This
+# script is for when there are no runner minutes left, or when a deploy has to
+# happen from a laptop.
+#
+# The build runs in Cloud Build rather than locally: the service runs on amd64,
+# and emulating that on an Apple Silicon machine takes an order of magnitude
+# longer.
+#
+# Environment variables, secrets and scaling belong to Terraform. This only
+# changes which image the service runs.
+#
+# Usage:
+#   scripts/deploy.sh            # deploy the current commit
+#   scripts/deploy.sh --dry-run  # print what it would do
+#
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PROJECT_ID="${PROJECT_ID:-ghota-outflex-prod}"
-REGION="${REGION:-europe-west1}"
-SERVICE="${SERVICE:-flexwall}"
-REGISTRY="${REGION}-docker.pkg.dev/${PROJECT_ID}/flexwall-repo/${SERVICE}"
-TAG="${TAG:-$(git -C "$ROOT" rev-parse HEAD)}"
-APP_URL="${APP_URL:-https://flexwall.lol}"
+PROJECT_ID="ghota-outflex-prod"
+REGION="europe-west1"
+REPO_NAME="flexwall-repo"
+SERVICE_NAME="flexwall"
+IMAGE_NAME="flexwall"
+DRY_RUN=""
+[[ "${1:-}" == "--dry-run" ]] && DRY_RUN="yes"
 
-echo "[deploy] building ${REGISTRY}:${TAG}"
-# linux/amd64: Apple Silicon builds arm64 images, which Cloud Run refuses.
-docker build --platform linux/amd64 --build-arg NEXT_PUBLIC_APP_URL="${APP_URL}" -t "${REGISTRY}:${TAG}" "$ROOT"
-docker push "${REGISTRY}:${TAG}"
-gcloud run deploy "${SERVICE}" --image "${REGISTRY}:${TAG}" --region "${REGION}" --project "${PROJECT_ID}" --quiet
-echo "[deploy] done"
+cd "$(dirname "$0")/.."
+
+SHA="$(git rev-parse HEAD)"
+IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${IMAGE_NAME}:${SHA}"
+
+# A deploy must be traceable to something that exists on the remote.
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "Working tree isn't clean: commit or stash first, so the running image matches a commit." >&2
+  exit 1
+fi
+if ! git merge-base --is-ancestor "$SHA" "origin/main" 2>/dev/null; then
+  echo "HEAD ($(git rev-parse --short HEAD)) isn't on origin/main. Push and merge it first." >&2
+  exit 1
+fi
+
+echo "Deploying $(git rev-parse --short HEAD) — $(git log -1 --pretty=%s)"
+echo "  image:   ${IMAGE}"
+echo "  service: ${SERVICE_NAME} (${PROJECT_ID}, ${REGION})"
+if [[ -n "$DRY_RUN" ]]; then
+  echo "Dry run: nothing was built or deployed."
+  exit 0
+fi
+
+echo "==> Building in Cloud Build (a few minutes)"
+# The Dockerfile defaults NEXT_PUBLIC_APP_URL to the production origin, so the
+# image needs no build arguments.
+gcloud builds submit --project "$PROJECT_ID" --tag "$IMAGE" --quiet
+
+echo "==> Pointing the service at it"
+gcloud run deploy "$SERVICE_NAME" \
+  --image "$IMAGE" \
+  --project "$PROJECT_ID" \
+  --region "$REGION" \
+  --quiet
+
+URL="$(gcloud run services describe "$SERVICE_NAME" --project "$PROJECT_ID" --region "$REGION" --format='value(status.url)')"
+echo "==> Smoke test ${URL}"
+CODE="$(curl -s -o /dev/null -w '%{http_code}' "$URL")"
+[[ "$CODE" == "200" ]] || { echo "The service answered HTTP ${CODE}." >&2; exit 1; }
+echo "Deployed: ${URL} answers 200, running ${SHA:0:7}."
