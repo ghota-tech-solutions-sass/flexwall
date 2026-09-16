@@ -508,3 +508,48 @@ describe("Editor store: dragging tiles in from the library", () => {
     expect(store.getState().libraryDrag).toBeNull();
   });
 });
+
+describe("Editor store: templates", () => {
+  test("given a wall, when a template is applied, then it replaces the tiles and one tap puts the wall back", async () => {
+    // Given
+    const { store, actions, scheduler } = anEditor({ pro: true });
+    const before = store.getState().draft.tiles;
+
+    // When
+    actions.applyTemplate("indie");
+    const applied = store.getState();
+    actions.undoTemplate();
+    await scheduler.advance(EDITOR_TIMINGS.autosaveMs);
+
+    // Then
+    expect(applied.draft.tiles.map((t) => t.widget)).toEqual(["stat", "stat", "countdown", "note"]);
+    expect(applied.restorePoint?.tiles).toBe(before);
+    expect(store.getState().draft.tiles).toBe(before);
+    expect(store.getState().restorePoint).toBeNull();
+  });
+
+  test("given a template applied a while ago, when the undo window has passed, then the old wall is let go", async () => {
+    // Given
+    const { store, actions, scheduler } = anEditor({ pro: true });
+
+    // When
+    actions.applyTemplate("creator");
+    await scheduler.advance(EDITOR_TIMINGS.undoMs);
+
+    // Then
+    expect(store.getState().restorePoint).toBeNull();
+    expect(store.getState().draft.tiles).toHaveLength(4);
+  });
+
+  test("given a template id nobody ships, when it's applied, then the wall is left alone", () => {
+    // Given
+    const { store, actions } = anEditor();
+    const before = store.getState().draft;
+
+    // When
+    actions.applyTemplate("nope");
+
+    // Then
+    expect(store.getState().draft).toBe(before);
+  });
+});

@@ -273,7 +273,18 @@ function SaveStatus() {
 
 function UndoToast() {
   const removed = useEditor((s) => s.removed);
+  const restorePoint = useEditor((s) => s.restorePoint);
   const actions = useEditorActions();
+  if (restorePoint) {
+    return (
+      <div className="ed-toast" role="status">
+        <span>Template applied</span>
+        <button type="button" onClick={actions.undoTemplate}>
+          Undo
+        </button>
+      </div>
+    );
+  }
   if (!removed) return null;
   return (
     <div className="ed-toast" role="status">

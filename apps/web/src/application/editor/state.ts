@@ -38,6 +38,8 @@ export interface EditorState {
   connections: ConnectionView[];
   /** The last deleted tile, while it can still be brought back. */
   removed: Tile | null;
+  /** The wall a template replaced, while the owner can still change their mind. */
+  restorePoint: WallDraft | null;
   /** Bumped when the owner asks to connect an account from a tile, so its form takes focus. */
   connectRequest: { tileId: string; count: number } | null;
   lockscreenPath: string;
@@ -59,6 +61,7 @@ export function initialState(init: EditorInit): EditorState {
     save: { kind: "saved" },
     states: {},
     removed: null,
+    restorePoint: null,
     connectRequest: null,
     lockscreenError: null,
     themePreview: null,

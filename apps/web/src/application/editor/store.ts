@@ -23,6 +23,7 @@ import {
   updateTile,
 } from "./draft";
 import type { EditorDeps, Outcome } from "./ports";
+import { applyTemplate, templateById } from "@/domain/templates";
 import { EDITOR_TIMINGS, initialState, type EditorInit, type EditorState, type EditorSurface } from "./state";
 
 type LayoutItem = { i: string; x: number; y: number; w: number; h: number };
@@ -56,6 +57,9 @@ export interface EditorActions {
   dropTile(widgetId: string, at: { x: number; y: number }): void;
   removeTile(tileId: string): void;
   undoRemove(): void;
+  /** Replaces the wall with a template, keeping the old one for one undo. */
+  applyTemplate(templateId: string): void;
+  undoTemplate(): void;
   duplicateTile(tileId: string): void;
   moveTiles(layout: readonly LayoutItem[]): void;
   /** The same wall, rearranged in the phone's two columns: the stored four-column layout follows the order. */
@@ -191,6 +195,23 @@ export function createEditorStore(deps: EditorDeps, init: EditorInit): EditorSto
         cancel.undo();
         change((d) => restoreTile(d, tile));
         set({ removed: null, selected: tile.id });
+      },
+      applyTemplate: (templateId) => {
+        const template = templateById(templateId);
+        if (!template) return;
+        const before = get().draft;
+        change((d) => applyTemplate(d, template, newTileId, get().entitlements.maxTiles));
+        if (get().draft === before) return;
+        set({ restorePoint: before, selected: null, removed: null });
+        cancel.undo();
+        cancel.undo = scheduler.schedule(EDITOR_TIMINGS.undoMs, () => set((s) => (s.restorePoint === before ? { restorePoint: null } : s)));
+      },
+      undoTemplate: () => {
+        const before = get().restorePoint;
+        if (!before) return;
+        cancel.undo();
+        change(() => before);
+        set({ restorePoint: null });
       },
       duplicateTile: (tileId) => {
         if (!canAddTile(get())) return;
