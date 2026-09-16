@@ -83,6 +83,62 @@ export function mobileLayout<T extends { layout: Box }>(items: readonly T[]): { 
   return out;
 }
 
+/** The order a reader goes through a wall: down the rows, then across. */
+export function readingOrder<T extends { layout: Box }>(items: readonly T[]): T[] {
+  return [...items].sort((a, b) => a.layout.y - b.layout.y || a.layout.x - b.layout.x);
+}
+
+/**
+ * Packs boxes so that reading them back gives the order they came in. Plain
+ * `firstFreeSpot` doesn't: it fills holes left behind, and a later tile can end
+ * up above an earlier one. Here each tile starts where the previous one leaves
+ * off, so what an owner arranges on a phone survives the trip to four columns.
+ */
+export function packInOrder<T extends { layout: Box }>(items: readonly T[], columns: number): { item: T; box: Box }[] {
+  const placed: Box[] = [];
+  const out: { item: T; box: Box }[] = [];
+  let after: Box | null = null;
+  for (const item of items) {
+    const w = Math.min(Math.max(1, item.layout.w), columns);
+    const h = Math.max(1, item.layout.h);
+    let box = firstFreeSpot(placed, w, h, columns);
+    // Never before the tile that came first: same row but further left, or a row above.
+    while (after && (box.y < after.y || (box.y === after.y && box.x < after.x + after.w))) {
+      box = firstFreeSpot([...placed, { x: 0, y: box.y, w: columns, h: 1 }], w, h, columns);
+    }
+    placed.push(box);
+    out.push({ item, box });
+    after = box;
+  }
+  return out;
+}
+
+/**
+ * What a tile may become on the phone grid, from what its widget allows on the
+ * wall. Widths are classes, not halves: a tile that may be two cells wide on
+ * the wall may be full width on a phone, and one that must be at least two
+ * stays full width there.
+ */
+export function phoneSizeBounds(size: { min: readonly [number, number]; max: readonly [number, number] }): { minW: number; maxW: number; minH: number; maxH: number } {
+  return {
+    minW: size.min[0] <= 1 ? 1 : MOBILE_COLUMNS,
+    maxW: size.max[0] >= MOBILE_COLUMNS ? MOBILE_COLUMNS : 1,
+    minH: size.min[1],
+    maxH: size.max[1],
+  };
+}
+
+/**
+ * The wall box a phone-sized tile means. Full width on a phone keeps a tile
+ * that was full width on the wall full width; anything else settles at half.
+ * The height carries over as it is, which is exact: the phone projection only
+ * shortens tiles wider than two cells, and those come back as four.
+ */
+export function wallBoxFromPhone(current: Box, phone: { w: number; h: number }): Box {
+  const w = phone.w >= MOBILE_COLUMNS ? (current.w === WALL_COLUMNS ? WALL_COLUMNS : 2) : 1;
+  return { ...current, w, h: Math.max(1, phone.h) };
+}
+
 /**
  * Packs items in reading order into a fixed columns×rows frame, shrinking each
  * to fit and skipping what doesn't. Share cards use it: whatever the wall's

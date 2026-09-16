@@ -1,12 +1,12 @@
 // Rendered inside the Editor client boundary.
 import { useEffect, useRef, useState } from "react";
-import ReactGridLayout, { useContainerWidth, verticalCompactor, type Layout } from "react-grid-layout";
+import ReactGridLayout, { noCompactor, useContainerWidth, verticalCompactor, type Layout } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import { CELL_UNITS, GAP_UNITS, gridUnits, themeBackground, type Size, type Theme } from "@flexwall/sdk";
 import type { TileState } from "@/application/use-cases/resolve-wall";
 import { dropCell, tileConnections, tileName } from "@/application/editor/draft";
 import { editorTheme } from "@/application/editor/state";
-import { WALL_COLUMNS } from "@/domain/layout";
+import { MOBILE_COLUMNS, mobileLayout, phoneSizeBounds, WALL_COLUMNS } from "@/domain/layout";
 import { BIO_MAX, TITLE_MAX, type Tile } from "@/domain/wall";
 import { catalog } from "@/plugins/registry";
 import { BrandMark, hasMark } from "@/components/brand/Logos";
@@ -20,6 +20,8 @@ import { CopyIcon, EyeIcon, EyeOffIcon, GrabIcon, KeyIcon, PlusIcon, ResizeIcon,
 const NO_DRAG = ".tile-tools, .tile-connect";
 /** With a finger, the tile body scrolls the page and only this handle moves the tile. */
 const TOUCH_DRAG_HANDLE = ".tile-grab";
+/** Below this width the wall is edited folded in two, the way a visitor sees it. */
+const PHONE_GRID = "(max-width: 640px)";
 
 /** Resize limits for a tile whose widget is gone: one cell up to the full width. */
 const FALLBACK_SIZE: { min: Size; max: Size } = { min: [1, 1], max: [WALL_COLUMNS, WALL_COLUMNS] };
@@ -79,8 +81,17 @@ export function WallCanvas() {
 
   const coarse = useCoarsePointer();
   const { width, containerRef, mounted } = useContainerWidth();
-  const px = width / gridUnits(WALL_COLUMNS);
+
+  /**
+   * On a phone the wall is edited folded in two, exactly as a visitor sees it:
+   * same columns, same scale. What comes back is an order and a size per tile,
+   * and the stored four-column layout is packed from that order.
+   */
+  const phone = useMediaQuery(PHONE_GRID);
+  const columns = phone ? MOBILE_COLUMNS : WALL_COLUMNS;
+  const px = width / gridUnits(columns);
   const pitch = (CELL_UNITS + GAP_UNITS) * px;
+  const folded = phone ? mobileLayout(tiles) : null;
 
   /**
    * Drops are handled here rather than by the grid: the grid's own drop is
@@ -95,7 +106,7 @@ export function WallCanvas() {
     // The pointer holds the tile by its middle, the way it looks while dragging.
     const point = { x: clientX - rect.left - ((dropW - 1) * pitch) / 2, y: clientY - rect.top - ((dropH - 1) * pitch) / 2 };
     const inside = clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
-    return inside ? dropCell(point, { cell: CELL_UNITS * px, gap: GAP_UNITS * px, columns: WALL_COLUMNS }, dropW) : null;
+    return inside ? dropCell(point, { cell: CELL_UNITS * px, gap: GAP_UNITS * px, columns }, Math.min(dropW, columns)) : null;
   };
 
   useEffect(() => {
@@ -119,11 +130,10 @@ export function WallCanvas() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dragged, px, pitch, dropW, dropH]);
 
-  const layout: Layout = tiles.map((t) => {
-    const size = catalog.widget(t.widget)?.size ?? FALLBACK_SIZE;
-    const [minW, minH] = size.min;
-    const [maxW, maxH] = size.max;
-    return { i: t.id, ...t.layout, minW, minH, maxW, maxH };
+  const layout: Layout = (folded ?? tiles.map((tile) => ({ item: tile, box: tile.layout }))).map(({ item, box }) => {
+    const size = catalog.widget(item.widget)?.size ?? FALLBACK_SIZE;
+    const bounds = phone ? phoneSizeBounds(size) : { minW: size.min[0], maxW: size.max[0], minH: size.min[1], maxH: size.max[1] };
+    return { i: item.id, ...box, ...bounds };
   });
 
   return (
@@ -165,14 +175,15 @@ export function WallCanvas() {
           <ReactGridLayout
             width={width}
             layout={layout}
-            gridConfig={{ cols: WALL_COLUMNS, rowHeight: CELL_UNITS * px, margin: [GAP_UNITS * px, GAP_UNITS * px], containerPadding: [0, 0] }}
-            compactor={verticalCompactor}
+            gridConfig={{ cols: columns, rowHeight: CELL_UNITS * px, margin: [GAP_UNITS * px, GAP_UNITS * px], containerPadding: [0, 0] }}
+            // Folded, the projection is the only compaction: compacting twice makes a tile settle twice under the finger.
+            compactor={phone ? noCompactor : verticalCompactor}
             dragConfig={{ cancel: NO_DRAG, handle: coarse ? TOUCH_DRAG_HANDLE : undefined, threshold: coarse ? 6 : 3 }}
             resizeConfig={{ enabled: true, handles: ["se"], handleComponent: resizeHandle }}
             // Commit on stop too: onLayoutChange can be skipped when a drag ends outside the grid.
-            onLayoutChange={actions.moveTiles}
-            onDragStop={actions.moveTiles}
-            onResizeStop={actions.moveTiles}
+            onLayoutChange={phone ? undefined : actions.moveTiles}
+            onDragStop={phone ? actions.movePhoneTiles : actions.moveTiles}
+            onResizeStop={phone ? actions.movePhoneTiles : actions.moveTiles}
           >
             {tiles.map((tile) => (
               <div

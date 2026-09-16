@@ -1,7 +1,7 @@
 import { defaultsFor, type FieldValues, type Value, type WidgetInputDef } from "@flexwall/sdk";
 import type { BrowsableCatalog, Catalog } from "@/domain/catalog";
 import type { ConnectionView } from "@/domain/connection";
-import { firstFreeSpot, LOCK_COLUMNS, LOCK_ROWS, overlaps, WALL_COLUMNS, type Box } from "@/domain/layout";
+import { firstFreeSpot, LOCK_COLUMNS, LOCK_ROWS, overlaps, packInOrder, phoneSizeBounds, readingOrder, WALL_COLUMNS, wallBoxFromPhone, type Box } from "@/domain/layout";
 import { sourceKey, TYPEABLE_VALUE_TYPES, type SourceRef, type TypeableValueType } from "@/domain/source";
 import { DEFAULT_VISIBILITY, HISTORY_DAYS, HISTORY_WINDOWS, type Binding, type Tile, type WallDraft } from "@/domain/wall";
 
@@ -237,6 +237,34 @@ export function applyLayout(draft: WallDraft, layout: readonly ({ i: string } & 
   });
   return changed ? { ...draft, tiles } : draft;
 }
+
+/**
+ * A wall rearranged from the phone's two columns. The phone shows the same wall
+ * folded in two, so what it gives back is an order and a size per tile; the
+ * stored four-column layout is packed from that order, keeping it readable the
+ * same way on both. Unchanged arrangements return the very same draft, so
+ * nothing is saved and nothing refetched.
+ */
+export function applyPhoneLayout(draft: WallDraft, layout: readonly ({ i: string } & Box)[], catalog: Catalog): WallDraft {
+  const phone = new Map(layout.map((l) => [l.i, l]));
+  const ordered = readingOrder(draft.tiles.flatMap((t) => (phone.has(t.id) ? [{ tile: t, layout: phone.get(t.id)! }] : [])));
+  const wall = ordered.map(({ tile, layout: onPhone }) => ({ tile, layout: wallBoxFromPhone(tile.layout, sizedForWall(tile, onPhone, catalog)) }));
+  const packed = packInOrder(wall, WALL_COLUMNS);
+  return applyLayout(
+    draft,
+    packed.map((p) => ({ i: p.item.tile.id, ...p.box }))
+  );
+}
+
+/** Keeps a phone size inside what the widget allows once it's back on the wall. */
+function sizedForWall(tile: Tile, onPhone: Box, catalog: Catalog): { w: number; h: number } {
+  const size = catalog.widget(tile.widget)?.size;
+  if (!size) return { w: onPhone.w, h: onPhone.h };
+  const bounds = phoneSizeBounds(size);
+  return { w: clamp(onPhone.w, bounds.minW, bounds.maxW), h: clamp(onPhone.h, bounds.minH, bounds.maxH) };
+}
+
+const clamp = (n: number, min: number, max: number) => Math.min(Math.max(n, min), max);
 
 /** Puts a tile on the lock screen in the first free spot that fits, or says why it can't. */
 export function placeOnLockscreen(draft: WallDraft, tileId: string, catalog: Catalog): { draft: WallDraft } | { error: string } {

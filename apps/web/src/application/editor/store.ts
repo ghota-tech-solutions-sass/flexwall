@@ -7,6 +7,7 @@ import { canUseTheme, type Binding, type Visibility, type WallDraft } from "@/do
 import {
   addTile,
   applyLayout,
+  applyPhoneLayout,
   applyLockscreenLayout,
   attachConnection,
   bindingFor,
@@ -57,6 +58,8 @@ export interface EditorActions {
   undoRemove(): void;
   duplicateTile(tileId: string): void;
   moveTiles(layout: readonly LayoutItem[]): void;
+  /** The same wall, rearranged in the phone's two columns: the stored four-column layout follows the order. */
+  movePhoneTiles(layout: readonly LayoutItem[]): void;
 
   setVisibility(tileId: string, visibility: Visibility): void;
   setOption(tileId: string, key: string, value: FieldValue | undefined): void;
@@ -198,6 +201,7 @@ export function createEditorStore(deps: EditorDeps, init: EditorInit): EditorSto
       },
       // While a widget is dragged in, the grid previews pushed tiles: only the drop commits them.
       moveTiles: (layout) => change((d) => applyLayout(d, layout)),
+      movePhoneTiles: (layout) => change((d) => applyPhoneLayout(d, layout, catalog)),
 
       setVisibility: (tileId, visibility) => change((d) => updateTile(d, tileId, (t) => (t.visibility === visibility ? t : { ...t, visibility }))),
       setOption: (tileId, key, value) =>
