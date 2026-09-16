@@ -3,6 +3,10 @@ node_modules/
 *.tsbuildinfo
 .env
 .env*.local
+# Provider keys and certificates kept for local testing. Tracked here rather
+# than in .git/info/exclude, which stays on one machine and protects no clone.
+.secrets/
+.claude/
 *.log
 .DS_Store
 .tmp/
