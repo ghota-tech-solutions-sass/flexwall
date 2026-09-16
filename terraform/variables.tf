@@ -91,15 +91,15 @@ variable "moderation_inbox" {
 # =============================================================================
 
 variable "stripe_automatic_tax" {
-  description = "Compute VAT with Stripe Tax at checkout. Turn on only once Stripe Tax is active on the account with its registrations (dashboard > Tax): before that, Stripe refuses every checkout session."
+  description = "Compute VAT with Stripe Tax at checkout. Turn on only once Stripe Tax is active on the account with its registrations (dashboard > Tax): before that, Stripe refuses every checkout session. On since the French registration was added (VAT 20%, electronically supplied services, prices tax-inclusive)."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "stripe_collect_terms_consent" {
-  description = "Show Stripe's terms checkbox at checkout, on top of the one on the pricing page. Turn on only once a terms URL is set in the account's public details (dashboard > Settings > Public details): before that, Stripe refuses every checkout session."
+  description = "Show Stripe's terms checkbox at checkout, on top of the one on the pricing page. Turn on only once a terms URL is set in the account's public details (dashboard > Settings > Public details): before that, Stripe refuses every checkout session. On since that URL points at flexwall.lol/terms."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "price_monthly_cents" {
