@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { number, parseTypedNumber, text } from "@flexwall/sdk";
 import { shortcutFor } from "@/presentation/editor/shortcuts";
 import { tileStatus } from "@/presentation/editor/tile-status";
+import { DRAG_THRESHOLD_PX, dragIntent } from "@/presentation/editor/pointer-drag";
 
 const key = (k: string, mods: Partial<{ metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }> = {}) => ({ key: k, metaKey: false, ctrlKey: false, shiftKey: false, ...mods });
 
@@ -49,5 +50,33 @@ describe("Editor shortcuts and typed numbers", () => {
 
     // Then
     expect(parsed).toEqual([1240, 12400.5, null, null]);
+  });
+});
+
+describe("Telling a tap from a drag", () => {
+  const start = { x: 100, y: 100 };
+
+  test("given a mouse that barely moved, when the gesture is read, then nothing has started yet", () => {
+    // Given / When
+    const intent = dragIntent(start, { x: 103, y: 102 }, false);
+
+    // Then
+    expect(intent).toBe("idle");
+  });
+
+  test("given a mouse past the threshold, when the gesture is read, then it's carrying the tile", () => {
+    // Given / When
+    const intents = [dragIntent(start, { x: 100 + DRAG_THRESHOLD_PX, y: 100 }, false), dragIntent(start, { x: 140, y: 160 }, false)];
+
+    // Then
+    expect(intents).toEqual(["drag", "drag"]);
+  });
+
+  test("given a finger, whatever it does, when the gesture is read, then it adds the tile instead of carrying it", () => {
+    // Given / When
+    const intents = [dragIntent(start, start, true), dragIntent(start, { x: 300, y: 500 }, true)];
+
+    // Then
+    expect(intents).toEqual(["tap", "tap"]);
   });
 });

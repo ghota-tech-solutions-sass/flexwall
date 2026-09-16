@@ -1,5 +1,5 @@
 // Rendered inside the Editor client boundary.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactGridLayout, { useContainerWidth, verticalCompactor, type Layout } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import { CELL_UNITS, GAP_UNITS, gridUnits, themeBackground, type Size, type Theme } from "@flexwall/sdk";
@@ -75,34 +75,41 @@ export function WallCanvas() {
   const pitch = (CELL_UNITS + GAP_UNITS) * px;
 
   /**
-   * Drops are handled here rather than by the grid: the grid's own drop keeps
-   * a layout of its own that fights the wall's. The spot follows the pointer;
-   * the tile lands on release, and the grid only sees the new wall.
+   * Drops are handled here rather than by the grid: the grid's own drop is
+   * HTML5 drag-and-drop, which a finger never fires, and it keeps a layout of
+   * its own that fights the wall's. While the library carries a widget, the
+   * window tells us where the pointer is; the tile lands on release.
    */
-  const cellUnder = (e: React.DragEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const cellAt = (clientX: number, clientY: number) => {
+    const rect = frameRef.current?.getBoundingClientRect();
+    if (!rect) return null;
     // The pointer holds the tile by its middle, the way it looks while dragging.
-    const point = { x: e.clientX - rect.left - ((dropW - 1) * pitch) / 2, y: e.clientY - rect.top - ((dropH - 1) * pitch) / 2 };
-    return dropCell(point, { cell: CELL_UNITS * px, gap: GAP_UNITS * px, columns: WALL_COLUMNS }, dropW);
+    const point = { x: clientX - rect.left - ((dropW - 1) * pitch) / 2, y: clientY - rect.top - ((dropH - 1) * pitch) / 2 };
+    const inside = clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+    return inside ? dropCell(point, { cell: CELL_UNITS * px, gap: GAP_UNITS * px, columns: WALL_COLUMNS }, dropW) : null;
   };
-  const dropHandlers = {
-    onDragOver: (e: React.DragEvent<HTMLDivElement>) => {
-      if (!dragged) return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "copy";
-      const cell = cellUnder(e);
-      if (cell.x !== dropAt?.x || cell.y !== dropAt?.y) setDropAt(cell);
-    },
-    onDragLeave: (e: React.DragEvent<HTMLDivElement>) => {
-      if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropAt(null);
-    },
-    onDrop: (e: React.DragEvent<HTMLDivElement>) => {
-      if (!dragged) return;
-      e.preventDefault();
+
+  useEffect(() => {
+    if (!dragged) return setDropAt(null);
+    const onMove = (e: PointerEvent) => setDropAt(cellAt(e.clientX, e.clientY));
+    const onUp = (e: PointerEvent) => {
+      const cell = cellAt(e.clientX, e.clientY);
       setDropAt(null);
-      actions.dropTile(dragged.id, cellUnder(e));
-    },
-  };
+      actions.endLibraryDrag();
+      if (cell) actions.dropTile(dragged.id, cell);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+    // cellAt reads the current geometry through refs and props; the drag identity is what matters here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragged, px, pitch, dropW, dropH]);
 
   const layout: Layout = tiles.map((t) => {
     const size = catalog.widget(t.widget)?.size ?? FALLBACK_SIZE;
@@ -125,7 +132,13 @@ export function WallCanvas() {
         />
         <textarea className="canvas-bio" aria-label="Bio" placeholder="Add a short bio: what you build, for whom." rows={1} value={bio} maxLength={BIO_MAX} style={{ color: theme.muted }} onChange={(e) => actions.setBio(e.target.value)} />
       </header>
-      <div ref={containerRef} className={dragged ? "canvas-grid dropping" : "canvas-grid"} {...dropHandlers}>
+      <div
+        ref={(node) => {
+          containerRef.current = node;
+          frameRef.current = node;
+        }}
+        className={dragged ? "canvas-grid dropping" : "canvas-grid"}
+      >
         {dragged && dropAt ? (
           <div
             className="canvas-drop-spot"
