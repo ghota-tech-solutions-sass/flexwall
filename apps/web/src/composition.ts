@@ -89,7 +89,6 @@ function build() {
       credits: {
         starter: optionalEnv("STRIPE_PRICE_CREDITS_STARTER") || null,
         regular: optionalEnv("STRIPE_PRICE_CREDITS_REGULAR") || null,
-        large: optionalEnv("STRIPE_PRICE_CREDITS_LARGE") || null,
       },
     },
     portalConfiguration: optionalEnv("STRIPE_PORTAL_CONFIGURATION") || null,

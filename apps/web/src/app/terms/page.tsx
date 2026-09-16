@@ -147,7 +147,7 @@ export default function TermsPage() {
 
       <h2>17. Credits</h2>
       <p>
-        Some connectors, such as &quot;X with credits&quot;, read with a paid key held by {PUBLISHER.companyName} and are paid for with credits, sold in packs:{" "}
+        Some connectors, X today, read with a paid key held by {PUBLISHER.companyName} and are paid for with credits, sold in packs:{" "}
         {CREDIT_PACKS.map((p) => `${CREDIT_PACK_DETAILS[p].credits} credits for $${CREDIT_PACK_DETAILS[p].priceUsd}`).join(", ")}, all taxes included. One
         credit is spent for each connected account on each UTC day it is refreshed from the provider; further refreshes that day, and days it isn&apos;t
         refreshed, cost nothing. A refresh that fails gives its credit back. Credits are delivered as soon as payment is accepted, don&apos;t expire while the

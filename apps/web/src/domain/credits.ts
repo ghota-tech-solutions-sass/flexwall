@@ -6,18 +6,17 @@
  *
  * Why these numbers. X bills a profile read $0.010 and counts the same profile
  * once per UTC day, so a credit costs Flexwall at most one cent. Packs sell
- * credits at 2.5 to 4 cents, taxes included, so the smallest pack still covers
+ * credits at 3 to 4 cents, taxes included, so the smallest pack still covers
  * VAT, card fees and the read itself when every credit is used. Prices match
  * terraform/variables.tf credits_*_cents.
  */
 
-export const CREDIT_PACKS = ["starter", "regular", "large"] as const;
+export const CREDIT_PACKS = ["starter", "regular"] as const;
 export type CreditPack = (typeof CREDIT_PACKS)[number];
 
 export const CREDIT_PACK_DETAILS: Record<CreditPack, { credits: number; priceUsd: number }> = {
   starter: { credits: 100, priceUsd: 3.99 },
   regular: { credits: 400, priceUsd: 11.99 },
-  large: { credits: 1200, priceUsd: 29.99 },
 };
 
 /** The pack settings suggest first. */
@@ -40,6 +39,11 @@ export function creditDay(now: number): string {
 export function centsPerCredit(pack: CreditPack): number {
   const { credits, priceUsd } = CREDIT_PACK_DETAILS[pack];
   return Math.round((priceUsd * 1000) / credits) / 10;
+}
+
+/** Months one account lasts on a pack, at one credit a day: what the pack picker promises. */
+export function monthsPerAccount(pack: CreditPack): number {
+  return Math.round(CREDIT_PACK_DETAILS[pack].credits / 30);
 }
 
 /**

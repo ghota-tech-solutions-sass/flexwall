@@ -217,6 +217,10 @@ export class ConnectionBuilder {
     this.connection.connector = id;
     return this;
   }
+  withLabel(label: string) {
+    this.connection.label = label;
+    return this;
+  }
   sealed(value: string) {
     this.connection.sealed = value;
     return this;

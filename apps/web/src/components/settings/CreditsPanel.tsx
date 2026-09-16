@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { CreditsView } from "@/application/use-cases/credits";
-import { centsPerCredit, CREDIT_PACK_DETAILS, CREDIT_PACKS, SUGGESTED_CREDIT_PACK, type CreditEntry, type CreditPack } from "@/domain/credits";
+import { CREDIT_PACK_DETAILS, CREDIT_PACKS, monthsPerAccount, SUGGESTED_CREDIT_PACK, type CreditEntry, type CreditPack } from "@/domain/credits";
 import { APP_LOCALE, DISPLAY_TIME_ZONE } from "@/domain/time";
 import { postJson } from "@/presentation/json";
 import { API, CREDITS_ANCHOR } from "@/presentation/routes";
@@ -15,7 +15,11 @@ const count = (n: number) => n.toLocaleString(APP_LOCALE);
 const day = (at: number) => new Date(at).toLocaleDateString(APP_LOCALE, { timeZone: DISPLAY_TIME_ZONE });
 const plural = (n: number, one: string, many: string) => `${count(n)} ${n === 1 ? one : many}`;
 
-/** The balance, what spends it, and the packs to top it up. Metered connectors (X without a developer app) read these credits. */
+/**
+ * The balance of the accounts Flexwall reads with its own paid key, today X.
+ * Settings only shows it to owners it concerns: someone who never connects X
+ * never reads the word "credit".
+ */
 export function CreditsPanel({ view, justBought }: { view: CreditsView; justBought: boolean }) {
   const { balance, perDay, daysLeft, metered, recent } = view;
   return (
@@ -26,18 +30,14 @@ export function CreditsPanel({ view, justBought }: { view: CreditsView; justBoug
         <strong className="credits-count">{count(balance)}</strong>
         <span>
           {balance === 1 ? "credit left" : "credits left"}
-          {daysLeft !== null ? ` · about ${plural(daysLeft, "day", "days")} at ${plural(perDay, "credit", "credits")} a day` : ""}
+          {daysLeft ? ` · about ${plural(daysLeft, "day", "days")} at ${plural(perDay, "credit", "credits")} a day` : ""}
         </span>
       </div>
       <p>
-        Credits pay for accounts Flexwall reads with its own paid key, like <strong>X with credits</strong>: no X developer account needed. Each account costs
-        one credit per day it refreshes, however many tiles show it, and days nobody views your wall cost nothing. Credits don&apos;t expire.
+        {metered.length ? `${metered.map((m) => m.label).join(", ")}: ` : ""}
+        X charges Flexwall for every read, so these accounts cost one credit per day they refresh — whatever the number of tiles showing them. Days nobody
+        views your wall cost nothing, and credits don&apos;t expire.
       </p>
-      {metered.length ? (
-        <p className="hint">Spending credits: {metered.map((m) => m.label).join(", ")}.</p>
-      ) : (
-        <p className="hint">Nothing spends credits yet. In the editor, add an X tile and pick “X with credits”.</p>
-      )}
       {balance === 0 && metered.length ? <p className="error">Out of credits: these tiles keep their last numbers until you top up.</p> : null}
       <CheckoutConsentScope signedIn purchase="credits">
         <div className="credit-packs">
@@ -91,9 +91,7 @@ function PackButton({ pack }: { pack: CreditPack }) {
       >
         {busy ? "Opening…" : `${count(credits)} credits · $${priceUsd}`}
       </button>
-      <span className="hint">
-        {centsPerCredit(pack)}¢ a credit · {plural(Math.floor(credits / 30), "account", "accounts")} for a month
-      </span>
+      <span className="hint">about {plural(monthsPerAccount(pack), "month", "months")} for one account</span>
       {consent.missing ? <span className="error">Tick the box below to continue.</span> : null}
       {error ? <span className="error">{error}</span> : null}
     </span>

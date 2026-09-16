@@ -75,11 +75,11 @@ describe("StartCreditsCheckout", () => {
     const checkout = new StartCreditsCheckout({ users, payments, clock: new FixedClock(), links: new FakeLinks() });
 
     // When
-    const { url } = await checkout.execute({ userId: "u1", pack: "large", acceptedTerms: true });
+    const { url } = await checkout.execute({ userId: "u1", pack: "regular", acceptedTerms: true });
 
     // Then
-    expect(url).toBe("https://pay.test/credits/large");
-    expect(payments.creditCheckouts).toEqual([{ userId: "u1", pack: "large", consent: { termsVersion: TERMS_VERSION, acceptedAt: NOW } }]);
+    expect(url).toBe("https://pay.test/credits/regular");
+    expect(payments.creditCheckouts).toEqual([{ userId: "u1", pack: "regular", consent: { termsVersion: TERMS_VERSION, acceptedAt: NOW } }]);
     expect((await users.byId("u1"))!.stripeCustomerId).toBe("cus_u1");
   });
 
