@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.14.0...v0.15.0) (2026-09-16)
+
+
+### Features
+
+* **billing:** pay for connected bank and brokerage accounts by the account ([#40](https://github.com/ghota-tech-solutions-sass/flexwall/issues/40)) ([560c713](https://github.com/ghota-tech-solutions-sass/flexwall/commit/560c7131f0b31f4846a77f2b92727267606cfa59))
+
 ## [0.14.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.13.0...v0.14.0) (2026-09-16)
 
 
