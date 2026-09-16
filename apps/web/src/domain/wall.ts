@@ -253,25 +253,30 @@ export function effectiveTheme(wall: Pick<Wall, "theme">, catalog: Catalog, enti
   return canUseTheme(theme, entitlements) ? theme : catalog.defaultTheme();
 }
 
-/** A wall to start from: enough to look alive, nothing that needs an account. */
+/**
+ * A wall to start from: enough to look alive, nothing that needs an account,
+ * and nothing showing a zero — an empty number reads as a broken tile. The room
+ * left over is what the owner fills, from the library or a template.
+ */
 export function newWall(input: { id: string; owner: { id: string; handle: Handle }; lockNonce: string; now: number; today: string }): Wall {
   const inMonths = (n: number) => {
     const d = startOfDay(input.today);
     d.setUTCMonth(d.getUTCMonth() + n);
     return isoDay(d);
   };
+  // Three tiles, all public, all half the wall: three full-width cards on a phone, two tidy rows on a desktop.
   const tiles: Tile[] = [
-    { id: "hello", widget: "note", inputs: {}, options: { title: "Hi, I'm building things", body: "Drag tiles, resize them, connect your accounts." }, visibility: "public", layout: { x: 0, y: 0, w: 2, h: 1 } },
-    { id: "year", widget: "time-left", inputs: {}, options: { period: "year", style: "bar" }, visibility: "public", layout: { x: 2, y: 0, w: 2, h: 1 } },
-    { id: "launch", widget: "countdown", inputs: {}, options: { date: inMonths(1), label: "until launch" }, visibility: "public", layout: { x: 0, y: 1, w: 1, h: 1 } },
     {
-      id: "goal",
-      widget: "stat",
-      inputs: { value: { kind: "static", value: { type: "number", value: 0, unit: "currency", currency: "usd" } } },
-      options: { label: "MRR", prefix: "", suffix: "", goal: 1000 },
-      visibility: "private",
-      layout: { x: 1, y: 1, w: 3, h: 1 },
+      id: "hello",
+      widget: "note",
+      inputs: {},
+      options: { title: `Hi, I'm @${input.owner.handle}`, body: "Tap a tile to change it. Add more with +, and publish when it looks right." },
+      visibility: "public",
+      layout: { x: 0, y: 0, w: 2, h: 1 },
     },
+    // Keep this id: the lock screen below places it by name.
+    { id: "year", widget: "time-left", inputs: {}, options: { period: "year", style: "bar" }, visibility: "public", layout: { x: 2, y: 0, w: 2, h: 1 } },
+    { id: "launch", widget: "countdown", inputs: {}, options: { date: inMonths(1), label: "until launch" }, visibility: "public", layout: { x: 0, y: 1, w: 2, h: 1 } },
   ];
   return {
     id: input.id,

@@ -3,7 +3,7 @@
  * and the Shortcuts panel lists them, so the two can't disagree.
  */
 
-export type ShortcutAction = "delete" | "duplicate" | "undo" | "deselect";
+export type ShortcutAction = "delete" | "duplicate" | "undo" | "deselect" | "save";
 
 export interface Shortcut {
   action: ShortcutAction;
@@ -19,6 +19,7 @@ export const SHORTCUTS: readonly Shortcut[] = [
   { action: "delete", label: "Delete a selected tile", keys: ["Delete"], matches: (e) => e.key === "Delete" || e.key === "Backspace" },
   { action: "duplicate", label: "Duplicate it", keys: ["⌘", "D"], matches: (e) => withModifier(e) && e.key.toLowerCase() === "d" },
   { action: "undo", label: "Undo a delete", keys: ["⌘", "Z"], matches: (e) => withModifier(e) && !e.shiftKey && e.key.toLowerCase() === "z" },
+  { action: "save", label: "Save now", keys: ["⌘", "S"], matches: (e) => withModifier(e) && e.key.toLowerCase() === "s" },
   { action: "deselect", label: "Back to the wall settings", keys: ["Esc"], matches: (e) => e.key === "Escape" },
 ];
 

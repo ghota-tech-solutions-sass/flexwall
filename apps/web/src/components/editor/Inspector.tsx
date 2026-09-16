@@ -7,6 +7,7 @@ import type { InputTarget } from "@/application/editor/store";
 import { connectionDetail, displayNameText, type ConnectionView } from "@/domain/connection";
 import { connectorOfSource, sameSource, sourceOfBinding, type SourceRef } from "@/domain/source";
 import { canUseTheme, effectiveTheme, STATIC_TEXT_MAX, VISIBILITIES, type Tile, type Visibility } from "@/domain/wall";
+import { TEMPLATES } from "@/domain/templates";
 import { catalog } from "@/plugins/registry";
 import { BrandMark, hasMark } from "@/components/brand/Logos";
 import { ConnectForm } from "@/components/connections/ConnectForm";
@@ -360,9 +361,21 @@ function WallPanel() {
         </span>
         <div>
           <h2>Wall</h2>
-          <p>Click a tile to change it. Edit the title and bio right on the wall.</p>
+          <p>Tap a tile to change it. Edit the title and bio right on the wall.</p>
         </div>
       </header>
+
+      <Group title="Start from a template">
+        <p className="ed-note">Replaces the tiles you have. One tap puts them back.</p>
+        <div className="ed-templates">
+          {TEMPLATES.map((template) => (
+            <button key={template.id} type="button" onClick={() => actions.applyTemplate(template.id)}>
+              <strong>{template.name}</strong>
+              <small>{template.tagline}</small>
+            </button>
+          ))}
+        </div>
+      </Group>
 
       <Group title="Theme">
         <div className="ed-themes" role="radiogroup" aria-label="Theme">

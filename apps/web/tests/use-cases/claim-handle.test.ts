@@ -26,7 +26,12 @@ describe("ClaimHandle", () => {
     expect(wall.handle).toBe("ada-builds" as never);
     expect(wall.ownerId).toBe("u1");
     expect(wall.published).toBe(false);
-    expect(wall.tiles.length).toBeGreaterThan(0);
+    // Everything on it is public and says something true: a private zero reads as a broken tile.
+    expect(wall.tiles.map((t) => t.widget)).toEqual(["note", "time-left", "countdown"]);
+    expect(wall.tiles.every((t) => t.visibility === "public")).toBe(true);
+    expect(wall.tiles.some((t) => String(t.options.body ?? "").toLowerCase().includes("drag"))).toBe(false);
+    // The lock screen places a tile by name: it must still be on the wall.
+    expect(wall.tiles.map((t) => t.id)).toContain(wall.lockscreen.placements[0].tileId);
     expect((await users.byId("u1"))!.handle).toBe("ada-builds" as never);
     expect(await handles.ownerOf("ada-builds" as never)).toBe("u1");
     expect(await walls.byOwner("u1")).not.toBeNull();

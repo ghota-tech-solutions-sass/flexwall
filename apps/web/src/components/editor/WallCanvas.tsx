@@ -1,12 +1,12 @@
 // Rendered inside the Editor client boundary.
-import { useState } from "react";
-import ReactGridLayout, { useContainerWidth, verticalCompactor, type Layout } from "react-grid-layout";
+import { useEffect, useRef, useState } from "react";
+import ReactGridLayout, { noCompactor, useContainerWidth, verticalCompactor, type Layout } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import { CELL_UNITS, GAP_UNITS, gridUnits, themeBackground, type Size, type Theme } from "@flexwall/sdk";
 import type { TileState } from "@/application/use-cases/resolve-wall";
 import { dropCell, tileConnections, tileName } from "@/application/editor/draft";
 import { editorTheme } from "@/application/editor/state";
-import { WALL_COLUMNS } from "@/domain/layout";
+import { MOBILE_COLUMNS, mobileLayout, phoneSizeBounds, WALL_COLUMNS } from "@/domain/layout";
 import { BIO_MAX, TITLE_MAX, type Tile } from "@/domain/wall";
 import { catalog } from "@/plugins/registry";
 import { BrandMark, hasMark } from "@/components/brand/Logos";
@@ -14,16 +14,51 @@ import { ConnectionTitle } from "@/components/connections/ConnectionTitle";
 import { displayNameText } from "@/domain/connection";
 import { TileBody } from "@/rendering/tile";
 import { useConnectionNames, useEditor, useEditorActions } from "./EditorContext";
-import { CopyIcon, EyeIcon, EyeOffIcon, KeyIcon, PlusIcon, TrashIcon } from "./icons";
+import { CopyIcon, EyeIcon, EyeOffIcon, GrabIcon, KeyIcon, PlusIcon, ResizeIcon, TrashIcon } from "./icons";
 
 /** Controls drawn on a tile. Pointer events on them never start a drag. */
 const NO_DRAG = ".tile-tools, .tile-connect";
+/** With a finger, the tile body scrolls the page and only this handle moves the tile. */
+const TOUCH_DRAG_HANDLE = ".tile-grab";
+/** Below this width the wall is edited folded in two, the way a visitor sees it. */
+const PHONE_GRID = "(max-width: 640px)";
 
 /** Resize limits for a tile whose widget is gone: one cell up to the full width. */
 const FALLBACK_SIZE: { min: Size; max: Size } = { min: [1, 1], max: [WALL_COLUMNS, WALL_COLUMNS] };
 
 /** Offered on an empty wall, in this order, when installed. */
 const QUICK_ADD_WIDGETS = ["stat", "sparkline", "note"] as const;
+
+/**
+ * A media query the components can branch on. Starts false so the server and
+ * the first paint agree, then tells the truth after mounting.
+ */
+export function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const read = () => setMatches(media.matches);
+    read();
+    media.addEventListener("change", read);
+    return () => media.removeEventListener("change", read);
+  }, [query]);
+  return matches;
+}
+
+/**
+ * True where the finger is the pointer. The grid takes its drag handle as a
+ * prop, so this can't be a media query in CSS.
+ */
+export function useCoarsePointer(): boolean {
+  return useMediaQuery("(pointer: coarse)");
+}
+
+/** A corner big enough for a thumb, with the chevron still small. */
+const resizeHandle = (_axis: unknown, ref: React.Ref<HTMLElement>) => (
+  <span ref={ref as React.Ref<HTMLSpanElement>} className="react-resizable-handle react-resizable-handle-se tile-resize" aria-hidden="true">
+    <ResizeIcon size={14} />
+  </span>
+);
 
 export function useEditorTheme(): Theme {
   return useEditor((s) => editorTheme(s, catalog));
@@ -44,45 +79,61 @@ export function WallCanvas() {
   const dragged = libraryDrag ? catalog.widget(libraryDrag) : null;
   const [dropW, dropH] = dragged?.size.default ?? [1, 1];
 
+  const coarse = useCoarsePointer();
   const { width, containerRef, mounted } = useContainerWidth();
-  const px = width / gridUnits(WALL_COLUMNS);
-  const pitch = (CELL_UNITS + GAP_UNITS) * px;
 
   /**
-   * Drops are handled here rather than by the grid: the grid's own drop keeps
-   * a layout of its own that fights the wall's. The spot follows the pointer;
-   * the tile lands on release, and the grid only sees the new wall.
+   * On a phone the wall is edited folded in two, exactly as a visitor sees it:
+   * same columns, same scale. What comes back is an order and a size per tile,
+   * and the stored four-column layout is packed from that order.
    */
-  const cellUnder = (e: React.DragEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
+  const phone = useMediaQuery(PHONE_GRID);
+  const columns = phone ? MOBILE_COLUMNS : WALL_COLUMNS;
+  const px = width / gridUnits(columns);
+  const pitch = (CELL_UNITS + GAP_UNITS) * px;
+  const folded = phone ? mobileLayout(tiles) : null;
+
+  /**
+   * Drops are handled here rather than by the grid: the grid's own drop is
+   * HTML5 drag-and-drop, which a finger never fires, and it keeps a layout of
+   * its own that fights the wall's. While the library carries a widget, the
+   * window tells us where the pointer is; the tile lands on release.
+   */
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const cellAt = (clientX: number, clientY: number) => {
+    const rect = frameRef.current?.getBoundingClientRect();
+    if (!rect) return null;
     // The pointer holds the tile by its middle, the way it looks while dragging.
-    const point = { x: e.clientX - rect.left - ((dropW - 1) * pitch) / 2, y: e.clientY - rect.top - ((dropH - 1) * pitch) / 2 };
-    return dropCell(point, { cell: CELL_UNITS * px, gap: GAP_UNITS * px, columns: WALL_COLUMNS }, dropW);
-  };
-  const dropHandlers = {
-    onDragOver: (e: React.DragEvent<HTMLDivElement>) => {
-      if (!dragged) return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "copy";
-      const cell = cellUnder(e);
-      if (cell.x !== dropAt?.x || cell.y !== dropAt?.y) setDropAt(cell);
-    },
-    onDragLeave: (e: React.DragEvent<HTMLDivElement>) => {
-      if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropAt(null);
-    },
-    onDrop: (e: React.DragEvent<HTMLDivElement>) => {
-      if (!dragged) return;
-      e.preventDefault();
-      setDropAt(null);
-      actions.dropTile(dragged.id, cellUnder(e));
-    },
+    const point = { x: clientX - rect.left - ((dropW - 1) * pitch) / 2, y: clientY - rect.top - ((dropH - 1) * pitch) / 2 };
+    const inside = clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+    return inside ? dropCell(point, { cell: CELL_UNITS * px, gap: GAP_UNITS * px, columns }, Math.min(dropW, columns)) : null;
   };
 
-  const layout: Layout = tiles.map((t) => {
-    const size = catalog.widget(t.widget)?.size ?? FALLBACK_SIZE;
-    const [minW, minH] = size.min;
-    const [maxW, maxH] = size.max;
-    return { i: t.id, ...t.layout, minW, minH, maxW, maxH };
+  useEffect(() => {
+    if (!dragged) return setDropAt(null);
+    const onMove = (e: PointerEvent) => setDropAt(cellAt(e.clientX, e.clientY));
+    const onUp = (e: PointerEvent) => {
+      const cell = cellAt(e.clientX, e.clientY);
+      setDropAt(null);
+      actions.endLibraryDrag();
+      if (cell) actions.dropTile(dragged.id, cell);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+    // cellAt reads the current geometry through refs and props; the drag identity is what matters here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragged, px, pitch, dropW, dropH]);
+
+  const layout: Layout = (folded ?? tiles.map((tile) => ({ item: tile, box: tile.layout }))).map(({ item, box }) => {
+    const size = catalog.widget(item.widget)?.size ?? FALLBACK_SIZE;
+    const bounds = phone ? phoneSizeBounds(size) : { minW: size.min[0], maxW: size.max[0], minH: size.min[1], maxH: size.max[1] };
+    return { i: item.id, ...box, ...bounds };
   });
 
   return (
@@ -99,7 +150,13 @@ export function WallCanvas() {
         />
         <textarea className="canvas-bio" aria-label="Bio" placeholder="Add a short bio: what you build, for whom." rows={1} value={bio} maxLength={BIO_MAX} style={{ color: theme.muted }} onChange={(e) => actions.setBio(e.target.value)} />
       </header>
-      <div ref={containerRef} className={dragged ? "canvas-grid dropping" : "canvas-grid"} {...dropHandlers}>
+      <div
+        ref={(node) => {
+          containerRef.current = node;
+          frameRef.current = node;
+        }}
+        className={dragged ? "canvas-grid dropping" : "canvas-grid"}
+      >
         {dragged && dropAt ? (
           <div
             className="canvas-drop-spot"
@@ -118,14 +175,15 @@ export function WallCanvas() {
           <ReactGridLayout
             width={width}
             layout={layout}
-            gridConfig={{ cols: WALL_COLUMNS, rowHeight: CELL_UNITS * px, margin: [GAP_UNITS * px, GAP_UNITS * px], containerPadding: [0, 0] }}
-            compactor={verticalCompactor}
-            dragConfig={{ cancel: NO_DRAG }}
-            resizeConfig={{ enabled: true, handles: ["se"] }}
+            gridConfig={{ cols: columns, rowHeight: CELL_UNITS * px, margin: [GAP_UNITS * px, GAP_UNITS * px], containerPadding: [0, 0] }}
+            // Folded, the projection is the only compaction: compacting twice makes a tile settle twice under the finger.
+            compactor={phone ? noCompactor : verticalCompactor}
+            dragConfig={{ cancel: NO_DRAG, handle: coarse ? TOUCH_DRAG_HANDLE : undefined, threshold: coarse ? 6 : 3 }}
+            resizeConfig={{ enabled: true, handles: ["se"], handleComponent: resizeHandle }}
             // Commit on stop too: onLayoutChange can be skipped when a drag ends outside the grid.
-            onLayoutChange={actions.moveTiles}
-            onDragStop={actions.moveTiles}
-            onResizeStop={actions.moveTiles}
+            onLayoutChange={phone ? undefined : actions.moveTiles}
+            onDragStop={phone ? actions.movePhoneTiles : actions.moveTiles}
+            onResizeStop={phone ? actions.movePhoneTiles : actions.moveTiles}
           >
             {tiles.map((tile) => (
               <div
@@ -137,13 +195,18 @@ export function WallCanvas() {
                 onFocus={(e) => e.target === e.currentTarget && actions.select(tile.id)}
               >
                 <TileBody tile={tile} state={states[tile.id]} box={{ w: tile.layout.w, h: tile.layout.h }} theme={theme} surface="editor" u={(n) => n * px} today={today} catalog={catalog} />
+                {coarse ? (
+                  <span className="tile-grab" aria-hidden="true" title="Drag to move">
+                    <GrabIcon size={16} />
+                  </span>
+                ) : null}
                 <ConnectButton tile={tile} state={states[tile.id]} theme={theme} />
                 {tile.visibility === "private" ? (
                   <span className="tile-private" title="Only you see this tile">
                     <EyeOffIcon size={12} /> Only me
                   </span>
                 ) : null}
-                <TileTools tile={tile} />
+                <TileTools tile={tile} inside={tile.layout.y === 0} />
               </div>
             ))}
           </ReactGridLayout>
@@ -172,7 +235,7 @@ function EmptyWall({ theme }: { theme: Theme }) {
 }
 
 /** Hover toolbar, the way Bento and Framer do it: the most common actions without opening anything. */
-function TileTools({ tile }: { tile: Tile }) {
+function TileTools({ tile, inside }: { tile: Tile; inside: boolean }) {
   const actions = useEditorActions();
   const connections = useEditor((s) => s.connections);
   const names = useConnectionNames();
@@ -183,7 +246,7 @@ function TileTools({ tile }: { tile: Tile }) {
   });
   const first = feeding[0];
   return (
-    <div className="tile-tools" role="toolbar" aria-label="Tile actions">
+    <div className="tile-tools" data-inside={inside} role="toolbar" aria-label="Tile actions">
       {first ? (
         <>
           <small aria-label={`From ${feeding.map((f) => displayNameText(f.shown ?? { name: f.connection.label, number: null })).join(", ")}`}>

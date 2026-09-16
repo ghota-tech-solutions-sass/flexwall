@@ -79,6 +79,37 @@ describe("Editor store: saving", () => {
     expect(store.getState().save).toEqual({ kind: "error", message: "The Number tile at row 1, column 1: that Billing connection isn't yours." });
   });
 
+  test("given a refused save, when the owner tries again, then the wall is sent once more and the error clears", async () => {
+    // Given
+    const { store, gateway, scheduler, actions } = anEditor();
+    gateway.saveOutcome = { ok: false, message: "The store is unavailable." };
+    actions.setBio("Building things");
+    await scheduler.advance(EDITOR_TIMINGS.autosaveMs);
+    gateway.saveOutcome = { ok: true, value: undefined };
+
+    // When
+    const retry = await actions.saveNow();
+
+    // Then
+    expect(retry).toEqual({ ok: true, value: undefined });
+    expect(gateway.saved.map((d) => d.bio)).toEqual(["Building things", "Building things"]);
+    expect(store.getState().save).toEqual({ kind: "saved" });
+  });
+
+  test("given a wall saved a moment ago, when something asks to save now, then nothing is sent again", async () => {
+    // Given
+    const { gateway, scheduler, actions } = anEditor();
+    actions.setBio("Building things");
+    await scheduler.advance(EDITOR_TIMINGS.autosaveMs);
+
+    // When
+    const again = await actions.saveNow();
+
+    // Then
+    expect(again.ok).toBe(true);
+    expect(gateway.saved).toHaveLength(1);
+  });
+
   test("given an edit that changes nothing, when applied, then the wall isn't marked dirty or saved", async () => {
     // Given
     const { store, gateway, scheduler, actions } = anEditor({ wall: aWall().unpublished() });
@@ -475,5 +506,50 @@ describe("Editor store: dragging tiles in from the library", () => {
     // Then
     expect(store.getState().draft.tiles).toHaveLength(8);
     expect(store.getState().libraryDrag).toBeNull();
+  });
+});
+
+describe("Editor store: templates", () => {
+  test("given a wall, when a template is applied, then it replaces the tiles and one tap puts the wall back", async () => {
+    // Given
+    const { store, actions, scheduler } = anEditor({ pro: true });
+    const before = store.getState().draft.tiles;
+
+    // When
+    actions.applyTemplate("indie");
+    const applied = store.getState();
+    actions.undoTemplate();
+    await scheduler.advance(EDITOR_TIMINGS.autosaveMs);
+
+    // Then
+    expect(applied.draft.tiles.map((t) => t.widget)).toEqual(["stat", "stat", "countdown", "note"]);
+    expect(applied.restorePoint?.tiles).toBe(before);
+    expect(store.getState().draft.tiles).toBe(before);
+    expect(store.getState().restorePoint).toBeNull();
+  });
+
+  test("given a template applied a while ago, when the undo window has passed, then the old wall is let go", async () => {
+    // Given
+    const { store, actions, scheduler } = anEditor({ pro: true });
+
+    // When
+    actions.applyTemplate("creator");
+    await scheduler.advance(EDITOR_TIMINGS.undoMs);
+
+    // Then
+    expect(store.getState().restorePoint).toBeNull();
+    expect(store.getState().draft.tiles).toHaveLength(4);
+  });
+
+  test("given a template id nobody ships, when it's applied, then the wall is left alone", () => {
+    // Given
+    const { store, actions } = anEditor();
+    const before = store.getState().draft;
+
+    // When
+    actions.applyTemplate("nope");
+
+    // Then
+    expect(store.getState().draft).toBe(before);
   });
 });

@@ -7,6 +7,7 @@ import { canUseTheme, type Binding, type Visibility, type WallDraft } from "@/do
 import {
   addTile,
   applyLayout,
+  applyPhoneLayout,
   applyLockscreenLayout,
   attachConnection,
   bindingFor,
@@ -22,6 +23,7 @@ import {
   updateTile,
 } from "./draft";
 import type { EditorDeps, Outcome } from "./ports";
+import { applyTemplate, templateById } from "@/domain/templates";
 import { EDITOR_TIMINGS, initialState, type EditorInit, type EditorState, type EditorSurface } from "./state";
 
 type LayoutItem = { i: string; x: number; y: number; w: number; h: number };
@@ -44,6 +46,8 @@ export interface EditorActions {
 
   select(tileId: string | null): void;
   showSurface(surface: EditorSurface): void;
+  /** Saves at once instead of waiting for the autosave: retrying an error, ⌘S, and before publishing or leaving. */
+  saveNow(): Promise<Outcome<void>>;
 
   addTile(widgetId: string): void;
   /** The owner started dragging a widget out of the library, or stopped. */
@@ -53,8 +57,13 @@ export interface EditorActions {
   dropTile(widgetId: string, at: { x: number; y: number }): void;
   removeTile(tileId: string): void;
   undoRemove(): void;
+  /** Replaces the wall with a template, keeping the old one for one undo. */
+  applyTemplate(templateId: string): void;
+  undoTemplate(): void;
   duplicateTile(tileId: string): void;
   moveTiles(layout: readonly LayoutItem[]): void;
+  /** The same wall, rearranged in the phone's two columns: the stored four-column layout follows the order. */
+  movePhoneTiles(layout: readonly LayoutItem[]): void;
 
   setVisibility(tileId: string, visibility: Visibility): void;
   setOption(tileId: string, key: string, value: FieldValue | undefined): void;
@@ -144,6 +153,13 @@ export function createEditorStore(deps: EditorDeps, init: EditorInit): EditorSto
       },
 
       select: (tileId) => set((s) => ({ selected: tileId, connectRequest: s.connectRequest?.tileId === tileId ? s.connectRequest : null })),
+      saveNow: async () => {
+        if (get().save.kind === "saved") return { ok: true as const, value: undefined };
+        cancel.save();
+        await save();
+        const state = get().save;
+        return state.kind === "error" ? { ok: false as const, message: state.message } : { ok: true as const, value: undefined };
+      },
       showSurface: (surface) => set({ surface }),
 
       addTile: (widgetId) => {
@@ -180,6 +196,23 @@ export function createEditorStore(deps: EditorDeps, init: EditorInit): EditorSto
         change((d) => restoreTile(d, tile));
         set({ removed: null, selected: tile.id });
       },
+      applyTemplate: (templateId) => {
+        const template = templateById(templateId);
+        if (!template) return;
+        const before = get().draft;
+        change((d) => applyTemplate(d, template, { newId: newTileId, maxTiles: get().entitlements.maxTiles, catalog, today: get().today }));
+        if (get().draft === before) return;
+        set({ restorePoint: before, selected: null, removed: null });
+        cancel.undo();
+        cancel.undo = scheduler.schedule(EDITOR_TIMINGS.undoMs, () => set((s) => (s.restorePoint === before ? { restorePoint: null } : s)));
+      },
+      undoTemplate: () => {
+        const before = get().restorePoint;
+        if (!before) return;
+        cancel.undo();
+        change(() => before);
+        set({ restorePoint: null });
+      },
       duplicateTile: (tileId) => {
         if (!canAddTile(get())) return;
         const result = duplicateTile(get().draft, tileId, newTileId);
@@ -189,6 +222,7 @@ export function createEditorStore(deps: EditorDeps, init: EditorInit): EditorSto
       },
       // While a widget is dragged in, the grid previews pushed tiles: only the drop commits them.
       moveTiles: (layout) => change((d) => applyLayout(d, layout)),
+      movePhoneTiles: (layout) => change((d) => applyPhoneLayout(d, layout, catalog)),
 
       setVisibility: (tileId, visibility) => change((d) => updateTile(d, tileId, (t) => (t.visibility === visibility ? t : { ...t, visibility }))),
       setOption: (tileId, key, value) =>
@@ -236,12 +270,8 @@ export function createEditorStore(deps: EditorDeps, init: EditorInit): EditorSto
       },
       signIn: async (connector, values, returnTo) => {
         // Leaving the page drops a pending autosave: save first, and stay if it fails.
-        if (get().save.kind !== "saved") {
-          cancel.save();
-          await save();
-          const state = get().save;
-          if (state.kind === "error") return { ok: false, message: state.message };
-        }
+        const saved = await actions.saveNow();
+        if (!saved.ok) return saved;
         return gateway.startSignIn(connector, values, returnTo);
       },
       adoptConnection: (connectionId) => {

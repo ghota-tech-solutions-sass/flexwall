@@ -19,6 +19,8 @@ import {
 } from "@/application/editor/draft";
 import { aTile, aWall } from "../builders";
 import { testCatalog } from "../fakes/test-plugin";
+import { applyPhoneLayout } from "@/application/editor/draft";
+import { readingOrder, WALL_COLUMNS } from "@/domain/layout";
 
 const { catalog } = testCatalog();
 const connections = [{ id: "c1", connector: "billing", label: "Billing", public: {}, createdAt: 0 }];
@@ -224,5 +226,55 @@ describe("Editor model", () => {
     ]);
     expect(tileConnections(tiles[2]!)).toEqual(["c1"]);
     expect(tilesUsing("gone", tiles, catalog)).toEqual([]);
+  });
+});
+
+describe("Rearranging from the phone", () => {
+  test("given tiles moved in the phone's two columns, when the wall takes them, then it keeps that order in four", () => {
+    // Given: the note second on the phone, the countdown first
+    const draft = aWall()
+      .with(aTile().withId("note").note("Hi").at(0, 0, 2, 1))
+      .with(aTile().withId("count").widget("countdown").at(2, 0, 1, 1))
+      .draft();
+
+    // When
+    const moved = applyPhoneLayout(draft, [{ i: "count", x: 0, y: 0, w: 1, h: 1 }, { i: "note", x: 0, y: 1, w: 2, h: 1 }], catalog);
+
+    // Then
+    expect(readingOrder(moved.tiles).map((t) => t.id)).toEqual(["count", "note"]);
+    expect(moved.tiles.every((t) => t.layout.x + t.layout.w <= WALL_COLUMNS)).toBe(true);
+  });
+
+  test("given a phone arrangement that changes nothing, when it's applied, then the very same draft comes back", () => {
+    // Given
+    const draft = aWall().with(aTile().withId("a").note().at(0, 0, 2, 1)).draft();
+
+    // When
+    const same = applyPhoneLayout(draft, [{ i: "a", x: 0, y: 0, w: 2, h: 1 }], catalog);
+
+    // Then
+    expect(same).toBe(draft);
+  });
+
+  test("given a tile pulled to full width on the phone, when it lands on the wall, then it takes half the wall, not all of it", () => {
+    // Given
+    const draft = aWall().with(aTile().withId("a").note().at(0, 0, 1, 1)).draft();
+
+    // When
+    const wider = applyPhoneLayout(draft, [{ i: "a", x: 0, y: 0, w: 2, h: 1 }], catalog);
+
+    // Then
+    expect(wider.tiles[0].layout).toMatchObject({ w: 2, h: 1 });
+  });
+
+  test("given a tile that spans the wall, when it is left full width on the phone, then it still spans the wall", () => {
+    // Given
+    const draft = aWall().with(aTile().withId("wide").widget("heatmap").at(0, 0, 4, 1)).draft();
+
+    // When
+    const kept = applyPhoneLayout(draft, [{ i: "wide", x: 0, y: 0, w: 2, h: 1 }], catalog);
+
+    // Then
+    expect(kept.tiles[0].layout.w).toBe(4);
   });
 });

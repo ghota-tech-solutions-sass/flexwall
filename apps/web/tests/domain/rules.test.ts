@@ -7,6 +7,7 @@ import { entitlementsOf, PAST_DUE_GRACE_MS } from "@/domain/user";
 import { effectiveTheme } from "@/domain/wall";
 import { aTile, aUser, NOW } from "../builders";
 import { testCatalog } from "../fakes/test-plugin";
+import { packInOrder, phoneSizeBounds, readingOrder, WALL_COLUMNS, wallBoxFromPhone, type Box } from "@/domain/layout";
 
 describe("Handle", () => {
   test("given mixed case, an @, spaces and underscores, when parsed, then it becomes a hyphenated slug", () => {
@@ -217,3 +218,65 @@ describe("Dropping a tile on a wall", () => {
   });
 });
 
+
+describe("Arranging a wall from a phone", () => {
+  const tile = (id: string, box: Box) => ({ id, layout: box });
+
+  test("given tiles in an order, when they're packed for the wall, then reading them back gives that order", () => {
+    // Given: widths that make a plain packer fill the hole behind the first tile
+    const ordered = [tile("a", { x: 0, y: 0, w: 3, h: 1 }), tile("b", { x: 0, y: 0, w: 2, h: 1 }), tile("c", { x: 0, y: 0, w: 1, h: 1 })];
+
+    // When
+    const packed = packInOrder(ordered, WALL_COLUMNS);
+
+    // Then
+    expect(readingOrder(packed.map((p) => ({ id: p.item.id, layout: p.box }))).map((t) => t.id)).toEqual(["a", "b", "c"]);
+  });
+
+  test("given an arrangement made on a phone, when it's stored and projected back, then the order and the sizes come back the same", () => {
+    // Given
+    const onPhone = [tile("note", { x: 0, y: 0, w: 2, h: 1 }), tile("small", { x: 0, y: 1, w: 1, h: 1 }), tile("tall", { x: 1, y: 1, w: 1, h: 2 })];
+
+    // When
+    const stored = packInOrder(
+      onPhone.map((t) => ({ ...t, layout: wallBoxFromPhone(t.layout, { w: t.layout.w, h: t.layout.h }) })),
+      WALL_COLUMNS
+    ).map((p) => ({ id: p.item.id, layout: p.box }));
+    const projected = mobileLayout(stored);
+
+    // Then
+    expect(projected.map((p) => p.item.id)).toEqual(["note", "small", "tall"]);
+    expect(projected.map((p) => [p.box.w, p.box.h])).toEqual([
+      [2, 1],
+      [1, 1],
+      [1, 2],
+    ]);
+  });
+
+  test("given a tile that was full width on the wall, when it stays full width on the phone, then it keeps all four columns", () => {
+    // Given
+    const wide = { x: 0, y: 0, w: 4, h: 2 };
+    const half = { x: 0, y: 0, w: 2, h: 1 };
+
+    // When
+    const back = [wallBoxFromPhone(wide, { w: 2, h: 2 }), wallBoxFromPhone(half, { w: 2, h: 1 }), wallBoxFromPhone(half, { w: 1, h: 1 })];
+
+    // Then
+    expect(back.map((b) => b.w)).toEqual([4, 2, 1]);
+  });
+
+  test("given what a widget allows on the wall, when its phone bounds are read, then widths become classes, not halves", () => {
+    // Given
+    const link = { min: [1, 1] as const, max: [2, 2] as const };
+    const heatmap = { min: [2, 1] as const, max: [4, 2] as const };
+
+    // When
+    const bounds = [phoneSizeBounds(link), phoneSizeBounds(heatmap)];
+
+    // Then
+    expect(bounds).toEqual([
+      { minW: 1, maxW: 2, minH: 1, maxH: 2 },
+      { minW: 2, maxW: 2, minH: 1, maxH: 2 },
+    ]);
+  });
+});

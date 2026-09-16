@@ -21,6 +21,11 @@
 .ed-save { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 2px 8px; border-radius: 999px; color: var(--muted); font-size: 13px; white-space: nowrap; transition: color 0.3s var(--spring); }
 .ed-save[data-kind="saved"] svg { color: var(--accent-text); }
 .ed-save[data-kind="error"] { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); max-width: 28ch; overflow: hidden; text-overflow: ellipsis; }
+
+/* A refused save, where the owner is looking: above the wall, with the way out. */
+.ed-save-error { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 16px; padding: 10px 12px; border-radius: var(--r-field); background: color-mix(in srgb, var(--danger) 10%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger) 30%, transparent); color: var(--danger); font-size: 14px; }
+.ed-save-error button { min-height: 36px; padding: 6px 14px; border: 0; border-radius: 999px; background: var(--danger); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.ed-save-error button:disabled { opacity: 0.7; cursor: default; }
 .ed-live { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 6px 14px; border-radius: 999px; background: var(--accent-wash); color: var(--accent-text); font-size: 14px; font-weight: 550; }
 .ed-live .ed-dot { background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
 .ed-bar .btn-small svg { margin-right: -2px; color: var(--muted); }
@@ -105,9 +110,9 @@
 .react-grid-item.react-grid-placeholder { background: var(--accent); opacity: 0.14; border-radius: 18px; }
 .react-grid-item.react-draggable-dragging .tile-tools { opacity: 0; }
 
-.tile-tools { position: absolute; top: -18px; right: 10px; z-index: 4; display: flex; align-items: center; gap: 1px; padding: 3px; border-radius: 11px; background: var(--surface); box-shadow: 0 0 0 1px var(--hairline-strong), 0 8px 24px -8px rgba(12, 13, 16, 0.25); opacity: 0; transform: translateY(4px) scale(0.96); transform-origin: top right; pointer-events: none; cursor: default; transition: opacity 0.18s ease-out, transform 0.3s var(--spring); }
+.tile-tools { position: absolute; top: -18px; right: 10px; max-width: calc(100% + 24px); z-index: 4; display: flex; align-items: center; gap: 1px; padding: 3px; border-radius: 11px; background: var(--surface); box-shadow: 0 0 0 1px var(--hairline-strong), 0 8px 24px -8px rgba(12, 13, 16, 0.25); opacity: 0; transform: translateY(4px) scale(0.96); transform-origin: top right; pointer-events: none; cursor: default; transition: opacity 0.18s ease-out, transform 0.3s var(--spring); }
 .grid-item:hover .tile-tools, .grid-item.selected .tile-tools, .grid-item:focus-within .tile-tools { opacity: 1; transform: none; pointer-events: auto; }
-.tile-tools button { display: grid; place-items: center; width: 30px; height: 28px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--ink-2); cursor: pointer; transition: background-color 0.15s ease-out, color 0.15s ease-out; }
+.tile-tools button { display: grid; place-items: center; width: 34px; height: 32px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--ink-2); cursor: pointer; transition: background-color 0.15s ease-out, color 0.15s ease-out; }
 .tile-tools button:hover { background: var(--surface-2); color: var(--ink); }
 .tile-tools button.danger:hover { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }
 .tile-tools > span { width: 1px; height: 16px; margin-inline: 2px; background: var(--hairline); }
@@ -115,6 +120,19 @@
 .tile-tools > small { display: inline-flex; align-items: center; gap: 5px; max-width: 150px; padding: 0 6px 0 7px; color: var(--ink-2); font-size: 12px; font-weight: 500; }
 .tile-tools > small svg { flex: none; }
 .tile-tools > small > i { flex: none; color: var(--muted); font-style: normal; }
+
+/* The first row has nothing above it: the toolbar tucks inside the tile instead of being clipped. */
+.tile-tools[data-inside="true"] { top: 8px; right: 8px; }
+
+/*
+ * Touch: the body scrolls the page, this handle moves the tile, and the corner
+ * resizes it. Both are 44px of target around a small mark.
+ */
+.tile-grab { position: absolute; top: 4px; left: 4px; z-index: 4; display: grid; place-items: center; width: 44px; height: 44px; color: var(--ink-2); opacity: 0; transition: opacity 0.18s ease-out; touch-action: none; }
+.grid-item.selected .tile-grab { opacity: 1; }
+.tile-grab > svg { padding: 3px; border-radius: 9px; background: var(--surface); box-shadow: 0 0 0 1px var(--hairline-strong); box-sizing: content-box; }
+.grid-item .react-resizable-handle.tile-resize { display: grid; place-items: center; width: 44px; height: 44px; right: -8px; bottom: -8px; padding: 0; color: var(--ink-2); background: none; touch-action: none; }
+.react-resizable-handle.tile-resize > svg { padding: 3px; border-radius: 9px; background: var(--surface); box-shadow: 0 0 0 1px var(--hairline-strong); box-sizing: content-box; }
 
 .tile-connect { position: absolute; left: 50%; top: 50%; z-index: 2; display: inline-flex; align-items: center; gap: 7px; max-width: calc(100% - 16px); padding: 7px 13px; border: 0; border-radius: 999px; background: var(--primary); color: var(--primary-ink); font: inherit; font-size: 13px; font-weight: 550; white-space: nowrap; cursor: pointer; transform: translate(-50%, -50%); box-shadow: 0 6px 20px -6px rgba(12, 13, 16, 0.4); transition: transform 0.3s var(--spring); }
 .tile-connect:hover { transform: translate(-50%, -50%) scale(1.03); }
@@ -301,27 +319,50 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; height: 22px; 
   .ed-toast { left: calc(236px + (100vw - 236px - 312px) / 2); }
   .ed-surface button { min-width: 0; }
 }
+@media (pointer: coarse) {
+  /* Fingers: every tile control is a 44px target, and the toolbar never leaves the tile. */
+  .tile-tools { top: 8px; right: 8px; padding: 2px; border-radius: 13px; }
+  .tile-tools button { width: 44px; height: 44px; }
+  .tile-tools > small { display: none; }
+}
+
+/* Templates: four walls to start from, named and explained in a line. */
+.ed-templates { display: grid; gap: 6px; }
+.ed-templates button { display: grid; gap: 2px; padding: 10px 12px; border: 0; border-radius: var(--r-field); background: var(--surface-2); color: var(--ink); font: inherit; text-align: left; cursor: pointer; transition: background-color 0.2s ease-out; }
+.ed-templates button:hover { background: color-mix(in srgb, var(--accent) 10%, var(--surface-2)); }
+.ed-templates strong { font-size: 14px; font-weight: 600; }
+.ed-templates small { color: var(--muted); font-size: 12.5px; }
+
+/* ── Phone shell: one canvas, a dock, and a sheet ── */
+.ed-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; display: none; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(12px); box-shadow: 0 -1px 0 var(--hairline); }
+.ed-dock button { display: grid; grid-auto-flow: column; place-items: center; gap: 6px; min-height: 48px; padding: 6px 10px; border: 0; border-radius: 12px; background: transparent; color: var(--ink-2); font: inherit; font-size: 13px; font-weight: 550; cursor: pointer; }
+.ed-dock button[data-active="true"] { background: var(--surface-2); color: var(--ink); }
+
+.ed-sheet-veil { position: fixed; inset: 0; z-index: 26; background: rgba(12, 13, 16, 0.28); animation: ed-fade 0.2s ease-out; }
+.ed-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 27; display: flex; flex-direction: column; max-height: 88dvh; border-radius: 20px 20px 0 0; background: var(--surface); box-shadow: 0 -12px 40px -16px rgba(12, 13, 16, 0.45); animation: ed-rise 0.28s var(--spring); }
+.ed-sheet[data-height="peek"] { height: 46dvh; }
+.ed-sheet[data-height="full"] { height: 88dvh; }
+.ed-sheet-head { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; padding: 10px 12px 8px 16px; border-bottom: 1px solid var(--hairline); }
+.ed-sheet-head h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.ed-sheet-grip { position: absolute; top: 6px; left: 50%; width: 56px; height: 20px; padding: 0; border: 0; background: none; cursor: grab; translate: -50% 0; }
+.ed-sheet-grip::after { content: ""; display: block; width: 40px; height: 4px; margin: 6px auto 0; border-radius: 999px; background: var(--hairline-strong); }
+.ed-sheet-body { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+.ed-sheet-body .ed-library, .ed-sheet-body .ed-panel { padding-top: 12px; }
+
+@keyframes ed-fade { from { opacity: 0; } to { opacity: 1; } }
+
 @media (max-width: 900px) {
-  .editor { height: auto; min-height: 100dvh; grid-template-rows: auto auto; }
+  /* The shell owns the viewport so the sheet and dock can be fixed; only the canvas scrolls. */
+  .editor { height: 100dvh; grid-template-rows: auto minmax(0, 1fr); }
   .ed-bar { position: sticky; top: 0; z-index: 20; grid-template-columns: minmax(0, 1fr) auto; row-gap: 8px; padding-block: 8px; }
-  .ed-surface { grid-column: 1 / -1; grid-row: 2; }
-  .ed-save { display: none; }
-  .editor-body { grid-template-columns: minmax(0, 1fr); }
-  .editor-side { overflow: visible; }
-  .editor-side:not(.right) { border-right: 0; border-bottom: 1px solid var(--hairline); }
-  .editor-side.right { order: 3; border-left: 0; border-top: 1px solid var(--hairline); }
-  /* The library becomes one swipeable row so the wall stays near the top. */
-  .ed-library { flex-direction: row; gap: 8px; padding: 12px 16px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; }
-  .ed-library-head, .ed-library .ed-search, .ed-library h3, .ed-library > .ed-note { display: none; }
-  .ed-library section, .ed-library .library { display: contents; }
-  .ed-library li { flex: none; scroll-snap-align: start; }
-  .ed-library .library button { width: 184px; background: var(--surface-2); }
-  .ed-library .ed-plus { opacity: 1; transform: none; }
-  .ed-library .ed-callout { flex: none; max-width: 240px; margin: 0; }
-  .canvas { padding: 16px; }
+  .ed-surface { display: none; }
+  .editor-body { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .canvas { min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 16px 16px calc(72px + env(safe-area-inset-bottom)); }
   .canvas-frame { padding: 16px; }
+  .ed-dock { display: grid; }
   .ed-foot { position: static; }
-  .ed-toast { left: 50%; }
+  /* Clear of the dock, or the one way back from a mis-tapped delete is buried. */
+  .ed-toast { left: 50%; bottom: calc(72px + env(safe-area-inset-bottom)); }
 }
 
 /* Lock screen surface */

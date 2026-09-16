@@ -62,17 +62,19 @@ function hostOf(url: string): string {
 }
 
 function LinkBody({ title, url, subtitle, width, theme, u }: { title: string; url: string; subtitle: string; width: number; theme: Parameters<typeof note.render>[0]["theme"]; u: Parameters<typeof note.render>[0]["u"] }) {
+  // A freshly added tile has no address yet: it says so instead of drawing an empty card.
+  const label = title || (url ? hostOf(url) : "Add a link");
   return (
     <Col style={{ width: "100%", height: "100%", justifyContent: "space-between" }}>
       <Row style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
-        <Text style={{ fontSize: u(11), color: theme.muted }}>{hostOf(url)}</Text>
+        <Text style={{ fontSize: u(11), color: theme.muted }}>{url ? hostOf(url) : "No address yet"}</Text>
         <svg width={u(14)} height={u(14)} viewBox="0 0 24 24">
           <path d="M7 17L17 7M9 7h8v8" fill="none" stroke={theme.muted} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </Row>
       <Fill style={{ alignItems: "flex-end" }}>
         <Col>
-          <Text style={{ fontSize: u(fitFont(title || hostOf(url), width, 16, titleAdvance(theme))), color: theme.ink, fontFamily: theme.display.family, fontWeight: theme.display.weight }}>{title || hostOf(url)}</Text>
+          <Text style={{ fontSize: u(fitFont(label, width, 16, titleAdvance(theme))), color: url ? theme.ink : theme.muted, fontFamily: theme.display.family, fontWeight: theme.display.weight }}>{label}</Text>
           {subtitle ? <Text style={{ fontSize: u(11), color: theme.muted, marginTop: u(3) }}>{subtitle}</Text> : null}
         </Col>
       </Fill>
@@ -88,16 +90,21 @@ export const link = defineWidget<{ url: string; title: string; subtitle: string 
   category: "content",
   inputs: [],
   options: [
-    field.url("url", "Address", { placeholder: "https://…" }),
+    // Optional: a tile is added before it has an address, and a wall must still save.
+    field.url("url", "Address", { placeholder: "https://…", optional: true }),
     field.text("title", "Title", { maxLength: 40, optional: true }),
     field.text("subtitle", "Subtitle", { maxLength: 60, optional: true }),
   ],
   size: { default: [1, 1], min: [1, 1], max: [2, 2] },
   render: ({ options, area, theme, u }) => <LinkBody title={options.title} url={options.url} subtitle={options.subtitle} width={area.width} theme={theme} u={u} />,
-  renderPage: ({ options, area, theme, u }) => (
-    // Owner-supplied link on a public page: never pass reputation, never give the target window access.
-    <a href={options.url} target="_blank" rel="nofollow ugc noopener noreferrer" style={{ display: "flex", width: "100%", height: "100%", color: "inherit", textDecoration: "none" }}>
-      <LinkBody title={options.title} url={options.url} subtitle={options.subtitle} width={area.width} theme={theme} u={u} />
-    </a>
-  ),
+  renderPage: ({ options, area, theme, u }) => {
+    const body = <LinkBody title={options.title} url={options.url} subtitle={options.subtitle} width={area.width} theme={theme} u={u} />;
+    if (!options.url) return body;
+    return (
+      // Owner-supplied link on a public page: never pass reputation, never give the target window access.
+      <a href={options.url} target="_blank" rel="nofollow ugc noopener noreferrer" style={{ display: "flex", width: "100%", height: "100%", color: "inherit", textDecoration: "none" }}>
+        {body}
+      </a>
+    );
+  },
 });

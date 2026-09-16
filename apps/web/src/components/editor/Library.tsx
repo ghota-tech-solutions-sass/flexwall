@@ -1,15 +1,14 @@
 // Rendered inside the Editor client boundary.
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { WIDGET_CATEGORIES, type WidgetCategory } from "@flexwall/sdk";
 import { canAddTile } from "@/application/editor/store";
 import { PAID_TILE_LIMIT } from "@/domain/user";
 import { catalog } from "@/plugins/registry";
+import { dragIntent } from "@/presentation/editor/pointer-drag";
 import { ROUTES } from "@/presentation/routes";
 import { useEditor, useEditorActions } from "./EditorContext";
+import { useCoarsePointer } from "./WallCanvas";
 import { CategoryIcon, PlusIcon, SearchIcon } from "./icons";
-
-/** What a library item carries while dragged, so a drop elsewhere can't be mistaken for one. */
-export const LIBRARY_DRAG_TYPE = "application/x-flexwall-widget";
 
 const CATEGORY_LABELS: Record<WidgetCategory, string> = {
   numbers: "Numbers",
@@ -19,13 +18,20 @@ const CATEGORY_LABELS: Record<WidgetCategory, string> = {
   content: "Content",
 };
 
-/** Every installed widget, by category: click to add it in the first free spot, or drag it where it goes. Community widgets show up here with nothing else to change. */
+/**
+ * Every installed widget, by category: tap or click to add it in the first free
+ * spot, or carry it to a cell with a mouse. Pointer events, so a finger and a
+ * mouse take the same path. Community widgets show up here with nothing else to change.
+ */
 export function Library() {
   const [query, setQuery] = useState("");
   const count = useEditor((s) => s.draft.tiles.length);
   const { maxTiles, paid } = useEditor((s) => s.entitlements);
   const canAdd = useEditor(canAddTile);
   const actions = useEditorActions();
+  const coarse = useCoarsePointer();
+  const start = useRef<{ x: number; y: number } | null>(null);
+  const dragging = useRef(false);
 
   const q = query.trim().toLowerCase();
   const widgets = catalog.widgets().filter((w) => !q || `${w.name} ${w.description}`.toLowerCase().includes(q));
@@ -65,17 +71,33 @@ export function Library() {
                   <button
                     type="button"
                     disabled={!canAdd}
-                    draggable={canAdd}
-                    title="Click to add, or drag onto the wall"
-                    onClick={() => actions.addTile(w.id)}
-                    onDragStart={(e) => {
-                      // Firefox starts a drag only with data set.
-                      e.dataTransfer.setData(LIBRARY_DRAG_TYPE, w.id);
-                      e.dataTransfer.setData("text/plain", w.name);
-                      e.dataTransfer.effectAllowed = "copy";
+                    title={coarse ? "Tap to add" : "Click to add, or drag onto the wall"}
+                    onClick={() => {
+                      // A drag already added the tile where it was dropped.
+                      if (dragging.current) return;
+                      actions.addTile(w.id);
+                    }}
+                    onPointerDown={(e) => {
+                      if (!canAdd || e.button !== 0) return;
+                      start.current = { x: e.clientX, y: e.clientY };
+                      dragging.current = false;
+                    }}
+                    onPointerMove={(e) => {
+                      if (!start.current || dragging.current) return;
+                      if (dragIntent(start.current, { x: e.clientX, y: e.clientY }, coarse) !== "drag") return;
+                      dragging.current = true;
                       actions.startLibraryDrag(w.id);
                     }}
-                    onDragEnd={() => actions.endLibraryDrag()}
+                    onPointerUp={() => {
+                      start.current = null;
+                      // The wall commits the drop on its own pointerup; this only clears the ghost.
+                      if (dragging.current) requestAnimationFrame(() => (dragging.current = false));
+                    }}
+                    onPointerCancel={() => {
+                      start.current = null;
+                      dragging.current = false;
+                      actions.endLibraryDrag();
+                    }}
                   >
                     <span className="ed-glyph small">
                       <CategoryIcon category={w.category} size={15} />
