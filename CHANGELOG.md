@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.13.0...v0.14.0) (2026-09-16)
+
+
+### Features
+
+* **admin:** see each connector's environment and choose who may use it ([#38](https://github.com/ghota-tech-solutions-sass/flexwall/issues/38)) ([911f22d](https://github.com/ghota-tech-solutions-sass/flexwall/commit/911f22d25dbb852574b5de642af823099d1d4f06))
+
 ## [0.13.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.12.0...v0.13.0) (2026-09-16)
 
 
