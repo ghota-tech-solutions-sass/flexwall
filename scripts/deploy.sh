@@ -7,9 +7,11 @@
 # script is for when there are no runner minutes left, or when a deploy has to
 # happen from a laptop.
 #
-# The build runs in Cloud Build rather than locally: the service runs on amd64,
-# and emulating that on an Apple Silicon machine takes an order of magnitude
-# longer.
+# The build runs in Cloud Build when it can: the service runs on amd64, and
+# emulating that on an Apple Silicon machine takes an order of magnitude longer.
+# When Cloud Build refuses — its service account currently can't read the source
+# it was just handed — the script builds the amd64 image locally instead, which
+# is slow but needs no permission anyone has to grant first.
 #
 # Environment variables, secrets and scaling belong to Terraform. This only
 # changes which image the service runs.
@@ -54,7 +56,14 @@ fi
 echo "==> Building in Cloud Build (a few minutes)"
 # The Dockerfile defaults NEXT_PUBLIC_APP_URL to the production origin, so the
 # image needs no build arguments.
-gcloud builds submit --project "$PROJECT_ID" --tag "$IMAGE" --quiet
+if ! gcloud builds submit --project "$PROJECT_ID" --tag "$IMAGE" --quiet; then
+  echo "==> Cloud Build refused; building amd64 locally instead (longer)"
+  command -v docker >/dev/null || { echo "Local build needs Docker, which isn't on this machine." >&2; exit 1; }
+  # --push rather than a build then a push: buildx writes the manifest straight
+  # to Artifact Registry, and a cross-platform image doesn't have to be loaded
+  # into the local daemon to be pushed.
+  docker buildx build --platform linux/amd64 --tag "$IMAGE" --push .
+fi
 
 echo "==> Pointing the service at it"
 gcloud run deploy "$SERVICE_NAME" \
