@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.12.0...v0.13.0) (2026-09-16)
+
+
+### Features
+
+* **credits:** keep credits out of the way of everyone they don't concern ([#36](https://github.com/ghota-tech-solutions-sass/flexwall/issues/36)) ([1fee36b](https://github.com/ghota-tech-solutions-sass/flexwall/commit/1fee36bdd6fa62f82e1d5cde1cb7fe58661d1c25))
+
 ## [0.12.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.11.0...v0.12.0) (2026-09-15)
 
 
