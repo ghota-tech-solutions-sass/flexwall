@@ -33,6 +33,7 @@ const STATUS: Record<DomainErrorCode, number> = {
   unauthenticated: HTTP_STATUS.unauthorized,
   connection_failed: HTTP_STATUS.unprocessable,
   payments_unavailable: HTTP_STATUS.unavailable,
+  paid_account_required: HTTP_STATUS.paymentRequired,
 };
 
 export function errorResponse(error: unknown): NextResponse {

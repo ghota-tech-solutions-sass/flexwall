@@ -4,8 +4,7 @@ import { CheckoutConsentScope } from "@/components/site/CheckoutConsent";
 import { UpgradeButton } from "@/components/site/UpgradeButton";
 import { FREE_TILE_LIMIT } from "@/domain/user";
 import { container } from "@/composition";
-import { CREDIT_PACK_DETAILS, monthsPerAccount } from "@/domain/credits";
-import { PLAN_PRICES_USD } from "@/domain/pricing";
+import { PAID_ACCOUNT_PRICE_USD, PLAN_PRICES_USD } from "@/domain/pricing";
 import { REFERRAL_DISCOUNT_PERCENT } from "@/domain/referral";
 import { sessionUserId } from "@/presentation/http";
 import { pageMetadata } from "@/presentation/seo/metadata";
@@ -16,7 +15,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = pageMetadata({
   title: "Pricing",
-  description: `Every public wall is free. Pro is $${PLAN_PRICES_USD.monthly} a month or $${PLAN_PRICES_USD.yearly} a year for verified revenue, history and a clean lock screen. Lifetime is $${PLAN_PRICES_USD.lifetime} once.`,
+  description: `Every public wall is free. Pro is $${PLAN_PRICES_USD.monthly} a month or $${PLAN_PRICES_USD.yearly} a year for verified revenue, history and a clean lock screen. Connected bank and brokerage accounts are $${PAID_ACCOUNT_PRICE_USD} a month each.`,
   path: ROUTES.pricing,
 });
 
@@ -69,26 +68,11 @@ export default async function PricingPage() {
                 <UpgradeButton plan="yearly" signedIn={signedIn} label="Yearly" />
               </div>
             </div>
-            <div className="plan">
-              <h3>Lifetime</h3>
-              <div className="price">
-                ${PLAN_PRICES_USD.lifetime} <small>once</small>
-              </div>
-              <ul>
-                <li>Pro, forever</li>
-                <li>For the first supporters: this plan will close</li>
-              </ul>
-              <UpgradeButton plan="lifetime" signedIn={signedIn} label="Get lifetime" />
-            </div>
           </div>
         </CheckoutConsentScope>
-        <section className="panel credits-note" aria-labelledby="credits">
-          <h2 id="credits">One exception: X</h2>
-          <p>
-            X charges for every read of its API, so an X account costs a credit a day, on any plan — about ${CREDIT_PACK_DETAILS.starter.priceUsd} for{" "}
-            {monthsPerAccount("starter")} months. Bring your own X key instead and it&apos;s free. Nothing else on Flexwall uses credits.
-          </p>
-        </section>
+        <p className="plans-note">
+          Connected bank and brokerage accounts cost ${PAID_ACCOUNT_PRICE_USD} a month each, on top of Pro, for as long as they stay connected.
+        </p>
       </main>
       <Footer />
     </div>

@@ -130,16 +130,10 @@ variable "admin_emails" {
   default     = ["villers@ghotatechsolutions.com"]
 }
 
-variable "credits_starter_cents" {
-  description = "Price of the 100-credit pack in US cents, taxes included. Must match CREDIT_PACK_DETAILS in apps/web/src/domain/credits.ts."
+variable "price_paid_account_cents" {
+  description = "Monthly price of one connected bank or brokerage account in US cents, taxes included. Must match PAID_ACCOUNT_PRICE_USD in apps/web/src/domain/pricing.ts."
   type        = number
-  default     = 399
-}
-
-variable "credits_regular_cents" {
-  description = "Price of the 400-credit pack in US cents, taxes included."
-  type        = number
-  default     = 1199
+  default     = 500
 }
 
 variable "connector_secrets" {

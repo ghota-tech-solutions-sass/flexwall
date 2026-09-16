@@ -4,6 +4,8 @@ import { useId, useState } from "react";
 import { catalog } from "@/plugins/registry";
 import { BrandMark, hasMark } from "@/components/brand/Logos";
 import { KeyIcon, SearchIcon } from "@/components/editor/icons";
+import { isPaidAccountConnector } from "@/domain/paid-accounts";
+import { PAID_ACCOUNT_PRICE_USD } from "@/domain/pricing";
 import { searchConnectors, visibleConnectors } from "@/presentation/connections";
 
 /** Every connector that takes an account, searchable by name or what it measures. */
@@ -41,6 +43,8 @@ export function ConnectorPicker({ paid, allowed, onPick }: { paid: boolean; allo
               <strong>
                 {c.name}
                 {c.tier === "pro" && !paid ? <span className="badge">Pro</span> : null}
+                {/* A bank or brokerage costs Flexwall every month it stays connected, so its price shows before the owner picks it, paid plan or not. */}
+                {isPaidAccountConnector(c) ? <span className="badge">${PAID_ACCOUNT_PRICE_USD}/mo</span> : null}
               </strong>
               <small>{c.description}</small>
             </span>

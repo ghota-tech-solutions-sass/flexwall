@@ -242,17 +242,15 @@ export const CREDITS_TTL = 6 * 3600;
 const xCreditsConnector = defineConnector({
   id: "x-credits",
   name: "X",
-  description: "Followers, following, posts, lists and likes of an X account. Flexwall reads it for you; it costs one credit a day per account.",
+  description: "Followers, following, posts, lists and likes of an X account, read for you: no X developer app needed.",
   homepage: "https://x.com",
   tier: "free",
   // A handle anyone can type proves nothing about who owns it.
   verified: false,
   ttl: CREDITS_TTL,
-  creditsPerDay: 1,
   auth: {
     label: "Connect X",
-    help:
-      "No X developer account needed: Flexwall reads the profile with its own X app. Each account costs one credit per day it refreshes, whatever the number of tiles showing it; days nobody views your wall cost nothing. Buy credits in settings.",
+    help: "No X developer account needed: Flexwall reads the profile with its own X app, on any plan. One read answers every tile of this account.",
     fields: [HANDLE_FIELD],
   },
   // X has one API: the server's bearer token reads the real x.com.

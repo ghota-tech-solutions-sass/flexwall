@@ -393,12 +393,12 @@ describe("x-credits connector", () => {
   const SERVER_TOKEN = "AAAAAAAAAAAAAAAAAAAAAFlexwallServerToken";
   const env = { X_BEARER_TOKEN: SERVER_TOKEN };
 
-  test("given the definition, when read, then it costs a credit a day, refreshes every 6 hours and shares the X metrics", () => {
+  test("given the definition, when read, then it refreshes every 6 hours, costs the owner nothing extra and shares the X metrics", () => {
     // Given / When
     const c = xCreditsConnector;
 
     // Then
-    expect(c.creditsPerDay).toBe(1);
+    expect(c.serverCost).toBeUndefined();
     expect(c.ttl).toBe(6 * 3600);
     expect(c.verified).toBe(false);
     expect(c.metrics.map((m) => m.id)).toEqual(ALL);

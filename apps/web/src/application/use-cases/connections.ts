@@ -2,6 +2,8 @@ import { BlockedRequestError, ConnectorError, HttpError, splitSecrets, validateF
 import type { Catalog } from "@/domain/catalog";
 import { normalizeNickname, OAUTH_PENDING_TTL_MS, safeReturnPath, viewOf, type Connection, type ConnectionView } from "@/domain/connection";
 import { DEFAULT_AVAILABILITY, visibleTo } from "@/domain/connector-policy";
+import { allowanceOf, countPaidAccounts, isPaidAccountConnector } from "@/domain/paid-accounts";
+import { PAID_ACCOUNT_PRICE_USD } from "@/domain/pricing";
 import { DomainError, forbidden, invalid, notFound } from "@/domain/errors";
 import { todayIn } from "@/domain/time";
 import type { User } from "@/domain/user";
@@ -23,8 +25,12 @@ interface ConnectionDeps {
   administrators: readonly string[];
 }
 
-/** The owner, the connector and room for one more connection, or the reason not. */
-async function prepare(deps: ConnectionDeps, userId: string, connectorId: string): Promise<{ user: User; connector: ConnectorDef; existing: Connection[] }> {
+/**
+ * The owner, the connector and room for one more connection, or the reason not.
+ * `replacing` names a connection about to get fresh credentials: reconnecting
+ * an account already paid for doesn't need another paid account.
+ */
+async function prepare(deps: ConnectionDeps, userId: string, connectorId: string, replacing?: string): Promise<{ user: User; connector: ConnectorDef; existing: Connection[] }> {
   const user = await deps.users.byId(userId);
   if (!user) throw new DomainError("unauthenticated", "Sign in again.");
   const connector = deps.catalog.connector(connectorId);
@@ -37,6 +43,17 @@ async function prepare(deps: ConnectionDeps, userId: string, connectorId: string
   }
   const existing = await deps.connections.byOwner(user.id);
   if (existing.length >= MAX_CONNECTIONS) throw new DomainError("plan_limit", `You can keep ${MAX_CONNECTIONS} connections.`);
+  // Accounts that cost Flexwall a monthly fee are paid for one at a time, before they're connected.
+  if (isPaidAccountConnector(connector)) {
+    const reconnecting = existing.some((c) => c.id === replacing && c.ownerId === user.id && c.connector === connector.id);
+    const needed = countPaidAccounts(existing, deps.catalog) + (reconnecting ? 0 : 1);
+    if (needed > allowanceOf(user, deps.clock.now())) {
+      throw new DomainError(
+        "paid_account_required",
+        `A connected ${connector.name} account is $${PAID_ACCOUNT_PRICE_USD} a month. Add one from settings, then connect.`
+      );
+    }
+  }
   return { user, connector, existing };
 }
 
@@ -79,8 +96,8 @@ async function store(deps: ConnectionDeps, input: { user: User; connector: Conne
 export class ConnectAccount {
   constructor(private readonly deps: ConnectionDeps) {}
 
-  async execute(input: { userId: string; connector: string; values: Record<string, unknown> }): Promise<ConnectionView> {
-    const { user, connector, existing } = await prepare(this.deps, input.userId, input.connector);
+  async execute(input: { userId: string; connector: string; values: Record<string, unknown>; replacing?: string }): Promise<ConnectionView> {
+    const { user, connector, existing } = await prepare(this.deps, input.userId, input.connector, input.replacing);
     if (!connector.connect) throw invalid(`${connector.name} connects by signing in at ${connector.name}.`);
 
     const checked = validateFields(connector.auth!.fields, input.values);
@@ -108,6 +125,8 @@ interface PendingSignIn {
   carry: Record<string, string>;
   returnTo: string;
   startedAt: number;
+  /** The connection getting fresh credentials, so coming back doesn't ask for another paid account. */
+  replacing?: string;
 }
 
 const PENDING_KEY = "pending";
@@ -120,8 +139,8 @@ const PENDING_KEY = "pending";
 export class StartConnectionSignIn {
   constructor(private readonly deps: ConnectionDeps & { links: AppLinks }) {}
 
-  async execute(input: { userId: string; connector: string; values: Record<string, unknown>; returnTo: unknown; fallbackReturn: string }): Promise<{ url: string; pending: string }> {
-    const { user, connector } = await prepare(this.deps, input.userId, input.connector);
+  async execute(input: { userId: string; connector: string; values: Record<string, unknown>; returnTo: unknown; fallbackReturn: string; replacing?: string }): Promise<{ url: string; pending: string }> {
+    const { user, connector } = await prepare(this.deps, input.userId, input.connector, input.replacing);
     const oauth = connector.auth!.oauth;
     if (!oauth) throw invalid(`${connector.name} connects with a key, not a sign-in.`);
 
@@ -146,6 +165,7 @@ export class StartConnectionSignIn {
       carry: started.carry ?? {},
       returnTo: safeReturnPath(input.returnTo, input.fallbackReturn),
       startedAt: this.deps.clock.now(),
+      replacing: input.replacing,
     };
     return { url: started.url, pending: this.deps.secrets.seal({ [PENDING_KEY]: JSON.stringify(pending) }) };
   }
@@ -171,7 +191,7 @@ export class FinishConnectionSignIn {
     if (pending.userId !== input.userId) throw forbidden("This sign-in was started by another account.");
     if (!input.query.state || input.query.state !== pending.state) throw invalid("This sign-in didn't come back from where it started. Start connecting again.");
 
-    const { user, connector, existing } = await prepare(this.deps, input.userId, pending.connector);
+    const { user, connector, existing } = await prepare(this.deps, input.userId, pending.connector, pending.replacing);
     const oauth = connector.auth!.oauth;
     if (!oauth) throw invalid(`${connector.name} connects with a key, not a sign-in.`);
 
@@ -226,7 +246,18 @@ export const DISCONNECT_DEADLINE_MS = 5000;
  * the owner from removing their account.
  */
 export class RemoveConnection {
-  constructor(private readonly deps: { connections: ConnectionRepository; catalog: Catalog; secrets: SecretBox; runtime: ConnectorRuntime; clock: Clock; log?: (message: string) => void }) {}
+  constructor(
+    private readonly deps: {
+      connections: ConnectionRepository;
+      catalog: Catalog;
+      secrets: SecretBox;
+      runtime: ConnectorRuntime;
+      clock: Clock;
+      /** Lowers what Stripe bills once the account is gone. Never in the way of removing it. */
+      reconcile?: { execute(input: { userId: string }): Promise<void> };
+      log?: (message: string) => void;
+    }
+  ) {}
 
   async execute(input: { userId: string; connectionId: string }): Promise<void> {
     const connection = await this.deps.connections.byId(input.connectionId);
@@ -234,6 +265,9 @@ export class RemoveConnection {
     if (connection.ownerId !== input.userId) throw forbidden();
     await this.letGo(connection);
     await this.deps.connections.delete(connection.id);
+    if (isPaidAccountConnector(this.deps.catalog.connector(connection.connector))) {
+      await this.deps.reconcile?.execute({ userId: input.userId }).catch(() => undefined);
+    }
   }
 
   private async letGo(connection: Connection): Promise<void> {

@@ -292,6 +292,8 @@ export function makeEnableBankingConnector(clock: { now?: () => number } = {}): 
     description: "Verified balance of your bank accounts in Europe, read through open banking with Enable Banking.",
     homepage: "https://enablebanking.com",
     tier: "pro",
+    // Every connection here is a paying link at the provider, billed monthly: the owner pays for it by the account.
+    serverCost: "per-account",
     verified: true,
     // Banks allow about 4 unattended balance reads a day per account (PSD2), and
     // Enable Banking advises waiting 6 hours after a rate limit.

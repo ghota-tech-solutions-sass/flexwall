@@ -4,7 +4,6 @@ import type {
   CachedValues,
   ConnectionRepository,
   ConnectorPolicies,
-  CreditAccounts,
   EventLog,
   HandleRegistry,
   ReferralRepository,
@@ -15,7 +14,6 @@ import type {
 } from "@/application/ports";
 import type { Connection } from "@/domain/connection";
 import type { ConnectorPolicy } from "@/domain/connector-policy";
-import type { CreditEntry, SpendOutcome } from "@/domain/credits";
 import type { Handle } from "@/domain/handle";
 import type { Referral } from "@/domain/referral";
 import type { User } from "@/domain/user";
@@ -108,67 +106,6 @@ export class DbSnapshots implements SnapshotStore {
       .filter(([t]) => t >= fromDay && t <= toDay)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([t, v]) => ({ t, v }));
-  }
-}
-
-/**
- * A balance document per user, apart from the user document so saving a user
- * can never overwrite a balance, and one document per entry. Each change reads
- * and writes both in one transaction.
- */
-export class DbCredits implements CreditAccounts {
-  /** Entries read to show the latest ones: the store can't sort, so it reads a bounded batch. */
-  private static readonly HISTORY_SCAN = 500;
-  constructor(private readonly db: Db) {}
-
-  private static spendId = (userId: string, key: string, day: string) => docId(`spend|${userId}|${key}|${day}`);
-
-  async balance(userId: string) {
-    return (await this.db.get<{ balance: number }>("credit_balances", userId))?.balance ?? 0;
-  }
-
-  spend(input: { userId: string; key: string; day: string; amount: number; detail: string }): Promise<SpendOutcome> {
-    const id = DbCredits.spendId(input.userId, input.key, input.day);
-    return this.db.transaction(async (tx) => {
-      const [entry, account] = await Promise.all([tx.get("credit_entries", id), tx.get<{ balance: number }>("credit_balances", input.userId)]);
-      if (entry) return "already_paid";
-      const balance = account?.balance ?? 0;
-      if (balance < input.amount) return "insufficient";
-      const now = Date.now();
-      tx.set("credit_balances", input.userId, { userId: input.userId, balance: balance - input.amount, updatedAt: now });
-      tx.set("credit_entries", id, asDoc({ id, userId: input.userId, amount: -input.amount, reason: "spend", at: now, detail: input.detail } satisfies CreditEntry));
-      return "charged";
-    });
-  }
-
-  release(input: { userId: string; key: string; day: string }): Promise<void> {
-    const id = DbCredits.spendId(input.userId, input.key, input.day);
-    return this.db.transaction(async (tx) => {
-      const [entry, account] = await Promise.all([tx.get<CreditEntry & Doc>("credit_entries", id), tx.get<{ balance: number }>("credit_balances", input.userId)]);
-      if (!entry) return;
-      tx.set("credit_balances", input.userId, { userId: input.userId, balance: (account?.balance ?? 0) - entry.amount, updatedAt: Date.now() });
-      tx.delete("credit_entries", id);
-    });
-  }
-
-  adjust(input: { userId: string; entryId: string; amount: number; reason: Exclude<CreditEntry["reason"], "spend">; detail: string }): Promise<boolean> {
-    const id = docId(`${input.reason}|${input.entryId}`);
-    return this.db.transaction(async (tx) => {
-      const [entry, account] = await Promise.all([tx.get("credit_entries", id), tx.get<{ balance: number }>("credit_balances", input.userId)]);
-      if (entry) return false;
-      const balance = account?.balance ?? 0;
-      // Taking credits back stops at zero: what was already spent stays spent.
-      const amount = Math.max(input.amount, -balance);
-      const now = Date.now();
-      tx.set("credit_balances", input.userId, { userId: input.userId, balance: balance + amount, updatedAt: now });
-      tx.set("credit_entries", id, asDoc({ id, userId: input.userId, amount, reason: input.reason, at: now, detail: input.detail } satisfies CreditEntry));
-      return true;
-    });
-  }
-
-  async history(userId: string, limit: number) {
-    const entries = (await this.db.where("credit_entries", [["userId", userId]], DbCredits.HISTORY_SCAN)) as unknown as CreditEntry[];
-    return entries.sort((a, b) => b.at - a.at).slice(0, limit);
   }
 }
 

@@ -5,7 +5,7 @@ import { GetLockscreen } from "@/application/use-cases/lockscreen";
 import { ResolveWall } from "@/application/use-cases/resolve-wall";
 import { REPORT_CONTACT_MAX } from "@/domain/report";
 import { aConnection, aTile, aUser, aWall, NOW } from "../builders";
-import { FakeAvailability, FakeRuntime, FakeTokens, FixedClock, InMemoryConnections, InMemoryCredits, InMemorySnapshots, InMemoryUsers, InMemoryValueCache, InMemoryWalls, RecordingMailer, TransparentSecretBox } from "../fakes";
+import { FakeAvailability, FakeRuntime, FakeTokens, FixedClock, InMemoryConnections, InMemorySnapshots, InMemoryUsers, InMemoryValueCache, InMemoryWalls, RecordingMailer, TransparentSecretBox } from "../fakes";
 import { testCatalog } from "../fakes/test-plugin";
 
 describe("GetLockscreen", () => {
@@ -47,7 +47,7 @@ describe("ListExplore", () => {
     const connections = new InMemoryConnections();
     const cache = new InMemoryValueCache();
     const clock = new FixedClock();
-    const resolve = new ResolveWall({ catalog, connections, cache, snapshots: new InMemorySnapshots(), secrets: new TransparentSecretBox(), runtime: new FakeRuntime(), credits: new InMemoryCredits(), access: new FakeAvailability(), administrators: [], clock });
+    const resolve = new ResolveWall({ catalog, connections, cache, snapshots: new InMemorySnapshots(), secrets: new TransparentSecretBox(), runtime: new FakeRuntime(), access: new FakeAvailability(), administrators: [], clock });
     const listExplore = new ListExplore({ walls, users, resolve, catalog, clock });
 
     const listedWithRevenue = async (id: string, amount: number) => {

@@ -68,13 +68,23 @@ export class UserBuilder {
     this.user.lifetime = true;
     return this;
   }
+  /** Paying for `accounts` connected bank or brokerage accounts. */
+  withPaidAccounts(accounts: number, over: Partial<Subscription> = {}) {
+    this.user.paidAccounts = { id: "sub_accounts", status: "active", interval: "month", currentPeriodEnd: NOW + 30 * 86_400_000, cancelAtPeriodEnd: false, quantity: accounts, updatedAt: NOW, ...over };
+    return this;
+  }
+  /** Connected accounts an administrator gave, or that predate billing them. */
+  withGrantedAccounts(accounts: number) {
+    this.user.paidAccountsGranted = accounts;
+    return this;
+  }
   build(): User {
     return structuredClone(this.user);
   }
 }
 
 export class SubscriptionBuilder {
-  private sub: Subscription = { id: "sub_1", status: "active", interval: "month", currentPeriodEnd: NOW + 30 * 86_400_000, cancelAtPeriodEnd: false };
+  private sub: Subscription = { id: "sub_1", status: "active", interval: "month", currentPeriodEnd: NOW + 30 * 86_400_000, cancelAtPeriodEnd: false, quantity: 1, updatedAt: NOW };
   with(over: Partial<Subscription>) {
     Object.assign(this.sub, over);
     return this;

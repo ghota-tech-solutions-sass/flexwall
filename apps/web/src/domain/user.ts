@@ -9,6 +9,10 @@ export interface Subscription {
   /** Epoch ms. */
   currentPeriodEnd: number;
   cancelAtPeriodEnd: boolean;
+  /** How many of it: one for Pro, the number of paid accounts for the accounts subscription. */
+  quantity: number;
+  /** Epoch ms of the event that produced this state; a later one wins, an older one is ignored. */
+  updatedAt: number;
 }
 
 export interface User {
@@ -27,6 +31,10 @@ export interface User {
   bonusProUntil: number | null;
   /** Pro given by an administrator, free of charge. Older accounts have it undefined. */
   complimentary?: Complimentary | null;
+  /** The monthly subscription paying for connected bank and brokerage accounts. Never grants Pro. */
+  paidAccounts?: Subscription | null;
+  /** Accounts an administrator gave for nothing, and what owners connected before this was billed. */
+  paidAccountsGranted?: number | null;
 }
 
 /** Pro offered from the administration: nobody pays, Stripe knows nothing about it. */
@@ -69,7 +77,7 @@ export const PAST_DUE_GRACE_MS = 7 * 24 * 60 * 60 * 1000;
 
 type PlanFacts = Pick<User, "lifetime" | "subscription"> & { bonusProUntil?: number | null; complimentary?: Complimentary | null };
 
-/** What the user pays for, ignoring referral rewards: decides whether they can subscribe again. */
+/** What the user pays for, ignoring referral rewards: decides whether they can subscribe again. Paid accounts are an add-on, never a plan. */
 export function paidPlanOf(user: PlanFacts, now: number): Plan {
   if (user.lifetime) return "lifetime";
   const s = user.subscription;
@@ -127,5 +135,7 @@ export function newUser(input: { id: string; email: string; now: number; timeZon
     referredBy: null,
     bonusProUntil: null,
     complimentary: null,
+    paidAccounts: null,
+    paidAccountsGranted: null,
   };
 }

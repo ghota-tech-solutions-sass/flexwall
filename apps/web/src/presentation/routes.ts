@@ -10,10 +10,10 @@ const segment = (value: string) => encodeURIComponent(value);
 export const SIGN_IN_PARAMS = { token: "token", timeZone: "tz" } as const;
 
 /** Query parameters /settings reads. */
-export const SETTINGS_PARAMS = { upgraded: "upgraded", credits: "credits" } as const;
+export const SETTINGS_PARAMS = { upgraded: "upgraded", seats: "seats" } as const;
 
-/** The credits section of settings, where the out-of-credits message sends owners. */
-export const CREDITS_ANCHOR = "credits";
+/** The connected-accounts section of settings, where paying for one more starts. */
+export const PAID_ACCOUNTS_ANCHOR = "accounts";
 
 /** Query parameters added to the page an owner returns to after signing in at a provider. */
 export const CONNECT_PARAMS = { connected: "connected", error: "connect_error" } as const;
@@ -60,9 +60,9 @@ export const ROUTES = {
   lockscreen: (wallId: string, key: string) => `${PREFIX.lockscreen}${segment(wallId)}/${segment(key)}`,
   /** Settings after a paid checkout: says Pro is on its way. */
   settingsUpgraded: `/settings?${new URLSearchParams({ [SETTINGS_PARAMS.upgraded]: FLAG_ON })}`,
-  /** Settings after a credit pack is paid for: says the credits are on their way. */
-  settingsCreditsBought: `/settings?${new URLSearchParams({ [SETTINGS_PARAMS.credits]: FLAG_ON })}#${CREDITS_ANCHOR}`,
-  settingsCredits: `/settings#${CREDITS_ANCHOR}`,
+  /** Settings after paying for a connected account: says it's on its way. */
+  settingsAccountAdded: `/settings?${new URLSearchParams({ [SETTINGS_PARAMS.seats]: FLAG_ON })}#${PAID_ACCOUNTS_ANCHOR}`,
+  settingsAccounts: `/settings#${PAID_ACCOUNTS_ANCHOR}`,
   legalFr: "/fr/mentions-legales",
   termsFr: "/fr/cgv",
   privacyFr: "/fr/confidentialite",
@@ -82,7 +82,7 @@ export const API = {
   oauthStart: "/api/connections/oauth",
   adminPro: (accountId: string) => `/api/admin/accounts/${segment(accountId)}/pro`,
   adminWall: (accountId: string) => `/api/admin/accounts/${segment(accountId)}/wall`,
-  adminCredits: (accountId: string) => `/api/admin/accounts/${segment(accountId)}/credits`,
+  adminPaidAccounts: (accountId: string) => `/api/admin/accounts/${segment(accountId)}/paid-accounts`,
   adminConnectors: "/api/admin/connectors",
   /** Where providers send the owner back. Registered with each provider, so never rename it. */
   oauthCallback: "/api/connections/oauth/callback",
@@ -91,7 +91,7 @@ export const API = {
   signOut: "/api/auth/logout",
   billingCheckout: "/api/billing/checkout",
   billingPortal: "/api/billing/portal",
-  billingCredits: "/api/billing/credits",
+  billingPaidAccounts: "/api/billing/paid-accounts",
   report: "/api/report",
   signInVerify: SIGN_IN_VERIFY,
   /** The link mailed to sign in. */

@@ -1,18 +1,18 @@
 import Stripe from "stripe";
-import type { BillingEvent, BillingPlan, CheckoutConsent, PaymentGateway } from "@/application/ports";
-import { CREDIT_PACK_DETAILS, isCreditPack, type CreditPack } from "@/domain/credits";
+import type { BillingEvent, BillingPlan, CheckoutConsent, PaymentGateway, SubscriptionRole } from "@/application/ports";
+import { PAID_ACCOUNT_PRICE_USD } from "@/domain/pricing";
 import type { Subscription, SubscriptionStatus, User } from "@/domain/user";
 
 export interface StripePrices {
   monthly: string | null;
   yearly: string | null;
   lifetime: string | null;
-  /** One-off prices of the credit packs. */
-  credits?: Partial<Record<CreditPack, string | null>>;
+  /** The monthly price of one connected account. */
+  paidAccount?: string | null;
 }
 
-/** Tells credit pack payments apart from plan payments in session metadata. */
-export const CREDITS_METADATA_KIND = "credits";
+/** Tells the accounts subscription apart from the plan, in metadata and on prices. */
+export const PAID_ACCOUNTS_ROLE = "paid_accounts";
 
 /** Inline prices used when no Stripe price ids are configured (test mode, self-hosting). Taxes included, like the configured ones. */
 const FALLBACK = {
@@ -92,47 +92,52 @@ export function checkoutSessionParams(input: {
   };
 }
 
-/** The Checkout session for a credit pack: a one-off payment, with the same consent and tax handling as plans. */
-export function creditsSessionParams(input: {
+/**
+ * The Checkout session that opens the accounts subscription. Monthly, whatever
+ * the plan's own cycle, and never discounted: the invitee coupon is spent once
+ * and belongs to Pro, not to a $5 line.
+ */
+export function paidAccountsSessionParams(input: {
   customerId: string;
   userId: string;
-  pack: CreditPack;
+  quantity: number;
   priceId: string | null;
   consent: CheckoutConsent;
   successUrl: string;
   cancelUrl: string;
   options: CheckoutOptions;
 }): Stripe.Checkout.SessionCreateParams {
-  const { credits, priceUsd } = CREDIT_PACK_DETAILS[input.pack];
   const metadata = {
     userId: input.userId,
-    kind: CREDITS_METADATA_KIND,
-    pack: input.pack,
-    credits: String(credits),
+    role: PAID_ACCOUNTS_ROLE,
     terms_version: input.consent.termsVersion,
     terms_accepted_at: new Date(input.consent.acceptedAt).toISOString(),
     immediate_start: "requested",
   };
   const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = input.priceId
-    ? { price: input.priceId, quantity: 1 }
+    ? { price: input.priceId, quantity: input.quantity }
     : {
-        quantity: 1,
+        quantity: input.quantity,
         price_data: {
           currency: "usd",
-          product_data: { name: `${credits} Flexwall credits` },
+          product_data: { name: "Flexwall connected account" },
           tax_behavior: "inclusive",
-          unit_amount: Math.round(priceUsd * 100),
+          unit_amount: PAID_ACCOUNT_PRICE_USD * 100,
+          recurring: { interval: "month" as const },
         },
       };
   return {
     customer: input.customerId,
-    mode: "payment",
+    mode: "subscription",
     line_items: [lineItem],
     metadata,
-    payment_intent_data: { metadata },
-    invoice_creation: { enabled: true },
+    subscription_data: { metadata },
+    // The invitee coupon is once only and belongs to Pro.
+    allow_promotion_codes: false,
     custom_text: {
-      submit: { message: `${credits} credits land on your account as soon as you pay. Unused credits are refunded on request within 14 days.` },
+      submit: {
+        message: `$${PAID_ACCOUNT_PRICE_USD} a month per connected bank or brokerage account, for as long as it stays connected. Removing an account lowers the next invoice.`,
+      },
     },
     ...(input.options.automaticTax
       ? {
@@ -206,14 +211,14 @@ export class StripeGateway implements PaymentGateway {
     return { url: session.url, customerId };
   }
 
-  async creditsCheckoutUrl(input: { user: User; pack: CreditPack; consent: CheckoutConsent; successUrl: string; cancelUrl: string }) {
+  async paidAccountsCheckoutUrl(input: { user: User; quantity: number; consent: CheckoutConsent; successUrl: string; cancelUrl: string }) {
     const customerId = await this.customerFor(input.user);
     const session = await this.stripe().checkout.sessions.create(
-      creditsSessionParams({
+      paidAccountsSessionParams({
         customerId,
         userId: input.user.id,
-        pack: input.pack,
-        priceId: this.config.prices.credits?.[input.pack] ?? null,
+        quantity: input.quantity,
+        priceId: this.config.prices.paidAccount ?? null,
         consent: input.consent,
         successUrl: input.successUrl,
         cancelUrl: input.cancelUrl,
@@ -222,6 +227,39 @@ export class StripeGateway implements PaymentGateway {
     );
     if (!session.url) throw new Error("Stripe returned a checkout session without a URL");
     return { url: session.url, customerId };
+  }
+
+  /**
+   * Sets how many accounts are paid for. Raising invoices the rest of the month
+   * now; lowering leaves a credit on the next invoice. At zero the subscription
+   * ends with the period, so Stripe stops issuing empty invoices, and connecting
+   * again before then simply raises it back.
+   */
+  async setPaidAccountsQuantity(input: { subscription: Subscription; quantity: number; direction: "up" | "down" }) {
+    const stripe = this.stripe();
+    const sub = await stripe.subscriptions.retrieve(input.subscription.id);
+    const item = sub.items.data[0];
+    if (!item) throw new Error(`Stripe subscription ${sub.id} has no item to set a quantity on`);
+    const proration_behavior = input.direction === "up" ? "always_invoice" : "create_prorations";
+    if (input.quantity > 0) {
+      await stripe.subscriptionItems.update(item.id, { quantity: input.quantity, proration_behavior });
+      const updated = await stripe.subscriptions.update(sub.id, { cancel_at_period_end: false });
+      return toSubscription(updated);
+    }
+    await stripe.subscriptionItems.update(item.id, { quantity: 1, proration_behavior });
+    return toSubscription(await stripe.subscriptions.update(sub.id, { cancel_at_period_end: true }));
+  }
+
+  async paidAccountsSubscriptions(customerId: string) {
+    const price = this.config.prices.paidAccount;
+    const list = await this.stripe().subscriptions.list({ customer: customerId, status: "all", limit: 100 });
+    return list.data
+      .filter((sub) => roleOf(sub, price) === PAID_ACCOUNTS_ROLE && sub.status !== "canceled" && sub.status !== "incomplete_expired")
+      .map(toSubscription);
+  }
+
+  async cancelSubscription(subscriptionId: string) {
+    await this.stripe().subscriptions.cancel(subscriptionId);
   }
 
   async portalUrl(input: { customerId: string; returnUrl: string }) {
@@ -246,11 +284,6 @@ export class StripeGateway implements PaymentGateway {
         const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;
         const userId = session.metadata?.userId;
         if (!customerId || !userId) return null;
-        if (session.metadata?.kind === CREDITS_METADATA_KIND) {
-          const pack = session.metadata.pack;
-          // The pack decides the amount, never a number carried in metadata.
-          return isCreditPack(pack) ? { id: event.id, type: "credits", customerId, userId, pack, credits: CREDIT_PACK_DETAILS[pack].credits } : null;
-        }
         if (session.metadata?.plan !== "lifetime") return null;
         return { id: event.id, type: "lifetime", customerId, userId };
       }
@@ -259,15 +292,7 @@ export class StripeGateway implements PaymentGateway {
         const customerId = typeof charge.customer === "string" ? charge.customer : charge.customer?.id;
         // Partial refunds keep the purchase, and the referral with it.
         if (!charge.refunded || !customerId) return null;
-        const intentId = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
-        if (intentId) {
-          // Pack payments carry their metadata on the payment intent, not on the charge.
-          const metadata = charge.metadata?.kind ? charge.metadata : (await this.stripe().paymentIntents.retrieve(intentId)).metadata;
-          if (metadata?.kind === CREDITS_METADATA_KIND) {
-            return isCreditPack(metadata.pack) && metadata.userId ? { id: event.id, type: "credits_refund", customerId, userId: metadata.userId, pack: metadata.pack } : null;
-          }
-        }
-        return { id: event.id, type: "refund", customerId };
+        return { id: event.id, type: "refund", role: await this.refundRole(charge), customerId };
       }
       case "customer.subscription.created":
       case "customer.subscription.updated":
@@ -276,22 +301,55 @@ export class StripeGateway implements PaymentGateway {
         return {
           id: event.id,
           type: "subscription",
+          role: roleOf(sub, this.config.prices.paidAccount),
           customerId: typeof sub.customer === "string" ? sub.customer : sub.customer.id,
           userId: sub.metadata?.userId ?? null,
-          subscription: toSubscription(sub),
+          subscription: toSubscription(sub, event.created * 1000),
         };
       }
       default:
         return null;
     }
   }
+
+  /**
+   * What a refunded charge paid for, so a refunded connected account doesn't
+   * take a referrer's month back. A charge Stripe can't tie to a subscription
+   * invoice counts as a plan payment, which is what every charge was before.
+   */
+  private async refundRole(charge: Stripe.Charge): Promise<SubscriptionRole | "unknown"> {
+    const intentId = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
+    if (!intentId) return "unknown";
+    try {
+      const stripe = this.stripe();
+      const payments = await stripe.invoicePayments.list({ payment: { type: "payment_intent", payment_intent: intentId }, limit: 1 });
+      const invoiceRef = payments.data[0]?.invoice;
+      const invoiceId = typeof invoiceRef === "string" ? invoiceRef : invoiceRef?.id;
+      if (!invoiceId) return "unknown";
+      const invoice = await stripe.invoices.retrieve(invoiceId);
+      if (invoice.parent?.subscription_details?.metadata?.role === PAID_ACCOUNTS_ROLE) return PAID_ACCOUNTS_ROLE;
+      const priceId = invoice.lines.data.find((l) => l.pricing?.price_details?.price)?.pricing?.price_details?.price;
+      return priceId && priceId === this.config.prices.paidAccount ? PAID_ACCOUNTS_ROLE : "pro";
+    } catch {
+      return "unknown";
+    }
+  }
 }
 
-export function toSubscription(sub: Stripe.Subscription): Subscription {
+/** Which subscription this is: what its metadata says, else its price, else the plan (everything sold before accounts were). */
+export function roleOf(sub: Pick<Stripe.Subscription, "metadata" | "items">, paidAccountPrice: string | null | undefined): SubscriptionRole {
+  if (sub.metadata?.role === PAID_ACCOUNTS_ROLE) return PAID_ACCOUNTS_ROLE;
+  const priceId = sub.items?.data?.[0]?.price?.id;
+  return paidAccountPrice && priceId === paidAccountPrice ? PAID_ACCOUNTS_ROLE : "pro";
+}
+
+export function toSubscription(sub: Stripe.Subscription, updatedAt = Date.now()): Subscription {
   const item = sub.items.data[0];
   return {
     id: sub.id,
     status: sub.status as SubscriptionStatus,
+    quantity: item?.quantity ?? 1,
+    updatedAt,
     interval: item?.price.recurring?.interval === "year" ? "year" : "month",
     currentPeriodEnd: (item?.current_period_end ?? 0) * 1000,
     cancelAtPeriodEnd: sub.cancel_at_period_end,
