@@ -28,19 +28,27 @@ const FALLBACK_SIZE: { min: Size; max: Size } = { min: [1, 1], max: [WALL_COLUMN
 const QUICK_ADD_WIDGETS = ["stat", "sparkline", "note"] as const;
 
 /**
- * True where the finger is the pointer. Read once per editor: the grid takes
- * its drag handle as a prop, so this can't be a media query in CSS.
+ * A media query the components can branch on. Starts false so the server and
+ * the first paint agree, then tells the truth after mounting.
+ */
+export function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const read = () => setMatches(media.matches);
+    read();
+    media.addEventListener("change", read);
+    return () => media.removeEventListener("change", read);
+  }, [query]);
+  return matches;
+}
+
+/**
+ * True where the finger is the pointer. The grid takes its drag handle as a
+ * prop, so this can't be a media query in CSS.
  */
 export function useCoarsePointer(): boolean {
-  const [coarse, setCoarse] = useState(false);
-  useEffect(() => {
-    const query = window.matchMedia("(pointer: coarse)");
-    const read = () => setCoarse(query.matches);
-    read();
-    query.addEventListener("change", read);
-    return () => query.removeEventListener("change", read);
-  }, []);
-  return coarse;
+  return useMediaQuery("(pointer: coarse)");
 }
 
 /** A corner big enough for a thumb, with the chevron still small. */

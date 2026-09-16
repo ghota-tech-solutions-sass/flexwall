@@ -3,6 +3,7 @@ import { number, parseTypedNumber, text } from "@flexwall/sdk";
 import { shortcutFor } from "@/presentation/editor/shortcuts";
 import { tileStatus } from "@/presentation/editor/tile-status";
 import { DRAG_THRESHOLD_PX, dragIntent } from "@/presentation/editor/pointer-drag";
+import { CLOSED, isOpen, nextSheet, type Sheet } from "@/presentation/editor/sheet";
 
 const key = (k: string, mods: Partial<{ metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }> = {}) => ({ key: k, metaKey: false, ctrlKey: false, shiftKey: false, ...mods });
 
@@ -78,5 +79,54 @@ describe("Telling a tap from a drag", () => {
 
     // Then
     expect(intents).toEqual(["tap", "tap"]);
+  });
+});
+
+describe("The phone editor's sheet", () => {
+  test("given nothing open, when a tile is selected, then the inspector rises far enough to leave the tile visible", () => {
+    // Given / When
+    const sheet = nextSheet(CLOSED, "select");
+
+    // Then
+    expect(sheet).toEqual({ kind: "inspector", height: "peek" });
+  });
+
+  test("given an inspector the owner pulled up, when another tile is selected, then it stays where they put it", () => {
+    // Given
+    const full = nextSheet(nextSheet(CLOSED, "select"), "expand");
+
+    // When
+    const after = nextSheet(full, "select");
+
+    // Then
+    expect(after).toEqual({ kind: "inspector", height: "full" });
+  });
+
+  test("given the inspector open, when the tile is deselected, then the sheet closes", () => {
+    // Given / When
+    const closed = nextSheet({ kind: "inspector", height: "peek" }, "deselect");
+
+    // Then
+    expect(closed).toEqual(CLOSED);
+  });
+
+  test("given the library open, when nothing is selected any more, then the library stays: it isn't about a tile", () => {
+    // Given / When
+    const sheet = nextSheet({ kind: "library" }, "deselect");
+
+    // Then
+    expect(sheet).toEqual({ kind: "library" });
+  });
+
+  test("given any sheet, when the owner adds, designs or dismisses, then the sheet follows", () => {
+    // Given
+    const from: Sheet = { kind: "inspector", height: "full" };
+
+    // When
+    const moves = [nextSheet(from, "add"), nextSheet(from, "design"), nextSheet(from, "dismiss")];
+
+    // Then
+    expect(moves).toEqual([{ kind: "library" }, { kind: "wall" }, CLOSED]);
+    expect(moves.map(isOpen)).toEqual([true, true, false]);
   });
 });

@@ -326,29 +326,36 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; height: 22px; 
   .tile-tools > small { display: none; }
 }
 
+/* ── Phone shell: one canvas, a dock, and a sheet ── */
+.ed-dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; display: none; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(12px); box-shadow: 0 -1px 0 var(--hairline); }
+.ed-dock button { display: grid; grid-auto-flow: column; place-items: center; gap: 6px; min-height: 48px; padding: 6px 10px; border: 0; border-radius: 12px; background: transparent; color: var(--ink-2); font: inherit; font-size: 13px; font-weight: 550; cursor: pointer; }
+.ed-dock button[data-active="true"] { background: var(--surface-2); color: var(--ink); }
+
+.ed-sheet-veil { position: fixed; inset: 0; z-index: 26; background: rgba(12, 13, 16, 0.28); animation: ed-fade 0.2s ease-out; }
+.ed-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 27; display: flex; flex-direction: column; max-height: 88dvh; border-radius: 20px 20px 0 0; background: var(--surface); box-shadow: 0 -12px 40px -16px rgba(12, 13, 16, 0.45); animation: ed-rise 0.28s var(--spring); }
+.ed-sheet[data-height="peek"] { height: 46dvh; }
+.ed-sheet[data-height="full"] { height: 88dvh; }
+.ed-sheet-head { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; padding: 10px 12px 8px 16px; border-bottom: 1px solid var(--hairline); }
+.ed-sheet-head h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.ed-sheet-grip { position: absolute; top: 6px; left: 50%; width: 56px; height: 20px; padding: 0; border: 0; background: none; cursor: grab; translate: -50% 0; }
+.ed-sheet-grip::after { content: ""; display: block; width: 40px; height: 4px; margin: 6px auto 0; border-radius: 999px; background: var(--hairline-strong); }
+.ed-sheet-body { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+.ed-sheet-body .ed-library, .ed-sheet-body .ed-panel { padding-top: 12px; }
+
+@keyframes ed-fade { from { opacity: 0; } to { opacity: 1; } }
+
 @media (max-width: 900px) {
-  .editor { height: auto; min-height: 100dvh; grid-template-rows: auto auto; }
+  /* The shell owns the viewport so the sheet and dock can be fixed; only the canvas scrolls. */
+  .editor { height: 100dvh; grid-template-rows: auto minmax(0, 1fr); }
   .ed-bar { position: sticky; top: 0; z-index: 20; grid-template-columns: minmax(0, 1fr) auto; row-gap: 8px; padding-block: 8px; }
-  .ed-surface { grid-column: 1 / -1; grid-row: 2; }
-  /* Saving state stays visible on a phone: a failed save must never be silent. */
-  .ed-save { margin-left: 0; padding: 6px 10px; min-height: 32px; }
-  .ed-save[data-kind="error"] { max-width: 14ch; }
-  .editor-body { grid-template-columns: minmax(0, 1fr); }
-  .editor-side { overflow: visible; }
-  .editor-side:not(.right) { border-right: 0; border-bottom: 1px solid var(--hairline); }
-  .editor-side.right { order: 3; border-left: 0; border-top: 1px solid var(--hairline); }
-  /* The library becomes one swipeable row so the wall stays near the top. */
-  .ed-library { flex-direction: row; gap: 8px; padding: 12px 16px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; }
-  .ed-library-head, .ed-library .ed-search, .ed-library h3, .ed-library > .ed-note { display: none; }
-  .ed-library section, .ed-library .library { display: contents; }
-  .ed-library li { flex: none; scroll-snap-align: start; }
-  .ed-library .library button { width: 184px; background: var(--surface-2); }
-  .ed-library .ed-plus { opacity: 1; transform: none; }
-  .ed-library .ed-callout { flex: none; max-width: 240px; margin: 0; }
-  .canvas { padding: 16px; }
+  .ed-surface { display: none; }
+  .editor-body { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .canvas { min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 16px 16px calc(72px + env(safe-area-inset-bottom)); }
   .canvas-frame { padding: 16px; }
+  .ed-dock { display: grid; }
   .ed-foot { position: static; }
-  .ed-toast { left: 50%; }
+  /* Clear of the dock, or the one way back from a mis-tapped delete is buried. */
+  .ed-toast { left: 50%; bottom: calc(72px + env(safe-area-inset-bottom)); }
 }
 
 /* Lock screen surface */
