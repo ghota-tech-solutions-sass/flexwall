@@ -16,6 +16,14 @@ export interface CreditsView {
   recent: CreditEntry[];
 }
 
+/**
+ * Whether credits concern this owner at all: settings hides the whole section
+ * from someone who has never connected an account that spends them.
+ */
+export function usesCredits(view: CreditsView): boolean {
+  return view.metered.length > 0 || view.balance > 0 || view.recent.length > 0;
+}
+
 /** An owner's credits: what's left, what spends them, and how long they last. */
 export class GetCredits {
   constructor(private readonly deps: { credits: CreditAccounts; connections: ConnectionRepository; catalog: Catalog }) {}

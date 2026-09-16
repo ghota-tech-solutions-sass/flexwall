@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { centsPerCredit, creditDay, CREDIT_PACK_DETAILS, CREDIT_PACKS, daysLeft, isCreditPack } from "@/domain/credits";
+import { centsPerCredit, creditDay, CREDIT_PACK_DETAILS, CREDIT_PACKS, daysLeft, isCreditPack, monthsPerAccount } from "@/domain/credits";
 
 /** What one credit can cost Flexwall at worst: one X profile read. */
 const WORST_READ_COST_USD = 0.01;
@@ -11,13 +11,13 @@ const WORST_CARD_FEE = (price: number) => price * 0.0525 + 0.3;
 describe("Credits", () => {
   test("given what a checkout request can carry, when it's read as a pack, then only the packs Flexwall sells are accepted", () => {
     // Given
-    const asked: unknown[] = [...CREDIT_PACKS, "huge", "STARTER", undefined, 100];
+    const asked: unknown[] = [...CREDIT_PACKS, "large", "STARTER", undefined, 100];
 
     // When
     const accepted = asked.filter(isCreditPack);
 
     // Then
-    expect(accepted).toEqual(["starter", "regular", "large"]);
+    expect(accepted).toEqual(["starter", "regular"]);
   });
 
   test("given every pack, when all its credits are spent at the worst tax and card rates, then it still covers the reads", () => {
@@ -31,12 +31,14 @@ describe("Credits", () => {
     expect(margins.every((m) => m > 0)).toBe(true);
   });
 
-  test("given bigger packs, when compared per credit, then each one is cheaper than the one before", () => {
+  test("given the two packs, when compared, then the bigger one is cheaper per credit and lasts longer", () => {
     // Given / When
     const cents = CREDIT_PACKS.map(centsPerCredit);
+    const months = CREDIT_PACKS.map(monthsPerAccount);
 
     // Then
-    expect(cents).toEqual([4, 3, 2.5]);
+    expect(cents).toEqual([4, 3]);
+    expect(months).toEqual([3, 13]);
   });
 
   test("given a moment late in the evening west of UTC, when its credit day is taken, then it's already the next UTC day", () => {

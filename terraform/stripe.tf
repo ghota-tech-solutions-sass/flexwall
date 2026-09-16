@@ -7,7 +7,7 @@
 #
 #   Pro       $6 a month or $48 a year   subscription
 #   Lifetime  $99 once                   payment
-#   Credits   100 $3.99, 400 $11.99, 1200 $29.99, once each   payment
+#   Credits   100 $3.99 or 400 $11.99, once each   payment
 #
 # Prices include taxes (tax_behavior inclusive): with Stripe Tax on, the VAT of
 # the buyer's country comes out of the price instead of being added to it.
@@ -152,7 +152,6 @@ locals {
   credit_packs = {
     starter = { credits = 100, cents = var.credits_starter_cents }
     regular = { credits = 400, cents = var.credits_regular_cents }
-    large   = { credits = 1200, cents = var.credits_large_cents }
   }
 }
 

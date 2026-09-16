@@ -176,7 +176,7 @@ const HANDLE_FIELD = field.text("handle", "X handle", { placeholder: "@XDevelope
 
 const xConnector = defineConnector({
   id: "x",
-  name: "X",
+  name: "X with your own key",
   description: "Followers, following, posts, lists and likes of an X account, read with your own X developer app.",
   homepage: "https://x.com",
   // The owner pays X for every read, so running it costs Flexwall nothing.
@@ -187,7 +187,7 @@ const xConnector = defineConnector({
   ttl: MIN_TTL,
   ttlFor: (connection) => ttlForRefresh(connection.refresh),
   auth: {
-    label: "Connect X",
+    label: "Connect X with your own key",
     help:
       "Uses your own X developer app: every refresh is a paid X API read, billed by X to your developer account, not by Flexwall. " +
       "In the X developer console (console.x.com), create a project and an app, buy credits, then open the app's Keys and tokens and copy its Bearer Token (app-only, read access is enough). " +
@@ -241,8 +241,8 @@ export const CREDITS_TTL = 6 * 3600;
 
 const xCreditsConnector = defineConnector({
   id: "x-credits",
-  name: "X with credits",
-  description: "Followers, following, posts, lists and likes of an X account, with no X developer app: one Flexwall credit a day per account.",
+  name: "X",
+  description: "Followers, following, posts, lists and likes of an X account. Flexwall reads it for you; it costs one credit a day per account.",
   homepage: "https://x.com",
   tier: "free",
   // A handle anyone can type proves nothing about who owns it.
@@ -250,7 +250,7 @@ const xCreditsConnector = defineConnector({
   ttl: CREDITS_TTL,
   creditsPerDay: 1,
   auth: {
-    label: "Track an X account",
+    label: "Connect X",
     help:
       "No X developer account needed: Flexwall reads the profile with its own X app. Each account costs one credit per day it refreshes, whatever the number of tiles showing it; days nobody views your wall cost nothing. Buy credits in settings.",
     fields: [HANDLE_FIELD],

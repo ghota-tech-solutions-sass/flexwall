@@ -154,7 +154,7 @@ export default function CgvPage() {
 
       <h2>17. Crédits</h2>
       <p>
-        Certains connecteurs, comme « X with credits », lisent avec une clé payante détenue par {PUBLISHER.companyName} et se paient en crédits, vendus par
+        Certains connecteurs, X aujourd&apos;hui, lisent avec une clé payante détenue par {PUBLISHER.companyName} et se paient en crédits, vendus par
         packs :{" "}
         {CREDIT_PACKS.map((p) => `${CREDIT_PACK_DETAILS[p].credits} crédits pour ${String(CREDIT_PACK_DETAILS[p].priceUsd).replace(".", ",")} $`).join(", ")},
         toutes taxes comprises. Un crédit est consommé par compte connecté pour chaque jour UTC où il est actualisé auprès du fournisseur ; les

@@ -12,8 +12,8 @@ X API v2, two ways:
 
 | Kind | Id | What |
 |---|---|---|
-| Connector | `x` | Free tier, unverified. Bring your own Bearer Token. |
-| Connector | `x-credits` | Free tier, unverified, `creditsPerDay: 1`. Flexwall's `X_BEARER_TOKEN`. |
+| Connector | `x-credits` | Shown as **X**: Flexwall's `X_BEARER_TOKEN`, `creditsPerDay: 1`. |
+| Connector | `x` | Shown as **X with your own key**: the owner's Bearer Token, no credits. |
 
 | Metric | Type | Where it comes from |
 |---|---|---|

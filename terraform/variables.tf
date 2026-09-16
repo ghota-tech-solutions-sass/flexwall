@@ -142,12 +142,6 @@ variable "credits_regular_cents" {
   default     = 1199
 }
 
-variable "credits_large_cents" {
-  description = "Price of the 1200-credit pack in US cents, taxes included."
-  type        = number
-  default     = 2999
-}
-
 variable "connector_secrets" {
   description = "Server keys and app credentials for connectors, by env name (STEAM_API_KEY, TWITCH_CLIENT_ID, …). Each non-empty value becomes a Secret Manager secret read by the service. Empty or missing names leave that connector saying the server isn't set up."
   type        = map(string)

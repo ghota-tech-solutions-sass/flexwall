@@ -7,6 +7,7 @@ import { ConnectionsManager } from "@/components/settings/ConnectionsManager";
 import { CreditsPanel } from "@/components/settings/CreditsPanel";
 import { ReferralPanel } from "@/components/settings/ReferralPanel";
 import { tilesUsing } from "@/application/editor/draft";
+import { usesCredits } from "@/application/use-cases/credits";
 import { container } from "@/composition";
 import { DomainError } from "@/domain/errors";
 import { catalog } from "@/plugins/registry";
@@ -25,6 +26,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const query = await searchParams;
   const upgraded = query[SETTINGS_PARAMS.upgraded];
   const credits = await container().getCredits.execute({ userId });
+  // Credits only concern owners of accounts Flexwall reads with its own paid key; for everyone else the section isn't there.
+  const showCredits = usesCredits(credits) || Boolean(query[SETTINGS_PARAMS.credits]);
   const program = await container().getReferralProgram.execute({ userId });
   const administrator = await container().isAdministrator.execute({ userId });
   const now = Date.now();
@@ -50,7 +53,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <h1 className="display">Settings</h1>
           <nav className="settings-nav" aria-label="Settings sections">
             <a href="#billing">Plan</a>
-            <a href={`#${CREDITS_ANCHOR}`}>Credits</a>
+            {showCredits ? <a href={`#${CREDITS_ANCHOR}`}>Credits</a> : null}
             <a href="#connections">Connections</a>
             {program ? <a href="#invite">Invite friends</a> : null}
             <a href="#account">Account</a>
@@ -65,7 +68,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           subscription={owner.user.subscription}
           hasCustomer={Boolean(owner.user.stripeCustomerId)}
         />
-        <CreditsPanel view={credits} justBought={Boolean(query[SETTINGS_PARAMS.credits])} />
+        {showCredits ? <CreditsPanel view={credits} justBought={Boolean(query[SETTINGS_PARAMS.credits])} /> : null}
         <ConnectionsManager initial={owner.connections} paid={owner.entitlements.paid} usage={usage} now={now} />
         {program ? <ReferralPanel program={program} /> : null}
         <section className="panel" aria-labelledby="account">
