@@ -359,4 +359,19 @@ describe("instagram plugin", () => {
       expect(error).toBe(limited);
     });
   });
+
+  test("given the server's Instagram app, when the back office asks what it points at, then an unset INSTAGRAM_ENV stays sandbox", () => {
+    // Given
+    const missing = fakeContext({}, { env: {} });
+    const live = fakeContext({}, { env: { ...env, INSTAGRAM_ENV: "production" } });
+    const unset = fakeContext({}, { env });
+
+    // When
+    const [a, b, c] = [missing, live, unset].map((ctx) => instagramConnector.server!(ctx));
+
+    // Then
+    expect(a.configured).toBe(false);
+    expect(b).toEqual({ configured: true, environment: "production", detail: "app id set" });
+    expect(c.environment).toBe("sandbox");
+  });
 });

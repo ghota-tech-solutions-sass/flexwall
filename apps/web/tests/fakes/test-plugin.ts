@@ -161,6 +161,24 @@ export function testCatalog(upstream = new ScriptedUpstream()) {
     sample: { followers: number(1, { unit: "count" }), posts: number(1, { unit: "count" }) },
   });
 
-  const plugin = definePlugin({ id: "test", name: "Test", description: "Test connectors", author: { name: "tests" }, connectors: [analytics, billing, brokerage, wallet, social, metered] });
+  // Reads with a key the server holds, and says so: the host keeps sandbox keys to administrators.
+  const sandboxed = defineConnector({
+    id: "sandboxed",
+    name: "Sandboxed",
+    description: "A connector whose server keys point at its provider's test environment.",
+    tier: "pro",
+    verified: true,
+    ttl: 600,
+    auth: { help: "Sign in.", fields: [field.text("account", "Account")] },
+    metrics: [{ id: "balance", name: "Balance", type: "number", unit: "currency" }],
+    server: () => ({ configured: true, environment: "sandbox", detail: "sandbox.example.test" }),
+    async connect(input) {
+      return { secret: {}, public: { account: String(input.account) }, label: `Sandbox ${String(input.account)}` };
+    },
+    fetch: async () => ({ balance: number(10, { unit: "currency", currency: "usd" }) }),
+    sample: { balance: number(1, { unit: "currency", currency: "usd" }) },
+  });
+
+  const plugin = definePlugin({ id: "test", name: "Test", description: "Test connectors", author: { name: "tests" }, connectors: [analytics, billing, brokerage, wallet, social, metered, sandboxed] });
   return { catalog: createCatalog([core, plugin], "night"), upstream };
 }

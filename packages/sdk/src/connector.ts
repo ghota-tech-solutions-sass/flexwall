@@ -140,6 +140,19 @@ export interface ConnectorContext {
   log(message: string): void;
 }
 
+/**
+ * What a connector's server-side credentials point at, for the people who run
+ * the service. Connectors that need nothing from the server don't implement it.
+ */
+export interface ServerStatus {
+  /** False when the server credentials this connector needs are missing: it can't work at all. */
+  configured: boolean;
+  /** Sandbox means test data: the host keeps such a connector to administrators. */
+  environment: "production" | "sandbox";
+  /** One short line for operators, like the host or the domain in use. Never a secret. */
+  detail?: string;
+}
+
 export interface ConnectorDef {
   /** Unique across all plugins. Lowercase, digits, dashes. */
   id: string;
@@ -154,6 +167,11 @@ export interface ConnectorDef {
   verified: boolean;
   /** Omit for public data that needs no account. */
   auth?: ConnectorAuth;
+  /**
+   * What this connector's server credentials point at. Read by the back office,
+   * never during a fetch. Omit when the connector needs nothing from the server.
+   */
+  server?(ctx: ConnectorContext): ServerStatus;
   metrics: MetricDef[];
   /** Seconds a fetched value stays fresh. */
   ttl: number;

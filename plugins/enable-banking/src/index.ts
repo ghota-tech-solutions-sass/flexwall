@@ -383,6 +383,16 @@ export function makeEnableBankingConnector(clock: { now?: () => number } = {}): 
         }
       },
     },
+
+    server(ctx) {
+      return {
+        configured: Boolean(ctx.env("ENABLE_BANKING_APP_ID")?.trim() && ctx.env("ENABLE_BANKING_PRIVATE_KEY")),
+        // One address serves both: only ENABLE_BANKING_ENV says whether the application is a sandbox one.
+        environment: ctx.env("ENABLE_BANKING_ENV")?.trim().toLowerCase() === "production" ? "production" : "sandbox",
+        detail: new URL(API).host,
+      };
+    },
+
     metrics: [
       {
         id: "balance",

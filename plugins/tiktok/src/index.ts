@@ -192,6 +192,17 @@ const tiktokConnector = defineConnector({
       throw new Error(`TikTok answered ${code.replace(/[^a-z_]/gi, "")} to the revoke.`);
     },
   },
+
+  server(ctx) {
+    const key = ctx.env("TIKTOK_CLIENT_KEY");
+    return {
+      configured: Boolean(key && ctx.env("TIKTOK_CLIENT_SECRET")),
+      // The keys are the same shape either way: TIKTOK_ENV says whether the app is still in TikTok's sandbox, before app review.
+      environment: ctx.env("TIKTOK_ENV")?.trim().toLowerCase() === "production" ? "production" : "sandbox",
+      detail: key ? "client key set" : "TIKTOK_CLIENT_KEY unset",
+    };
+  },
+
   metrics: [
     { id: "followers", name: "Followers", type: "number", unit: "count", defaults: { label: "followers" }, leaderboard: "audience" },
     { id: "likes", name: "Likes", description: "Likes across all your videos.", type: "number", unit: "count", defaults: { label: "likes" } },

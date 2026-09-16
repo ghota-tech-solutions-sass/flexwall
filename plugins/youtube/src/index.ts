@@ -74,6 +74,13 @@ const youtubeConnector = defineConnector({
   verified: false,
   // Quota is per server key and per day; these numbers move slowly and subscribers are rounded anyway.
   ttl: 6 * 3600,
+
+  // The Data API has one environment: a key reads the real YouTube.
+  server(ctx) {
+    const key = ctx.env("YOUTUBE_API_KEY");
+    return { configured: Boolean(key), environment: "production", detail: key ? "API key set" : "YOUTUBE_API_KEY unset" };
+  },
+
   metrics: [
     { id: "subscribers", name: "Subscribers", type: "number", unit: "count", params: [channel], defaults: { label: "subscribers" }, leaderboard: "audience" },
     { id: "views", name: "Total views", type: "number", unit: "count", params: [channel], defaults: { label: "views" } },

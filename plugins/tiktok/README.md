@@ -106,6 +106,11 @@ rate limits.
 3. Add the scopes `user.info.basic` and `user.info.stats`.
 4. Copy the **Client key** and **Client secret** into `TIKTOK_CLIENT_KEY` and
    `TIKTOK_CLIENT_SECRET`.
+5. `TIKTOK_ENV`: `sandbox` (the default) or `production`. Set it to
+   `production` only once App Review has approved the app; until then it is
+   still a Sandbox app that only its target users can authorize. Anything but
+   `production` counts as sandbox, and sandbox connectors stay with
+   administrators.
 
 **Before other people can connect:** a new app works in **Sandbox** only,
 where at most 10 TikTok accounts added as target users can authorize it. For

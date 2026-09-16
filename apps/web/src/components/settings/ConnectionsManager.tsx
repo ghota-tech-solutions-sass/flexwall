@@ -23,7 +23,7 @@ const formatDate = (epochMs: number) => new Date(epochMs).toLocaleDateString();
 type Adding = { step: "closed" } | { step: "choose" } | { step: "form"; connectorId: string };
 
 /** Accounts connected once and used by any tile, grouped by provider. Forms come from each connector's declared auth fields. */
-export function ConnectionsManager({ initial, paid, usage, now }: { initial: ConnectionView[]; paid: boolean; usage: Record<string, TileRef[]>; now: number }) {
+export function ConnectionsManager({ initial, paid, allowed, usage, now }: { initial: ConnectionView[]; paid: boolean; allowed: readonly string[]; usage: Record<string, TileRef[]>; now: number }) {
   const [gateway] = useState(accountsGateway);
   const [connections, setConnections] = useState(initial);
   const [adding, setAdding] = useState<Adding>({ step: "closed" });
@@ -91,7 +91,7 @@ export function ConnectionsManager({ initial, paid, usage, now }: { initial: Con
                 Cancel
               </button>
             </div>
-            <ConnectorPicker paid={paid} onPick={(connectorId) => setAdding({ step: "form", connectorId })} />
+            <ConnectorPicker paid={paid} allowed={allowed} onPick={(connectorId) => setAdding({ step: "form", connectorId })} />
           </>
         ) : (
           <>

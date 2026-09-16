@@ -1,4 +1,5 @@
 import type { ComplimentaryTerm } from "@/domain/admin";
+import type { Availability, PolicyOverride } from "@/domain/connector-policy";
 import type { Plan, PlanSource } from "@/domain/user";
 import { APP_LOCALE, DISPLAY_TIME_ZONE } from "@/domain/time";
 
@@ -12,6 +13,16 @@ export const PLAN_SOURCE_LABELS: Record<PlanSource, string> = {
 };
 
 export const PLAN_LABELS: Record<Plan, string> = { free: "Free", pro: "Pro", lifetime: "Lifetime" };
+
+/** How the back office names who may use a connector. */
+export const AVAILABILITY_LABELS: Record<Availability, string> = { everyone: "Everyone", admins: "Administrators only", off: "Nobody" };
+
+/** Why a connector isn't what an administrator asked for. */
+export function overrideLine(override: PolicyOverride): string | null {
+  if (override === "unconfigured") return "No server credentials: nobody can use it.";
+  if (override === "sandbox") return "Sandbox keys: test data stays with administrators.";
+  return null;
+}
 
 export const TERM_LABELS: Record<ComplimentaryTerm, string> = { "1m": "1 month", "3m": "3 months", "1y": "1 year", forever: "With no end" };
 

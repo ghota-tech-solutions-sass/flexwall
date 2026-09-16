@@ -139,6 +139,10 @@ day per connection. Sandbox fair usage is 30 calls a minute, 86,400 a day.
      (`flexwall-sandbox`); a full `flexwall-sandbox.biapi.pro` is accepted.
    - `POWENS_CLIENT_ID`
    - `POWENS_CLIENT_SECRET`: only ever sent in the `/auth/init` body.
+   - `POWENS_ENV`: `sandbox` (the default) or `production`. Anything but
+     `production` counts as sandbox, and sandbox connectors stay with
+     administrators. A domain containing `-sandbox` is reported as sandbox
+     whatever this says: the domain is the truth.
 
 ### Billing and clean-up
 

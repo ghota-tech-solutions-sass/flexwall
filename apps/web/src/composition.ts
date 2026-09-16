@@ -1,5 +1,6 @@
 import { RequestSignInLink, SignIn } from "@/application/use-cases/auth";
 import { ApplyBillingEvent, OpenBillingPortal, StartCheckout, StartCreditsCheckout } from "@/application/use-cases/billing";
+import { ConnectorAccess, GetConnectorControls, ListPublicConnectors, SetConnectorAvailability } from "@/application/use-cases/connector-policy";
 import { GetCredits } from "@/application/use-cases/credits";
 import { AdjustCredits, GetAccount, IsAdministrator, ListAccounts, ModerateWall, OfferPro, WithdrawPro } from "@/application/use-cases/admin";
 import { ClaimHandle } from "@/application/use-cases/claim-handle";
@@ -14,7 +15,7 @@ import { isProduction, optionalEnv } from "@/infrastructure/env";
 import { ConsoleMailer, GmailMailer } from "@/infrastructure/mail/mailers";
 import { db } from "@/infrastructure/persistence/db";
 import { parseAdministrators } from "@/domain/admin";
-import { DbConnections, DbCredits, DbEventLog, DbHandles, DbReferrals, DbSnapshots, DbUsers, DbValueCache, DbWalls } from "@/infrastructure/persistence/repositories";
+import { DbConnections, DbConnectorPolicies, DbCredits, DbEventLog, DbHandles, DbReferrals, DbSnapshots, DbUsers, DbValueCache, DbWalls } from "@/infrastructure/persistence/repositories";
 import { AesSecretBox } from "@/infrastructure/security/secret-box";
 import { HmacTokenService } from "@/infrastructure/security/tokens";
 import { GuardedRuntime, RandomIds, SystemClock } from "@/infrastructure/system";
@@ -44,9 +45,14 @@ const CONNECTOR_ENV = [
   "PLAID_CLIENT_ID",
   "PLAID_SECRET",
   "PLAID_ENV",
+  "SNAPTRADE_ENV",
+  "ENABLE_BANKING_ENV",
+  "TIKTOK_ENV",
+  "INSTAGRAM_ENV",
   "POWENS_DOMAIN",
   "POWENS_CLIENT_ID",
   "POWENS_CLIENT_SECRET",
+  "POWENS_ENV",
   "X_BEARER_TOKEN",
 ] as const;
 
@@ -75,6 +81,7 @@ function build() {
   const events = new DbEventLog(store);
   const referrals = new DbReferrals(store);
   const credits = new DbCredits(store);
+  const connectorPolicies = new DbConnectorPolicies(store);
   const tokens = new HmacTokenService(optionalEnv("FLEXWALL_SECRET") || undefined, production, clock);
   const secrets = new AesSecretBox(optionalEnv("FLEXWALL_ENCRYPTION_KEY") || undefined, production);
   const mailbox = optionalEnv("EMAIL_IMPERSONATE");
@@ -101,9 +108,11 @@ function build() {
   const runtime = new GuardedRuntime(CONNECTOR_ENV);
 
   const administrators = parseAdministrators(optionalEnv("ADMIN_EMAILS"));
+  const access = new ConnectorAccess({ catalog, policies: connectorPolicies, runtime, clock });
   const admin = { users, walls, connections, clock, administrators };
+  const connectorAdmin = { users, connections, policies: connectorPolicies, access, catalog, clock, administrators };
 
-  const resolveWall = new ResolveWall({ catalog, connections, cache, snapshots, secrets, runtime, credits, clock });
+  const resolveWall = new ResolveWall({ catalog, connections, cache, snapshots, secrets, runtime, credits, access, administrators, clock });
 
   return {
     catalog,
@@ -113,13 +122,13 @@ function build() {
     requestSignInLink: new RequestSignInLink({ tokens, mailer, links }),
     signIn: new SignIn({ tokens, users, handles, referrals, ids, clock }),
     claimHandle: new ClaimHandle({ users, handles, walls, ids, clock }),
-    getOwnerWall: new GetOwnerWall({ users, walls, connections, tokens, links, clock }),
+    getOwnerWall: new GetOwnerWall({ users, walls, connections, tokens, links, clock, access, administrators }),
     saveWall: new SaveWall({ users, walls, connections, catalog, clock }),
     rotateLockscreenLink: new RotateLockscreenLink({ walls, ids, tokens, links, clock }),
     getPublicWall: new GetPublicWall({ walls, users, clock }),
-    connectAccount: new ConnectAccount({ users, connections, catalog, runtime, secrets, ids, clock }),
-    startConnectionSignIn: new StartConnectionSignIn({ users, connections, catalog, runtime, secrets, ids, clock, links }),
-    finishConnectionSignIn: new FinishConnectionSignIn({ users, connections, catalog, runtime, secrets, ids, clock, links }),
+    connectAccount: new ConnectAccount({ users, connections, catalog, runtime, secrets, ids, clock, access, administrators }),
+    startConnectionSignIn: new StartConnectionSignIn({ users, connections, catalog, runtime, secrets, ids, clock, links, access, administrators }),
+    finishConnectionSignIn: new FinishConnectionSignIn({ users, connections, catalog, runtime, secrets, ids, clock, links, access, administrators }),
     removeConnection: new RemoveConnection({ connections, catalog, secrets, runtime, clock }),
     renameConnection: new RenameConnection({ connections }),
     resolveWall,
@@ -138,6 +147,9 @@ function build() {
     offerPro: new OfferPro(admin),
     withdrawPro: new WithdrawPro(admin),
     adjustCredits: new AdjustCredits({ ...admin, credits, ids }),
+    publicConnectors: new ListPublicConnectors({ access }),
+    getConnectorControls: new GetConnectorControls(connectorAdmin),
+    setConnectorAvailability: new SetConnectorAvailability(connectorAdmin),
     moderateWall: new ModerateWall(admin),
     payments,
     users,

@@ -389,4 +389,19 @@ describe("disconnect", () => {
     expect(errors[2]).toBeInstanceOf(HttpError);
     for (const error of errors) expect([ACCESS, REFRESH, CLIENT_SECRET].filter((s) => (error as Error).message.includes(s))).toEqual([]);
   });
+
+  test("given the server's TikTok app, when the back office asks what it points at, then an unset TIKTOK_ENV stays sandbox", () => {
+    // Given
+    const missing = fakeContext({}, { env: {} });
+    const live = fakeContext({}, { env: { ...env, TIKTOK_ENV: "production" } });
+    const unset = fakeContext({}, { env });
+
+    // When
+    const [a, b, c] = [missing, live, unset].map((ctx) => tiktokConnector.server!(ctx));
+
+    // Then
+    expect(a.configured).toBe(false);
+    expect(b).toEqual({ configured: true, environment: "production", detail: "client key set" });
+    expect(c.environment).toBe("sandbox");
+  });
 });

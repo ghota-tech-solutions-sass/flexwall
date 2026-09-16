@@ -55,6 +55,12 @@ export function groupByConnector(views: readonly ConnectionView[], connectorName
 }
 
 /** Connectors that take an account, matching what the owner typed in their name or description, by name. */
+/** Only the connectors this viewer may use: the rest are paused or kept to administrators. */
+export function visibleConnectors(connectors: readonly ConnectorDef[], allowed: readonly string[]): ConnectorDef[] {
+  const open = new Set(allowed);
+  return connectors.filter((c) => open.has(c.id));
+}
+
 export function searchConnectors(connectors: readonly ConnectorDef[], query: string): ConnectorDef[] {
   const q = query.trim().toLowerCase();
   return connectors

@@ -3,7 +3,7 @@ import { money, text } from "@flexwall/sdk";
 import { GetOwnerWall, GetPublicWall, RotateLockscreenLink, SaveWall } from "@/application/use-cases/walls";
 import { FREE_TILE_LIMIT } from "@/domain/user";
 import { aConnection, aTile, aUser, aWall } from "../builders";
-import { FakeLinks, FakeTokens, FixedClock, InMemoryConnections, InMemoryUsers, InMemoryWalls, SequentialIds } from "../fakes";
+import { FakeAvailability, FakeLinks, FakeTokens, FixedClock, InMemoryConnections, InMemoryUsers, InMemoryWalls, SequentialIds } from "../fakes";
 import { testCatalog } from "../fakes/test-plugin";
 
 async function setup(user = aUser().withId("u1").build()) {
@@ -20,7 +20,7 @@ async function setup(user = aUser().withId("u1").build()) {
     connections,
     clock,
     saveWall: new SaveWall({ users, walls, connections, catalog, clock }),
-    getOwnerWall: new GetOwnerWall({ users, walls, connections, tokens: new FakeTokens(), links: new FakeLinks(), clock }),
+    getOwnerWall: new GetOwnerWall({ users, walls, connections, tokens: new FakeTokens(), links: new FakeLinks(), clock, access: new FakeAvailability(), administrators: [] }),
     getPublicWall: new GetPublicWall({ walls, users, clock }),
   };
 }

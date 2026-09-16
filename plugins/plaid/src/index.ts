@@ -1,4 +1,4 @@
-import { ConnectorError, defineConnector, definePlugin, field, HttpError, money, type ConnectorContext, type FetchResult } from "@flexwall/sdk";
+import { ConnectorError, defineConnector, definePlugin, field, HttpError, money, type ConnectorContext, type FetchResult, type ServerStatus } from "@flexwall/sdk";
 
 /**
  * Bank, card, loan and investment balances of US and Canadian institutions,
@@ -148,14 +148,29 @@ function server(ctx: ConnectorContext): Server {
   return app;
 }
 
-/** The server's Plaid app, or null when its keys aren't set. */
-function configuredServer(ctx: ConnectorContext): Server | null {
+/** The server's Plaid keys, or null when either is missing. */
+function keys(ctx: ConnectorContext): { clientId: string; secret: string } | null {
   const clientId = ctx.env("PLAID_CLIENT_ID")?.trim();
   const secret = ctx.env("PLAID_SECRET")?.trim();
-  if (!clientId || !secret) return null;
+  return clientId && secret ? { clientId, secret } : null;
+}
+
+/**
+ * Which Plaid PLAID_ENV names. Only `production` is production: unset, and
+ * anything else, reads as sandbox, so no back office ever guesses production.
+ * `configuredServer` still refuses an unrecognised value before any request.
+ */
+function environment(ctx: ConnectorContext): ServerStatus["environment"] {
+  return ctx.env("PLAID_ENV")?.trim().toLowerCase() === "production" ? "production" : "sandbox";
+}
+
+/** The server's Plaid app, or null when its keys aren't set. */
+function configuredServer(ctx: ConnectorContext): Server | null {
+  const pair = keys(ctx);
+  if (!pair) return null;
   const env = (ctx.env("PLAID_ENV")?.trim() || "sandbox").toLowerCase();
   if (env !== "sandbox" && env !== "production") throw new ConnectorError("This Flexwall server's PLAID_ENV must be sandbox or production.");
-  return { base: HOSTS[env], headers: { "Content-Type": "application/json", "PLAID-CLIENT-ID": clientId, "PLAID-SECRET": secret } };
+  return { base: HOSTS[env], headers: { "Content-Type": "application/json", "PLAID-CLIENT-ID": pair.clientId, "PLAID-SECRET": pair.secret } };
 }
 
 function post<T>(ctx: ConnectorContext, app: Server, path: string, body: Record<string, unknown>, maxBytes?: number): Promise<T> {
@@ -284,6 +299,12 @@ export const plaidConnector = defineConnector({
       }
     },
   },
+
+  server(ctx) {
+    const env = environment(ctx);
+    return { configured: keys(ctx) !== null, environment: env, detail: HOSTS[env] };
+  },
+
   metrics: [
     {
       id: "cash",

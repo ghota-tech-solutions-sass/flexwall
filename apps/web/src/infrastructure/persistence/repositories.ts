@@ -3,6 +3,7 @@ import type { SeriesPoint } from "@flexwall/sdk";
 import type {
   CachedValues,
   ConnectionRepository,
+  ConnectorPolicies,
   CreditAccounts,
   EventLog,
   HandleRegistry,
@@ -13,6 +14,7 @@ import type {
   WallRepository,
 } from "@/application/ports";
 import type { Connection } from "@/domain/connection";
+import type { ConnectorPolicy } from "@/domain/connector-policy";
 import type { CreditEntry, SpendOutcome } from "@/domain/credits";
 import type { Handle } from "@/domain/handle";
 import type { Referral } from "@/domain/referral";
@@ -70,6 +72,7 @@ export class DbConnections implements ConnectionRepository {
   constructor(private readonly db: Db) {}
   byId = (id: string) => this.db.get<Doc>("connections", id) as Promise<Connection | null>;
   byOwner = (ownerId: string) => this.db.where("connections", [["ownerId", ownerId]]) as unknown as Promise<Connection[]>;
+  list = (limit: number) => this.db.where("connections", [], limit) as unknown as Promise<Connection[]>;
   save = (c: Connection) => this.db.set("connections", c.id, asDoc(c));
   delete = (id: string) => this.db.delete("connections", id);
 }
@@ -166,6 +169,27 @@ export class DbCredits implements CreditAccounts {
   async history(userId: string, limit: number) {
     const entries = (await this.db.where("credit_entries", [["userId", userId]], DbCredits.HISTORY_SCAN)) as unknown as CreditEntry[];
     return entries.sort((a, b) => b.at - a.at).slice(0, limit);
+  }
+}
+
+/**
+ * One document holds every connector's availability: a wall render reads it
+ * once, and the cache in front of it (composition) keeps that to one store read
+ * a minute per instance.
+ */
+export class DbConnectorPolicies implements ConnectorPolicies {
+  private static readonly DOC = "connectors";
+  constructor(private readonly db: Db) {}
+
+  async all() {
+    return ((await this.db.get<Doc>("settings", DbConnectorPolicies.DOC)) ?? {}) as Record<string, ConnectorPolicy>;
+  }
+
+  save(connectorId: string, policy: ConnectorPolicy) {
+    return this.db.transaction(async (tx) => {
+      const current = (await tx.get<Doc>("settings", DbConnectorPolicies.DOC)) ?? {};
+      tx.set("settings", DbConnectorPolicies.DOC, { ...current, [connectorId]: asDoc(policy) });
+    });
   }
 }
 

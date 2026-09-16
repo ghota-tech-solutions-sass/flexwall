@@ -10,14 +10,22 @@ import { testCatalog } from "../fakes/test-plugin";
 const { catalog } = testCatalog();
 const billingAccount: ConnectionView = { id: "c1", connector: "billing", label: "Acme", public: {}, createdAt: 0 };
 
-function anEditor(options: { wall?: ReturnType<typeof aWall>; connections?: ConnectionView[]; pro?: boolean } = {}) {
+function anEditor(options: { wall?: ReturnType<typeof aWall>; connections?: ConnectionView[]; pro?: boolean; allowedConnectors?: string[] } = {}) {
   const gateway = new FakeEditorGateway();
   const scheduler = new ManualScheduler();
   const builder = options.wall ?? aWall();
   const user = options.pro ? aUser().pro().build() : aUser().build();
   const store = createEditorStore(
     { gateway, scheduler, catalog, newTileId: sequentialIds() },
-    { handle: builder.build().handle, entitlements: entitlementsOf(user, NOW), draft: builder.draft(), connections: options.connections ?? [], lockscreenPath: "/l/wall/key", today: "2026-09-15" }
+    {
+      handle: builder.build().handle,
+      entitlements: entitlementsOf(user, NOW),
+      allowedConnectors: options.allowedConnectors ?? catalog.connectors().map((c) => c.id),
+      draft: builder.draft(),
+      connections: options.connections ?? [],
+      lockscreenPath: "/l/wall/key",
+      today: "2026-09-15",
+    }
   );
   return { store, gateway, scheduler, actions: store.getState().actions };
 }

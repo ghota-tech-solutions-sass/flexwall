@@ -5,6 +5,8 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { Footer, TopBar } from "@/components/site/Chrome";
 import { WallGrids, wallStyle } from "@/components/wall/WallView";
 import { catalog } from "@/plugins/registry";
+import { container } from "@/composition";
+import { visibleConnectors } from "@/presentation/connections";
 import { todayIn } from "@/domain/time";
 import { sessionUserId } from "@/presentation/http";
 import { ROUTES } from "@/presentation/routes";
@@ -17,6 +19,8 @@ import { connectorShowcase, sampleStates } from "@/rendering/samples";
 type Props = { params: Promise<{ id: string }> };
 
 export const dynamicParams = false;
+// Whether a connector has a public page is decided per request, from the back office, so this can't be baked at build time.
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return catalog.connectors()
@@ -38,10 +42,13 @@ export default async function IntegrationPage({ params }: Props) {
   const found = pageFor((await params).id);
   if (!found) notFound();
   const { connector, page } = found;
+  // A connector taken off, or kept to administrators, has no public page even though its path was prerendered.
+  const open = await container().publicConnectors.execute();
+  if (!open.includes(connector.id)) notFound();
   const today = todayIn("UTC", Date.now());
   const tiles = connectorShowcase(connector, catalog, today);
   const theme = catalog.defaultTheme();
-  const others = catalog.connectors().filter((x) => x.id !== connector.id);
+  const others = visibleConnectors(catalog.connectors(), open).filter((x) => x.id !== connector.id);
 
   return (
     <>

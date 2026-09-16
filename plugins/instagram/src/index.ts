@@ -194,6 +194,17 @@ const instagramConnector = defineConnector({
       },
     },
   },
+
+  server(ctx) {
+    const id = ctx.env("INSTAGRAM_APP_ID");
+    return {
+      configured: Boolean(id && ctx.env("INSTAGRAM_APP_SECRET")),
+      // Meta's app credentials don't name a mode: INSTAGRAM_ENV says whether the app is live or still in development.
+      environment: ctx.env("INSTAGRAM_ENV")?.trim().toLowerCase() === "production" ? "production" : "sandbox",
+      detail: id ? "app id set" : "INSTAGRAM_APP_ID unset",
+    };
+  },
+
   metrics: [
     { id: "followers", name: "Followers", type: "number", unit: "count", defaults: { label: "followers" }, leaderboard: "audience" },
     { id: "following", name: "Following", description: "Accounts you follow.", type: "number", unit: "count", defaults: { label: "following" } },

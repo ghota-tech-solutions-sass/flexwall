@@ -4,13 +4,13 @@ import { useId, useState } from "react";
 import { catalog } from "@/plugins/registry";
 import { BrandMark, hasMark } from "@/components/brand/Logos";
 import { KeyIcon, SearchIcon } from "@/components/editor/icons";
-import { searchConnectors } from "@/presentation/connections";
+import { searchConnectors, visibleConnectors } from "@/presentation/connections";
 
 /** Every connector that takes an account, searchable by name or what it measures. */
-export function ConnectorPicker({ paid, onPick }: { paid: boolean; onPick: (connectorId: string) => void }) {
+export function ConnectorPicker({ paid, allowed, onPick }: { paid: boolean; allowed: readonly string[]; onPick: (connectorId: string) => void }) {
   const [query, setQuery] = useState("");
   const listId = useId();
-  const shown = searchConnectors(catalog.connectors(), query);
+  const shown = searchConnectors(visibleConnectors(catalog.connectors(), allowed), query);
 
   return (
     <div className="conn-picker">

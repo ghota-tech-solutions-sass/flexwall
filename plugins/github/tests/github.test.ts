@@ -90,4 +90,17 @@ describe("github plugin", () => {
     // Then
     await expect(attempt).rejects.toBeInstanceOf(ConnectorError);
   });
+
+  test("given no GITHUB_TOKEN, when the back office asks what the server points at, then it is still configured, on production, at the lower rate limit", () => {
+    // Given
+    const none = fakeContext({}, { env: {} });
+    const token = fakeContext({}, { env: { GITHUB_TOKEN: "ghp_x" } });
+
+    // When
+    const [a, b] = [none, token].map((ctx) => githubConnector.server!(ctx));
+
+    // Then
+    expect(a).toEqual({ configured: true, environment: "production", detail: "no GITHUB_TOKEN: 60 requests an hour" });
+    expect(b).toEqual({ configured: true, environment: "production", detail: "GITHUB_TOKEN set: 5,000 requests an hour" });
+  });
 });

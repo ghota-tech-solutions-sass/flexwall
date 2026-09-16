@@ -25,6 +25,7 @@ export default async function EditPage() {
       init={{
         handle: owner.wall.handle,
         entitlements: owner.entitlements,
+        allowedConnectors: owner.allowedConnectors,
         draft: draftOf(owner.wall),
         connections: owner.connections,
         lockscreenPath: owner.lockscreenPath,

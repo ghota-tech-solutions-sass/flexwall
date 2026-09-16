@@ -522,4 +522,19 @@ describe("disconnect", () => {
     expect(errors[1]).toBeInstanceOf(HttpError);
     for (const error of errors) expect(leaks((error as Error).message)).toEqual([]);
   });
+
+  test("given the server's keys, when the back office asks what they point at, then it names the host and never guesses production", () => {
+    // Given
+    const missing = fakeContext({}, { env: {} });
+    const live = fakeContext({}, { env: { ...ENV, PLAID_ENV: "production" } });
+    const unset = fakeContext({}, { env: ENV });
+
+    // When
+    const [a, b, c] = [missing, live, unset].map((ctx) => plaidConnector.server!(ctx));
+
+    // Then
+    expect(a).toEqual({ configured: false, environment: "sandbox", detail: HOSTS.sandbox });
+    expect(b).toEqual({ configured: true, environment: "production", detail: HOSTS.production });
+    expect(c.environment).toBe("sandbox");
+  });
 });

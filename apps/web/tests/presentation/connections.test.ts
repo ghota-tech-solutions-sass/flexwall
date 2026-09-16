@@ -66,7 +66,7 @@ describe("Account lists", () => {
     const nothing = searchConnectors(connectors, "zzz");
 
     // Then
-    expect(all).toEqual(["billing", "brokerage", "metered", "social"]);
+    expect(all).toEqual(["billing", "brokerage", "metered", "sandboxed", "social"]);
     expect(found).toEqual(["social"]);
     expect(byDescription).toEqual(["brokerage"]);
     expect(nothing).toEqual([]);

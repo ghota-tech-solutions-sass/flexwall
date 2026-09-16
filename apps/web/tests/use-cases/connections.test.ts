@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { ConnectAccount, FinishConnectionSignIn, RemoveConnection, RenameConnection, StartConnectionSignIn } from "@/application/use-cases/connections";
 import { OAUTH_PENDING_TTL_MS } from "@/domain/connection";
 import { aConnection, aUser } from "../builders";
-import { FakeLinks, FakeRuntime, FixedClock, InMemoryConnections, InMemoryUsers, SequentialIds, TransparentSecretBox } from "../fakes";
+import { FakeAvailability, FakeLinks, FakeRuntime, FixedClock, InMemoryConnections, InMemoryUsers, SequentialIds, TransparentSecretBox } from "../fakes";
 import { SOCIAL_TOKEN_EXPIRY, testCatalog } from "../fakes/test-plugin";
 
 async function setup() {
@@ -11,7 +11,7 @@ async function setup() {
   const secrets = new TransparentSecretBox();
   const { catalog } = testCatalog();
   await users.save(aUser().withId("u1").build());
-  const connect = new ConnectAccount({ users, connections, catalog, runtime: new FakeRuntime(), secrets, ids: new SequentialIds(), clock: new FixedClock() });
+  const connect = new ConnectAccount({ users, connections, catalog, runtime: new FakeRuntime(), secrets, ids: new SequentialIds(), access: new FakeAvailability(), administrators: [], clock: new FixedClock() });
   return { users, connections, secrets, connect };
 }
 
@@ -239,7 +239,7 @@ describe("Connecting by signing in at a provider", () => {
     const clock = new FixedClock();
     const { catalog } = testCatalog();
     await users.save(aUser().withId("u1").build());
-    const deps = { users, connections, catalog, runtime: new FakeRuntime(), secrets, ids: new SequentialIds(), clock, links: new FakeLinks() };
+    const deps = { users, connections, catalog, runtime: new FakeRuntime(), secrets, ids: new SequentialIds(), clock, links: new FakeLinks(), access: new FakeAvailability(), administrators: [] };
     return { connections, clock, start: new StartConnectionSignIn(deps), finish: new FinishConnectionSignIn(deps) };
   }
 
@@ -356,5 +356,67 @@ describe("Connecting by signing in at a provider", () => {
 
     // Then
     await expect(attempt).rejects.toMatchObject({ code: "invalid_input" });
+  });
+});
+
+describe("Connectors an owner may not use", () => {
+  async function gatedSetup(availability: Record<string, "everyone" | "admins" | "off">, administrators: string[] = ["boss@flexwall.lol"]) {
+    const users = new InMemoryUsers();
+    const connections = new InMemoryConnections();
+    const { catalog } = testCatalog();
+    const clock = new FixedClock();
+    await users.save(aUser().withId("u1").withEmail("ada@example.com").build());
+    await users.save(aUser().withId("boss").withEmail("boss@flexwall.lol").build());
+    const deps = {
+      users,
+      connections,
+      catalog,
+      runtime: new FakeRuntime(),
+      secrets: new TransparentSecretBox(),
+      ids: new SequentialIds(),
+      clock,
+      links: new FakeLinks(),
+      access: new FakeAvailability(availability, catalog),
+      administrators,
+    };
+    return { connect: new ConnectAccount(deps), start: new StartConnectionSignIn(deps), finish: new FinishConnectionSignIn(deps), secrets: deps.secrets };
+  }
+
+  test("given a connector taken off, when an owner pastes a key for it, then it's refused", async () => {
+    // Given
+    const { connect } = await gatedSetup({ billing: "off" });
+
+    // When
+    const attempt = connect.execute({ userId: "u1", connector: "billing", values: { key: "key_live_1" } });
+
+    // Then
+    await expect(attempt).rejects.toMatchObject({ code: "forbidden" });
+  });
+
+  test("given a connector kept to administrators, when an owner starts a sign-in and an administrator does, then only the administrator leaves", async () => {
+    // Given
+    const { start } = await gatedSetup({ social: "admins" });
+
+    // When
+    const owner = start.execute({ userId: "u1", connector: "social", values: {}, returnTo: "/edit", fallbackReturn: "/settings" });
+    const admin = await start.execute({ userId: "boss", connector: "social", values: {}, returnTo: "/edit", fallbackReturn: "/settings" });
+
+    // Then
+    await expect(owner).rejects.toMatchObject({ code: "forbidden" });
+    expect(admin.url).toContain("https://social.test/authorize");
+  });
+
+  test("given a connector taken off while the owner was at the provider, when they come back, then the connection isn't stored", async () => {
+    // Given
+    const open = await gatedSetup({ social: "everyone" });
+    const started = await open.start.execute({ userId: "u1", connector: "social", values: {}, returnTo: "/edit", fallbackReturn: "/settings" });
+    const state = new URL(started.url).searchParams.get("state")!;
+    const closed = await gatedSetup({ social: "off" });
+
+    // When
+    const attempt = closed.finish.execute({ userId: "u1", query: { state, code: "good" }, pending: started.pending });
+
+    // Then
+    await expect(attempt).rejects.toMatchObject({ code: "forbidden" });
   });
 });

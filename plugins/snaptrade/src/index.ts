@@ -348,6 +348,17 @@ export function makeSnaptradeConnector(deps: { now?: () => number; newUserId?: (
         await deleteUser(ctx, app, secret.userId);
       },
     },
+
+    server(ctx) {
+      const app = configuredApp(ctx);
+      return {
+        configured: app !== null,
+        // SnapTrade's keys don't name their environment: only SNAPTRADE_ENV does.
+        environment: ctx.env("SNAPTRADE_ENV")?.trim().toLowerCase() === "production" ? "production" : "sandbox",
+        detail: app ? `client ${app.clientId.slice(0, 6)}…` : "SNAPTRADE_CLIENT_ID or SNAPTRADE_CONSUMER_KEY unset",
+      };
+    },
+
     metrics: [
       {
         id: "portfolio-value",

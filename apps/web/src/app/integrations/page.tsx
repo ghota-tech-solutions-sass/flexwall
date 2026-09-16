@@ -3,6 +3,8 @@ import Link from "next/link";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Footer, TopBar } from "@/components/site/Chrome";
 import { catalog } from "@/plugins/registry";
+import { container } from "@/composition";
+import { visibleConnectors } from "@/presentation/connections";
 import { sessionUserId } from "@/presentation/http";
 import { ROUTES } from "@/presentation/routes";
 import { integrationPage } from "@/presentation/seo/integrations";
@@ -16,8 +18,11 @@ export const metadata: Metadata = pageMetadata({
   path: ROUTES.integrations,
 });
 
+// Which connectors are public is decided per request, from the back office.
+export const dynamic = "force-dynamic";
+
 export default async function IntegrationsPage() {
-  const pages = catalog.connectors().map((connector) => integrationPage(connector, catalog.widgets()));
+  const pages = visibleConnectors(catalog.connectors(), await container().publicConnectors.execute()).map((connector) => integrationPage(connector, catalog.widgets()));
   const verified = pages.filter((p) => p.verified);
   const open = pages.filter((p) => !p.verified);
 

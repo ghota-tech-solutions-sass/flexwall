@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { money, number } from "@flexwall/sdk";
 import { freshnessSeconds, outOfCreditsMessage, RENDER_DEADLINE_MS, ResolveWall, seriesKey } from "@/application/use-cases/resolve-wall";
 import { aConnection, aTile, aUser } from "../builders";
-import { FakeRuntime, FixedClock, InMemoryConnections, InMemoryCredits, InMemorySnapshots, InMemoryValueCache, TransparentSecretBox } from "../fakes";
+import { FakeAvailability, FakeRuntime, FixedClock, InMemoryConnections, InMemoryCredits, InMemorySnapshots, InMemoryValueCache, TransparentSecretBox } from "../fakes";
 import { SOCIAL_TOKEN_EXPIRY, testCatalog } from "../fakes/test-plugin";
 
 function setup() {
@@ -12,8 +12,9 @@ function setup() {
   const snapshots = new InMemorySnapshots();
   const clock = new FixedClock();
   const credits = new InMemoryCredits(clock);
-  const resolve = new ResolveWall({ catalog, connections, cache, snapshots, secrets: new TransparentSecretBox(), runtime: new FakeRuntime(), credits, clock });
-  return { upstream, connections, cache, snapshots, clock, resolve, catalog, credits };
+  const access = new FakeAvailability({}, catalog);
+  const resolve = new ResolveWall({ catalog, connections, cache, snapshots, secrets: new TransparentSecretBox(), runtime: new FakeRuntime(), credits, access, administrators: [], clock });
+  return { upstream, connections, cache, snapshots, clock, resolve, catalog, credits, access };
 }
 
 const followers = () => aTile().withId("f").stat({ label: "Followers" }).metric("social", "followers", { connection: "soc-1" });
@@ -339,5 +340,48 @@ describe("ResolveWall with credits", () => {
     // Then
     expect(states.v).toMatchObject({ status: "ready" });
     expect(credits.entries.size).toBe(0);
+  });
+});
+
+describe("ResolveWall and paused connectors", () => {
+  test("given a connector taken off, when a wall renders, then its tiles say so and the upstream is left alone", async () => {
+    // Given
+    const { resolve, upstream, access } = setup();
+    access.set("analytics", "off");
+
+    // When
+    const { states } = await resolve.execute({ tiles: [visitors().build()], owner: aUser().build(), surface: "page" });
+
+    // Then
+    expect(upstream.calls).toBe(0);
+    expect(states.v).toEqual({ status: "placeholder", reason: "unavailable", message: "Analytics is paused on Flexwall." });
+  });
+
+  test("given a connector kept to administrators, when their wall and someone else's render, then only the administrator's tiles draw", async () => {
+    // Given
+    const { catalog, upstream } = testCatalog();
+    const clock = new FixedClock();
+    const shared = {
+      catalog,
+      connections: new InMemoryConnections(),
+      cache: new InMemoryValueCache(),
+      snapshots: new InMemorySnapshots(),
+      secrets: new TransparentSecretBox(),
+      runtime: new FakeRuntime(),
+      credits: new InMemoryCredits(clock),
+      access: new FakeAvailability({ analytics: "admins" }, catalog),
+      administrators: ["boss@flexwall.lol"],
+      clock,
+    };
+    const resolve = new ResolveWall(shared);
+
+    // When
+    const boss = await resolve.execute({ tiles: [visitors().build()], owner: aUser().withId("boss").withEmail("boss@flexwall.lol").build(), surface: "page" });
+    const ada = await resolve.execute({ tiles: [visitors().build()], owner: aUser().withId("ada").withEmail("ada@example.com").build(), surface: "page" });
+
+    // Then
+    expect(boss.states.v).toMatchObject({ status: "ready" });
+    expect(ada.states.v).toMatchObject({ status: "placeholder", reason: "unavailable" });
+    expect(upstream.calls).toBe(1);
   });
 });

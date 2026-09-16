@@ -1,11 +1,13 @@
 import { ConnectorError, defaultCacheKey, ExpiredCredentialsError, isValue, series, type ConnectorDef, type FieldValues, type InputValue, type Surface, type Value } from "@flexwall/sdk";
 import type { Catalog } from "@/domain/catalog";
 import { needsRenewal, type Connection } from "@/domain/connection";
+import { DEFAULT_AVAILABILITY, visibleTo, type Availability } from "@/domain/connector-policy";
 import { creditDay } from "@/domain/credits";
 import { entitlementsOf, type Entitlements, type User } from "@/domain/user";
 import { shiftDay, todayIn } from "@/domain/time";
 import { HISTORY_DAYS, type Binding, type Tile } from "@/domain/wall";
-import type { CachedValues, Clock, ConnectionRepository, ConnectorRuntime, CreditAccounts, SecretBox, SnapshotStore, ValueCache } from "../ports";
+import type { CachedValues, Clock, ConnectionRepository, ConnectorAvailability, ConnectorRuntime, CreditAccounts, SecretBox, SnapshotStore, ValueCache } from "../ports";
+import { administrates } from "./connector-policy";
 
 /** What a tile can draw: its inputs, or the reason it can't yet. */
 export type TileState =
@@ -107,6 +109,8 @@ export class ResolveWall {
       secrets: SecretBox;
       runtime: ConnectorRuntime;
       credits: CreditAccounts;
+      access: ConnectorAvailability;
+      administrators: readonly string[];
       clock: Clock;
     }
   ) {}
@@ -117,6 +121,9 @@ export class ResolveWall {
     const entitlements = entitlementsOf(req.owner, now);
     const editor = req.surface === "editor";
     const connections = new Map((await this.deps.connections.byOwner(req.owner.id)).map((c) => [c.id, c]));
+    // Read once per render, not once per tile: connectors paused or kept to administrators stop rendering for everyone else.
+    const availability = await this.deps.access.all();
+    const owner = { administrator: administrates(req.owner, this.deps.administrators) };
 
     const blocked = new Map<string, Placeholder>();
     const groups = new Map<string, Group>();
@@ -126,7 +133,7 @@ export class ResolveWall {
       for (const binding of Object.values(tile.inputs)) {
         if (binding.kind !== "metric") continue;
         const connector = this.deps.catalog.connector(binding.connector);
-        const problem = this.gate(binding, connector, entitlements, editor, connections);
+        const problem = this.gate(binding, connector, entitlements, editor, connections, { availability, owner });
         if (problem) {
           if (!blocked.has(tile.id)) blocked.set(tile.id, problem);
           continue;
@@ -164,10 +171,14 @@ export class ResolveWall {
     connector: ConnectorDef | null,
     entitlements: Entitlements,
     editor: boolean,
-    connections: Map<string, Connection>
+    connections: Map<string, Connection>,
+    policy: { availability: Record<string, Availability>; owner: { administrator: boolean } }
   ): Placeholder | null {
     if (!connector || !this.deps.catalog.metric(binding.connector, binding.metric)) {
       return { status: "placeholder", reason: "unavailable", message: "This data source was removed." };
+    }
+    if (!visibleTo(policy.availability[connector.id] ?? DEFAULT_AVAILABILITY, policy.owner)) {
+      return { status: "placeholder", reason: "unavailable", message: `${connector.name} is paused on Flexwall.` };
     }
     if (!editor && connector.tier === "pro" && !entitlements.proConnectors) {
       return { status: "placeholder", reason: "pro", message: `${connector.name} tiles show with Pro.` };
