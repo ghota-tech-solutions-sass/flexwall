@@ -86,12 +86,6 @@ export function Footer() {
         <Link href={LEGAL_PATHS.terms.en}>Terms</Link>
         <Link href={LEGAL_PATHS.privacy.en}>Privacy</Link>
         <Link href={LEGAL_PATHS.notice.en}>Legal notice</Link>
-        <Link href={LEGAL_PATHS.terms.fr}>CGV (français)</Link>
-      </nav>
-      <nav aria-label="Contact">
-        <h2>Contact</h2>
-        {PUBLISHER.contactEmail ? <a href={`mailto:${PUBLISHER.contactEmail}`}>{PUBLISHER.contactEmail}</a> : null}
-        {PUBLISHER.registeredAddress ? <span>{PUBLISHER.registeredAddress.split(",").slice(-2).join(",").trim()}</span> : null}
       </nav>
       <p className="footer-legal">
         © {new Date().getFullYear()} {PUBLISHER.companyName}. {SOURCE_URL ? "Flexwall is open source (AGPL-3.0). Plugins and SDK are MIT." : "Prices in US dollars, taxes included."}

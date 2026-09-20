@@ -209,7 +209,7 @@ input[type="checkbox"] { width: 20px; min-height: 20px; accent-color: var(--acce
 @media (max-width: 760px) { .nav .hide-sm, .nav-link { display: none; } .topbar-inner { grid-template-columns: 1fr auto; } .nav { display: none; } }
 
 /* ── Footer: columns, then the legal line ─────── */
-.footer { display: grid; grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr)); gap: 32px; padding-block: 56px 40px; border-top: 1px solid var(--hairline); color: var(--muted); font-size: 14px; }
+.footer { display: grid; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)); gap: 32px; padding-block: 56px 40px; border-top: 1px solid var(--hairline); color: var(--muted); font-size: 14px; }
 main ~ .footer { margin-top: 120px; }
 .footer-brand p { margin: 12px 0 0; max-width: 30ch; }
 .footer nav { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
