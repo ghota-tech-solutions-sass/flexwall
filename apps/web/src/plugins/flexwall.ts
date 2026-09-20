@@ -1,6 +1,8 @@
 import { ConnectorError, defineConnector, definePlugin, number } from "@flexwall/sdk";
 
 const metrics = [
+  { id: "siteViews", name: "Site page views · since tracking began", label: "Site page views" },
+  { id: "officialWallViews", name: "Official wall page views · since tracking began", label: "Official wall views" },
   { id: "accounts", name: "Registered accounts", label: "Registered accounts" },
   { id: "walls", name: "Walls created, including drafts", label: "Walls created" },
   { id: "published", name: "Published walls", label: "Published walls" },

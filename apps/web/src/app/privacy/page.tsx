@@ -43,6 +43,8 @@ export default function PrivacyPage() {
         remember a handle typed before signing in. No analytics, advertising or third-party cookies, so no consent is asked.
       </p>
 
+      <p>Anonymous page-view counters measure visits to public pages and the official wall. Totals are public. The counter stores no IP address, cookies or persistent visitor identifier. A bounded set of random event receipts prevent duplicate requests; these do not identify a visitor. Do Not Track and Global Privacy Control are respected.</p>
+
       <h2>Security</h2>
       <p>
         Encrypted connections (HTTPS), connection credentials encrypted at rest with AES-256-GCM, passwordless sign-in through short-lived links, restricted

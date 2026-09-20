@@ -74,12 +74,32 @@ beforeAll(async () => {
 afterAll(() => server?.kill());
 
 describe("Public pages", () => {
+  test("page views count once and reject private pages, bots, opt-outs and foreign origins", async () => {
+    const id = crypto.randomUUID();
+    const post = (path: string, headers = {}, event = id) => http("/api/visits", { method: "POST", json: { path, id: event }, headers });
+    expect(await (await post("/")).json()).toEqual({ counted: true });
+    expect(await (await post("/")).json()).toEqual({ counted: false });
+    for (const path of ["/edit", "/settings", "/@does-not-exist", "/integrations/does-not-exist", "/api/wall", "/missing"]) {
+      expect(await (await post(path, {}, crypto.randomUUID())).json()).toEqual({ counted: false });
+    }
+    for (const headers of [{ dnt: "1" }, { "sec-gpc": "1" }, { "user-agent": "Googlebot" }]) {
+      expect(await (await post("/", headers, crypto.randomUUID())).json()).toEqual({ counted: false });
+    }
+    expect((await post("/", { origin: "https://evil.example" })).status).toBe(403);
+    expect((await post("/", { origin: "" })).status).toBe(403);
+    expect((await post("/", {}, "invalid")).status).toBe(422);
+    const stats = await (await http("/api/public-stats")).json();
+    expect(stats.siteViews).toBe(1);
+    expect(stats.officialWallViews).toBe(0);
+    expect(Date.parse(stats.trafficStartedAt)).toBeGreaterThan(0);
+  });
+
   test("public product statistics disclose aggregate counts only", async () => {
     const res = await http("/api/public-stats");
     expect(res.status).toBe(200);
     const stats = await res.json();
-    expect(Object.keys(stats).sort()).toEqual(["accounts", "connectors", "published", "updatedAt", "walls", "widgets"]);
-    for (const key of ["accounts", "connectors", "published", "walls", "widgets"]) {
+    expect(Object.keys(stats).sort()).toEqual(["accounts", "connectors", "officialWallViews", "published", "siteViews", "trafficStartedAt", "updatedAt", "walls", "widgets"]);
+    for (const key of ["accounts", "connectors", "officialWallViews", "published", "siteViews", "walls", "widgets"]) {
       expect(Number.isSafeInteger(stats[key])).toBe(true);
       expect(stats[key]).toBeGreaterThanOrEqual(0);
     }

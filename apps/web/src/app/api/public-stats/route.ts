@@ -1,3 +1,4 @@
+import { visitTotals } from "@/infrastructure/analytics/visits";
 import { NextResponse } from "next/server";
 import { db } from "@/infrastructure/persistence/db";
 import { container } from "@/composition";
@@ -8,10 +9,10 @@ let pending: Promise<Record<string, number | string>> | undefined;
 async function read() {
   const store = db();
   const c = container();
-  const [accounts, walls, published, connectors] = await Promise.all([
-    store.count("users"), store.count("walls"), store.count("walls", [["published", true]]), c.publicConnectors.execute(),
+  const [accounts, walls, published, connectors, traffic] = await Promise.all([
+    store.count("users"), store.count("walls"), store.count("walls", [["published", true]]), c.publicConnectors.execute(), visitTotals(store),
   ]);
-  return { accounts, walls, published, connectors: connectors.length, widgets: c.catalog.widgets().length, updatedAt: new Date().toISOString() };
+  return { ...traffic, accounts, walls, published, connectors: connectors.length, widgets: c.catalog.widgets().length, updatedAt: new Date().toISOString() };
 }
 /** Only aggregate totals. No identities, wall contents, credentials or revenue. */
 export const GET = () => handle(async () => {

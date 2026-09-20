@@ -82,3 +82,9 @@ The app (`apps/web`) is licensed under the [GNU AGPL-3.0](LICENSE): you can run,
 modify and host it; if you offer a modified version as a service, you share your
 changes. The SDK, the plugins and the plugin template are [MIT](packages/sdk/LICENSE),
 so anyone can build on them freely.
+
+### Public page-view counters
+
+`POST /api/visits` counts visible public-page navigations after 600 ms. Reloads count again; these are **page views, not unique visitors**. Private screens, nonexistent walls, known bot user agents, DNT/GPC opt-outs and cross-origin requests are excluded. The official wall is a subset of site traffic. No historical traffic is backfilled: `trafficStartedAt` in `/api/public-stats` records the first counted view. Public totals and connector values may lag by several minutes due to caching.
+
+The counter stores aggregate Firestore shards and bounded hashed random event receipts for retry deduplication (pruned on subsequent writes, max 512 per shard). It stores no IP, referrer, cookie or persistent visitor identifier. Hosting infrastructure logging is separate. Browser events can still be blocked or fabricated: the API provenance badge does not certify unique people or an audited audience. `Connect official visits` appends the two counters to the existing official wall, idempotently, without resetting totals or changing existing tiles.

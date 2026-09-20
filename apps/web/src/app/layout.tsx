@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { VisitTracker } from "@/components/site/VisitTracker";
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/presentation/seo/structured-data";
@@ -36,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         {children}
+        <Suspense fallback={null}><VisitTracker /></Suspense>
       </body>
     </html>
   );

@@ -93,6 +93,7 @@ export const ROUTES = {
 } as const;
 
 export const API = {
+  visits: "/api/visits",
   wall: "/api/wall",
   wallResolve: "/api/wall/resolve",
   lockscreenLink: "/api/wall/lockscreen-link",

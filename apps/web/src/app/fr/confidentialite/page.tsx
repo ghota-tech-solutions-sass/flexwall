@@ -46,6 +46,8 @@ export default function ConfidentialitePage() {
         n&apos;est donc demandé.
       </p>
 
+      <p>Des compteurs anonymes mesurent les pages vues sur les pages publiques et le mur officiel. Les totaux sont publics. Le compteur ne conserve ni adresse IP, ni cookie, ni identifiant persistant de visiteur. Un nombre limité d’identifiants aléatoires de requête limitent les doublons sans identifier les visiteurs. Les signaux Do Not Track et Global Privacy Control sont respectés.</p>
+
       <h2>Sécurité</h2>
       <p>
         Connexions chiffrées (HTTPS), accès des connexions chiffrés au repos en AES-256-GCM, connexion sans mot de passe par lien à usage limité, accès aux
