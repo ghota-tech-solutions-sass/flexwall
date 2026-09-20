@@ -1,0 +1,25 @@
+name: Inspect production Stripe
+on:
+  workflow_dispatch:
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_TERRAFORM_SERVICE_ACCOUNT }}
+          project_id: ghota-outflex-prod
+      - uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ghota-outflex-prod
+      - name: Inspect account identity and Flexwall products (read only)
+        run: bun scripts/inspect-production-stripe.ts
