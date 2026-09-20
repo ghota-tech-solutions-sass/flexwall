@@ -246,13 +246,8 @@ export default async function Home() {
               <span className="n">Step 1</span>
               <h3>Claim your handle</h3>
               <p>Pick the address people will remember.</p>
-              <div className="step-ui" aria-hidden="true">
-                <span className="fake-input">
-                  <span>
-                    flexwall.lol/@<b>{wall.handle}</b>
-                  </span>
-                  <i>Available</i>
-                </span>
+              <div className="step-ui">
+                <ClaimForm compact initialHandle={wall.handle} />
               </div>
             </li>
             <li>

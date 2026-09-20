@@ -3,7 +3,7 @@ import { ApplyBillingEvent, OpenBillingPortal, StartCheckout } from "@/applicati
 import { ConnectorAccess, GetConnectorControls, ListPublicConnectors, SetConnectorAvailability } from "@/application/use-cases/connector-policy";
 import { AddPaidAccount, GetPaidAccounts, ReconcilePaidAccounts } from "@/application/use-cases/paid-accounts";
 import { GetAccount, GrantPaidAccounts, IsAdministrator, ListAccounts, ModerateWall, OfferPro, WithdrawPro } from "@/application/use-cases/admin";
-import { ClaimHandle } from "@/application/use-cases/claim-handle";
+import { CheckHandle, ClaimHandle } from "@/application/use-cases/claim-handle";
 import { ConnectAccount, FinishConnectionSignIn, RemoveConnection, RenameConnection, StartConnectionSignIn } from "@/application/use-cases/connections";
 import { ListExplore, ReportWall } from "@/application/use-cases/explore";
 import { GetLockscreen } from "@/application/use-cases/lockscreen";
@@ -119,6 +119,7 @@ function build() {
     mailerIsConsole: !mailbox,
     requestSignInLink: new RequestSignInLink({ tokens, mailer, links }),
     signIn: new SignIn({ tokens, users, handles, referrals, ids, clock }),
+    checkHandle: new CheckHandle(handles),
     claimHandle: new ClaimHandle({ users, handles, walls, ids, clock }),
     getOwnerWall: new GetOwnerWall({ users, walls, connections, tokens, links, clock, access, administrators }),
     saveWall: new SaveWall({ users, walls, connections, catalog, clock }),

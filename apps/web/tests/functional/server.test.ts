@@ -81,6 +81,12 @@ describe("Public pages", () => {
     const session = verified.headers.get("set-cookie")!.split(";")[0]!;
     const claimed = await fetch(`${BASE}/api/me/handle`, { method: "POST", headers: { cookie: session, origin: BASE, "content-type": "application/json" }, body: JSON.stringify({ handle: "conversion" }) });
     expect(claimed.status).toBe(200);
+    const taken = await fetch(`${BASE}/api/me/handle?handle=conversion`);
+    expect(taken.headers.get("cache-control")).toBe("no-store");
+    expect(await taken.json()).toEqual({ handle: "conversion", available: false });
+    const available = await fetch(`${BASE}/api/me/handle?handle=available-name`);
+    expect(await available.json()).toEqual({ handle: "available-name", available: true });
+    expect((await fetch(`${BASE}/api/me/handle?handle=admin`)).status).toBe(409);
     const returning = await fetch(`${BASE}/login?plan=yearly`, { headers: { cookie: session }, redirect: "manual" });
     expect(returning.headers.get("location")).toBe("/pricing?plan=yearly");
     const invalid = await fetch(`${BASE}/login?plan=lifetime`, { headers: { cookie: session }, redirect: "manual" });

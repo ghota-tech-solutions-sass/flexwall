@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { ClaimHandle } from "@/application/use-cases/claim-handle";
+import { CheckHandle, ClaimHandle } from "@/application/use-cases/claim-handle";
+import { Handle } from "@/domain/handle";
 import { DomainError } from "@/domain/errors";
 import { aUser } from "../builders";
 import { FixedClock, InMemoryHandles, InMemoryUsers, InMemoryWalls, SequentialIds } from "../fakes";
@@ -76,5 +77,24 @@ describe("ClaimHandle", () => {
 
     // Then
     await expect(attempt).rejects.toMatchObject({ code: "handle_already_set" });
+  });
+});
+
+
+describe("CheckHandle", () => {
+  test("checking availability doesn't reserve a name and includes unpublished owners", async () => {
+    const { users, handles, claimHandle } = setup();
+    const check = new CheckHandle(handles);
+    expect(await check.execute("Ada")).toEqual({ handle: Handle.parse("ada"), available: true });
+    expect(handles.items.size).toBe(0);
+    await users.save(aUser().withId("u1").withHandle(null).build());
+    const wall = await claimHandle.execute({ userId: "u1", handle: "ada" });
+    expect(wall.published).toBe(false);
+    expect(await check.execute("ada")).toEqual({ handle: Handle.parse("ada"), available: false });
+  });
+  test("reserved and invalid handles are never available", async () => {
+    const check = new CheckHandle(new InMemoryHandles());
+    await expect(check.execute("admin")).rejects.toMatchObject({ code: "handle_reserved" });
+    await expect(check.execute("a")).rejects.toMatchObject({ code: "invalid_handle" });
   });
 });

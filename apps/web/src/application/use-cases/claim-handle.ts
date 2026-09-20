@@ -32,3 +32,12 @@ export class ClaimHandle {
     return wall;
   }
 }
+
+/** Checks the registry, including unpublished walls; never reserves a handle. */
+export class CheckHandle {
+  constructor(private readonly handles: HandleRegistry) {}
+  async execute(raw: string) {
+    const handle = Handle.parse(raw);
+    return { handle, available: (await this.handles.ownerOf(handle)) === null };
+  }
+}

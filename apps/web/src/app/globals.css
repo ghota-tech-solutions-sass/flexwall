@@ -793,3 +793,11 @@ rect[data-chart-active], rect[data-chart-point]:focus-visible { fill: rgba(127,1
   .hero-preview .wall-grid.desktop { display: none; }
   .hero-preview .wall-grid.mobile { display: grid; }
 }
+
+.claim-wrap { width: min(480px, 100%); }
+.claim-status { min-height: 1.4em; margin: 8px 12px 0; font-size: 12px; color: var(--muted); line-height: 1.4; }
+.claim-status[data-status="taken"], .claim-status[data-status="invalid"], .claim-status[data-status="error"] { color: var(--ink); }
+.claim-compact { width: 100%; padding-left: 14px; gap: 0; flex-wrap: nowrap; font-size: 14px; }
+.claim-compact input { width: 65px; min-width: 24px; flex: 1; font-weight: 500; }
+.claim-compact .btn { flex-basis: auto; width: auto; padding-inline: 12px; font-size: 12px; }
+.claim-wrap-compact .claim-status { margin-left: 0; }
