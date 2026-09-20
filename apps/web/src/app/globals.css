@@ -489,6 +489,8 @@ main ~ .footer { margin-top: 120px; }
 .wall-card-tile { container-type: inline-size; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; min-width: 0; min-height: 84px; padding: 12px; border-radius: 14px; background: var(--card-tile); box-shadow: 0 0 0 1px var(--card-tile-border); }
 .wall-card-tile span { color: var(--card-muted); font-size: 12px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wall-card-tile b { font-size: clamp(15px, 21cqw, 26px); font-weight: 700; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wall-card-tile .wall-card-source { display: flex; align-items: center; gap: 4px; font-size: 10px; }
+.wall-card-source svg { flex-shrink: 0; }
 .wall-card-tile.quiet { justify-content: center; align-items: center; }
 .wall-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-top: 1px solid var(--hairline); color: var(--muted); font-size: 13px; }
 .wall-card-foot p { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -49,11 +49,15 @@ export function WallCard({ entry, theme, now, rank, board }: { entry: ExploreEnt
               <span key={h.label + h.value} className="wall-card-tile">
                 <span>{h.label}</span>
                 <b style={{ fontFamily: theme.display.family }}>{h.value}</b>
+                <span className="wall-card-source" title={h.verified ? `Retrieved directly from ${h.connector} through a connected account.` : `API response verified from ${h.connector}. Confirms the data received, not account ownership or independent accuracy.`}>
+                  <SealCheckIcon size={12} weight="fill" aria-hidden="true" />
+                  {h.verified ? "Verified" : "API verified"} · {h.connector}
+                </span>
               </span>
             ))
           ) : (
             <span className="wall-card-tile quiet">
-              <span>No verified numbers yet</span>
+              <span>No synced numbers available yet</span>
             </span>
           )}
         </div>

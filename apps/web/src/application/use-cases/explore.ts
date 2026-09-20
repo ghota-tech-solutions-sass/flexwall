@@ -17,8 +17,8 @@ export interface ExploreEntry {
   bio: string;
   /** The theme the wall is drawn with, as on its page. */
   theme: string;
-  /** Up to three verified numbers, formatted, from cached values only. */
-  highlights: { label: string; value: string; connector: string }[];
+  /** Up to three connector-sourced numbers, formatted, from cached values only. */
+  highlights: { label: string; value: string; connector: string; verified: boolean }[];
   /** Best value per leaderboard this wall competes on. */
   ranks: Partial<Record<Leaderboard, number>>;
   updatedAt: number;
@@ -66,12 +66,12 @@ export class ListExplore {
       title: wall.title,
       bio: wall.bio,
       theme: effectiveTheme(wall, this.deps.catalog, entitlementsOf(owner, this.deps.clock.now())).id,
-      // Only numbers read from the owner's own accounts earn a spot here.
+      // Public API metrics also belong in previews; account verification still gates financial rankings.
       highlights: numbers
-        .filter((n) => n.verified)
         .slice(0, 3)
         .map((n) => ({
           label: n.label,
+          verified: n.verified,
           value: n.range ? formatBand(n.value) : formatValue(n.value),
           connector: this.deps.catalog.connector(n.binding.connector)?.name ?? n.binding.connector,
         })),

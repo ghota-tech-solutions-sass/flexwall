@@ -82,7 +82,23 @@ describe("ListExplore", () => {
 
     // Then
     expect(entries.map((e) => e.handle)).toEqual(["rich", "modest"]);
-    expect(entries[0].highlights).toEqual([{ label: "Portfolio", value: "$1M+", connector: "Brokerage" }]);
+    expect(entries[0].highlights).toEqual([{ label: "Portfolio", value: "$1M+", connector: "Brokerage", verified: true }]);
+  });
+
+  test("public API numbers, including zero, appear in previews without earning account-verified financial ranks", async () => {
+    const { walls, users, cache, listExplore, upstream } = await setup();
+    const owner = aUser().withId("api-wall").withHandle("api-wall").build();
+    await users.save(owner);
+    await walls.save(aWall().withId("api-wall").ownedBy(owner).listed()
+      .with(aTile().withId("public").stat({ label: "Balance" }).metric("wallet", "balance", { params: { address: "0xpublic" } }))
+      .with(aTile().withId("private").stat({ label: "Private balance" }).metric("wallet", "balance", { params: { address: "0xprivate" } }).private()).build());
+    await cache.set("wallet|-|balance?address=0xpublic", { at: NOW, values: { balance: money(0, "usd") } });
+    await cache.set("wallet|-|balance?address=0xprivate", { at: NOW, values: { balance: money(123, "usd") } });
+    const [entry] = await listExplore.execute({ sort: "recent" });
+    expect(entry.highlights).toHaveLength(1);
+    expect(entry.highlights[0]).toMatchObject({ label: "Balance", value: "under $1k", verified: false });
+    expect(entry.ranks.wealth).toBeUndefined();
+    expect(upstream.calls).toBe(0);
   });
 
   test("given an owner who asked a wealth tile for the exact number, when Explore picks highlights, then it prints the number", async () => {
@@ -108,7 +124,7 @@ describe("ListExplore", () => {
 
     // Then
     expect(entries.map((e) => e.handle)).toEqual(["big", "small"]);
-    expect(entries[0].highlights).toEqual([{ label: "MRR", value: "$12k", connector: "Billing" }]);
+    expect(entries[0].highlights).toEqual([{ label: "MRR", value: "$12k", connector: "Billing", verified: true }]);
     expect(upstream.calls).toBe(0);
   });
 
