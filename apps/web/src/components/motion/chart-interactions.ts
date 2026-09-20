@@ -23,7 +23,9 @@ export function installChartInteractions(root: HTMLElement) {
   const enter = (event: Event) => { const target = point(event.target); if (target) show(target); };
   const leave = (event: Event) => {
     if (event instanceof PointerEvent && event.pointerType !== "mouse") return;
-    if (point(event.target)) hide();
+    if (point(event.target) !== active) return;
+    if (event instanceof PointerEvent && document.activeElement === active) return;
+    hide();
   };
   const tap = (event: PointerEvent) => {
     if (event.pointerType === "mouse") return;
@@ -43,19 +45,23 @@ export function installChartInteractions(root: HTMLElement) {
     points[next]?.setAttribute("tabindex", "0");
     points[next]?.focus({ preventScroll: true });
   };
+  const reposition = () => {
+    if (active && document.activeElement === active) show(active);
+    else hide();
+  };
   root.addEventListener("pointerover", enter);
   root.addEventListener("pointerout", leave);
   root.addEventListener("focusin", enter);
   root.addEventListener("focusout", leave);
   root.addEventListener("keydown", key);
   document.addEventListener("pointerdown", tap);
-  window.addEventListener("scroll", hide, true);
-  window.addEventListener("resize", hide);
+  window.addEventListener("scroll", reposition, true);
+  window.addEventListener("resize", reposition);
   return () => {
     hide(); tip.remove();
     root.removeEventListener("pointerover", enter); root.removeEventListener("pointerout", leave);
     root.removeEventListener("focusin", enter); root.removeEventListener("focusout", leave);
     root.removeEventListener("keydown", key); document.removeEventListener("pointerdown", tap);
-    window.removeEventListener("scroll", hide, true); window.removeEventListener("resize", hide);
+    window.removeEventListener("scroll", reposition, true); window.removeEventListener("resize", reposition);
   };
 }
