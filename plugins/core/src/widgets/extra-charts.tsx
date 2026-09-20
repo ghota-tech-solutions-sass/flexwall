@@ -15,10 +15,11 @@ export function chartGeometry(values: readonly number[]) {
 const historyOptions = [
   field.text("label", "Label", { maxLength: 40, optional: true }),
   field.select("display", "Show", NUMBER_DISPLAY_OPTIONS, { default: "auto" }),
+  field.select("summary", "Headline value", [{ value: "latest", label: "Latest observation" }, { value: "sum", label: "Total of the displayed period" }], { default: "latest", help: "Use a total for daily revenue or visits, not balances or unique visitors." }),
 ];
 
 function historyChart(id: string, name: string, description: string, bars: boolean) {
-  return defineWidget<{ label: string; display: string }>({
+  return defineWidget<{ label: string; display: string; summary: string }>({
     id, name, description, category: "charts",
     inputs: [{ key: "series", label: "History", accepts: ["series"] }],
     options: historyOptions,
@@ -28,7 +29,7 @@ function historyChart(id: string, name: string, description: string, bars: boole
       // Keep individual observations intact rather than silently aggregating different metrics.
       const points = s.points.slice(-30);
       const values = points.map((p) => p.v);
-      const last = values.at(-1);
+      const last = values.length ? options.summary === "sum" ? values.reduce((sum, value) => sum + value, 0) : values.at(-1) : undefined;
       const range = showsRange(options.display, inputs.series!.source?.sensitive);
       const shown = last === undefined ? "No history yet" : range ? formatBand({ value: last, unit: s.unit, currency: s.currency }) : (s.unit === "currency" ? currencySymbol(s.currency) : "") + formatNumber(last);
       const geometry = chartGeometry(values);

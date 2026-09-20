@@ -380,3 +380,42 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; height: 22px; 
 .ed-start-guide summary { cursor: pointer; padding: 9px 0; font-weight: 550; }
 .ed-start-guide details[open] { width: 100%; }
 .ed-start-guide .ed-templates { margin-bottom: 12px; }
+
+/* A visual library and a quieter workspace keep the wall at the centre. */
+.ed-library-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: var(--surface-2); }
+.ed-library-tabs button { border: 0; padding: 9px; border-radius: 9px; color: var(--muted); background: transparent; font: inherit; font-size: 13px; cursor: pointer; }
+.ed-library-tabs button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 4px #0000000c; }
+.ed-library-intro { margin: 12px 4px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.ed-category-filter { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 12px; }
+.ed-category-filter button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 11px; border-radius: 7px; padding: 5px 7px; cursor: pointer; }
+.ed-category-filter button[aria-pressed="true"] { background: var(--accent-wash); color: var(--accent-text); }
+.ed-library .library { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.ed-library .library button { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 8px; border: 1px solid var(--hairline); background: var(--surface); border-radius: 13px; }
+.ed-widget-preview { width: 100%; height: 60px; border-radius: 8px; background: var(--surface-2); color: var(--ink); }
+.ed-library .library strong { font-size: 12px; }
+.ed-library .library small { display: none; }
+.ed-library .ed-plus { position: absolute; top: 9px; right: 9px; }
+.ed-layout-gallery { display: flex; flex-direction: column; gap: 12px; }
+.ed-layout-gallery > button { display: flex; flex-direction: column; gap: 6px; text-align: left; padding: 12px; border: 1px solid var(--hairline); border-radius: 14px; background: var(--surface); color: var(--ink); cursor: pointer; }
+.ed-layout-gallery > button:hover { border-color: var(--accent); }
+.ed-layout-gallery small { color: var(--muted); line-height: 1.4; }
+.ed-layout-mini { width: 100%; display: grid; grid-template-columns: repeat(4,1fr); grid-auto-rows: 24px; gap: 5px; padding: 10px; background: var(--surface-2); border-radius: 9px; margin-bottom: 4px; }
+.ed-layout-mini i { border-radius: 5px; background: var(--accent-wash); box-shadow: inset 0 0 0 1px var(--hairline); }
+.ed-layout-mini i:first-child { background: var(--accent); opacity: .75; }
+.ed-canvas-toolbar { max-width: 920px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.ed-eyebrow { text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-size: 10px; }
+.ed-canvas-toolbar h2 { font-size: 21px; letter-spacing: -.03em; margin: 3px 0; }
+.ed-canvas-toolbar p { font-size: 12px; color: var(--muted); margin: 0; }
+.ed-canvas-toolbar .btn { flex-shrink: 0; }
+.ed-start-guide { max-width: 920px; margin-inline: auto; }
+.ed-preview-wrap { text-align: center; }
+.ed-preview-wrap > .ed-note { margin: 12px 0 20px; }
+.ed-live-preview { text-align: left; max-width: 920px; margin: 0 auto; padding: 24px; border-radius: 24px; box-shadow: 0 12px 40px -20px #0003; }
+.ed-live-preview h1 { font-size: 28px; line-height: 1.2; margin: 4px 0 12px; overflow-wrap: anywhere; }
+.ed-live-preview > p { margin-bottom: 24px; overflow-wrap: anywhere; }
+.ed-live-preview[data-device="phone"] { max-width: 390px; }
+.ed-live-preview[data-device="phone"] .wall-grid.desktop { display: none; }
+.ed-live-preview[data-device="phone"] .wall-grid.mobile { display: grid; }
+.ed-live-preview[data-device="desktop"] .wall-grid.desktop { display: grid; }
+.ed-live-preview[data-device="desktop"] .wall-grid.mobile { display: none; }
+@media (max-width: 900px) { .ed-canvas-toolbar { align-items: flex-start; } .ed-canvas-toolbar h2 { font-size: 18px; } .ed-canvas-toolbar p { max-width: 30ch; } }

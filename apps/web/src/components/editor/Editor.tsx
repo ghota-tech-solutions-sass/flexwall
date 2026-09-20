@@ -13,6 +13,7 @@ import { ROUTES } from "@/presentation/routes";
 import { TEMPLATES } from "@/domain/templates";
 import { EditorProvider, useEditor, useEditorActions } from "./EditorContext";
 import { CheckIcon, CloseIcon, ExternalIcon, PlusIcon, SettingsIcon, TypeIcon } from "./icons";
+import { EditorPreview } from "./EditorPreview";
 import { Inspector } from "./Inspector";
 import { Library } from "./Library";
 import { LockscreenPanel } from "./LockscreenPanel";
@@ -46,6 +47,7 @@ function EditorShell({ appUrl }: { appUrl: string }) {
   const selected = useEditor((s) => s.selected);
   const phone = useMediaQuery(PHONE_SHELL);
   const [sheet, setSheet] = useState<Sheet>(CLOSED);
+  const [preview, setPreview] = useState(false);
   useShortcuts();
 
   // Selecting a tile is what opens the inspector on a phone: the panel is off-screen otherwise.
@@ -56,8 +58,9 @@ function EditorShell({ appUrl }: { appUrl: string }) {
   const canvas = (
     <main className="canvas" onMouseDown={(e) => e.target === e.currentTarget && actions.select(null)}>
       <SaveError />
-      {surface === "wall" ? <GettingStarted /> : null}
-      {surface === "wall" ? <WallCanvas /> : <LockscreenPanel appUrl={appUrl} />}
+      {surface === "wall" ? <div className="ed-canvas-toolbar"><div><span className="ed-eyebrow">Your workspace</span><h2>{preview ? "See it as a visitor" : "Make your wall yours"}</h2><p>{preview ? "Check the layout before sharing." : "Add a widget, connect its data, then arrange your wall."}</p></div><button type="button" className="btn btn-small" aria-pressed={preview} onClick={() => { actions.select(null); setPreview(!preview); }}>{preview ? "Back to editing" : "Preview draft"}</button></div> : null}
+      {surface === "wall" && !preview ? <GettingStarted /> : null}
+      {surface === "wall" ? preview ? <EditorPreview /> : <WallCanvas /> : <LockscreenPanel appUrl={appUrl} />}
       <UndoToast />
     </main>
   );
@@ -113,7 +116,7 @@ function GettingStarted() {
   if (published || !tiles.length) return null;
   const firstNumber = tiles.find((tile) => catalog.widget(tile.widget)?.inputs.length);
   return <section className="ed-start-guide" aria-label="Set up your wall">
-    <strong>Your first wall, in three steps</strong>
+    <strong>Start with the essentials</strong>
     <p>Choose a layout, add your numbers, then preview and publish. Your draft is only visible to you.</p>
     <div className="row">
       <details><summary>1. Choose a starting layout</summary>

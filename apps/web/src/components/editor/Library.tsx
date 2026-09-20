@@ -1,5 +1,7 @@
 // Rendered inside the Editor client boundary.
 import { useRef, useState } from "react";
+import { TEMPLATES } from "@/domain/templates";
+import { WidgetPreview } from "./WidgetPreview";
 import { WIDGET_CATEGORIES, type WidgetCategory } from "@flexwall/sdk";
 import { canAddTile } from "@/application/editor/store";
 import { PAID_TILE_LIMIT } from "@/domain/user";
@@ -8,7 +10,7 @@ import { dragIntent } from "@/presentation/editor/pointer-drag";
 import { ROUTES } from "@/presentation/routes";
 import { useEditor, useEditorActions } from "./EditorContext";
 import { useCoarsePointer } from "./WallCanvas";
-import { CategoryIcon, PlusIcon, SearchIcon } from "./icons";
+import { PlusIcon, SearchIcon } from "./icons";
 
 const CATEGORY_LABELS: Record<WidgetCategory, string> = {
   numbers: "Numbers",
@@ -25,6 +27,8 @@ const CATEGORY_LABELS: Record<WidgetCategory, string> = {
  */
 export function Library() {
   const [query, setQuery] = useState("");
+  const [tab, setTab] = useState<"widgets" | "layouts">("widgets");
+  const [categoryFilter, setCategoryFilter] = useState<WidgetCategory | "all">("all");
   const count = useEditor((s) => s.draft.tiles.length);
   const { maxTiles, paid } = useEditor((s) => s.entitlements);
   const canAdd = useEditor(canAddTile);
@@ -34,7 +38,7 @@ export function Library() {
   const dragging = useRef(false);
 
   const q = query.trim().toLowerCase();
-  const widgets = catalog.widgets().filter((w) => !q || `${w.name} ${w.description}`.toLowerCase().includes(q));
+  const widgets = catalog.widgets().filter((w) => (categoryFilter === "all" || w.category === categoryFilter) && (!q || `${w.name} ${w.description}`.toLowerCase().includes(q)));
 
   return (
     <div className="ed-library">
@@ -44,10 +48,25 @@ export function Library() {
           {count}/{maxTiles}
         </span>
       </div>
+      <div className="ed-library-tabs" aria-label="Library sections">
+        <button type="button" aria-pressed={tab === "widgets"} onClick={() => setTab("widgets")}>Widgets</button>
+        <button type="button" aria-pressed={tab === "layouts"} onClick={() => setTab("layouts")}>Layouts</button>
+      </div>
+      <p className="ed-library-intro">{tab === "widgets" ? "Pick a shape. Connect your data next." : "Start with a composition, then make it yours."}</p>
+      {tab === "layouts" ? <div className="ed-layout-gallery">
+        <p className="ed-note">Applying a layout replaces your tiles. You can undo it.</p>
+        {TEMPLATES.map((template) => <button type="button" key={template.id} onClick={() => actions.applyTemplate(template.id)}>
+          <span className="ed-layout-mini" aria-hidden="true">{template.tiles.map((tile,i) => <i key={i} style={{ gridColumn: `${tile.layout.x+1} / span ${tile.layout.w}`, gridRow: `${tile.layout.y+1} / span ${tile.layout.h}` }} />)}</span>
+          <strong>{template.name}</strong><small>{template.tagline}</small>
+        </button>)}
+      </div> : <>
       <label className="ed-search">
         <SearchIcon size={14} />
         <input type="search" placeholder="Search tiles" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search tiles" />
       </label>
+      <div className="ed-category-filter" aria-label="Widget categories">
+        {(["all", ...WIDGET_CATEGORIES] as const).map((category) => <button key={category} type="button" aria-pressed={categoryFilter === category} onClick={() => setCategoryFilter(category)}>{category === "all" ? "All" : CATEGORY_LABELS[category]}</button>)}
+      </div>
       {canAdd ? null : (
         <p className="ed-callout">
           {paid ? (
@@ -71,7 +90,8 @@ export function Library() {
                   <button
                     type="button"
                     disabled={!canAdd}
-                    title={coarse ? "Tap to add" : "Click to add, or drag onto the wall"}
+                    aria-label={`Add ${w.name}`}
+                    title={`${w.description} ${coarse ? "Tap to add." : "Click to add or drag onto the wall."}`}
                     onClick={() => {
                       // A drag already added the tile where it was dropped.
                       if (dragging.current) return;
@@ -99,9 +119,7 @@ export function Library() {
                       actions.endLibraryDrag();
                     }}
                   >
-                    <span className="ed-glyph small">
-                      <CategoryIcon category={w.category} size={15} />
-                    </span>
+                    <WidgetPreview id={w.id} />
                     <span>
                       <strong>{w.name}</strong>
                       <small>{w.description}</small>
@@ -117,6 +135,7 @@ export function Library() {
         );
       })}
       {widgets.length === 0 ? <p className="ed-note">No tile matches “{query}”.</p> : null}
+      </>}
     </div>
   );
 }

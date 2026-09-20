@@ -12,6 +12,6 @@ export function showcaseTiles(tiles: readonly Tile[], { hidden = [], chartType =
       const w = ["revenue", "graph"].includes(tile.id) ? 4 : 2;
       const layout = firstFreeSpot(placed, w, tile.id === "mrr" ? 2 : 1, 4);
       placed.push(layout);
-      return { ...tile, ...(tile.id === "revenue" ? { widget: chartType } : tile.id === "mrr" ? { widget: "goal-ring", options: { ...tile.options, goal: 10000 } } : {}), layout };
+      return { ...tile, ...(tile.id === "revenue" ? { widget: chartType, options: { ...tile.options, summary: "sum" } } : tile.id === "mrr" ? { widget: "goal-ring", options: { ...tile.options, goal: 10000 } } : {}), layout };
     });
 }

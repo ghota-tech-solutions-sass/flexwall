@@ -155,6 +155,19 @@ async function readAccount(key: string, ctx: ConnectorContext, wanted: Set<strin
   return { currency, values: out };
 }
 
+// Sample cash receipts reconcile exactly with the displayed 30-day total.
+const sampleWeights = Array.from({ length: 30 }, (_, i) => Math.round(120 + i * 4 + 40 * Math.sin(i / 2)));
+const sampleWeightTotal = sampleWeights.reduce((sum, value) => sum + value, 0);
+let sampleRunning = 0;
+let sampleAllocated = 0;
+const sampleDaily = sampleWeights.map((weight, i) => {
+  sampleRunning += weight;
+  const cumulative = Math.round(sampleRunning / sampleWeightTotal * 531000);
+  const cents = cumulative - sampleAllocated;
+  sampleAllocated = cumulative;
+  return { t: new Date(Date.now() - (29 - i) * 86400000).toISOString().slice(0, 10), v: cents / 100 };
+});
+
 const stripeConnector = defineConnector({
   id: "stripe",
   name: "Stripe",
@@ -214,7 +227,7 @@ const stripeConnector = defineConnector({
     mrr: money(4820, "usd"),
     revenue30d: money(5310, "usd"),
     "revenue-daily": series(
-      Array.from({ length: 30 }, (_, i) => ({ t: new Date(Date.now() - (29 - i) * 86_400_000).toISOString().slice(0, 10), v: Math.round(120 + i * 4 + 40 * Math.sin(i / 2)) })),
+      sampleDaily,
       { unit: "currency", currency: "usd" }
     ),
     subscribers: number(212, { unit: "count" }),

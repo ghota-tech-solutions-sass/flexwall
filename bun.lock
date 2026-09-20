@@ -25,6 +25,7 @@
         "@flexwall/plugin-crypto-wallet": "workspace:*",
         "@flexwall/plugin-enable-banking": "workspace:*",
         "@flexwall/plugin-github": "workspace:*",
+        "@flexwall/plugin-google-analytics": "workspace:*",
         "@flexwall/plugin-gumroad": "workspace:*",
         "@flexwall/plugin-hackernews": "workspace:*",
         "@flexwall/plugin-http": "workspace:*",
@@ -172,6 +173,13 @@
     },
     "plugins/github": {
       "name": "@flexwall/plugin-github",
+      "version": "0.1.0",
+      "dependencies": {
+        "@flexwall/sdk": "workspace:*",
+      },
+    },
+    "plugins/google-analytics": {
+      "name": "@flexwall/plugin-google-analytics",
       "version": "0.1.0",
       "dependencies": {
         "@flexwall/sdk": "workspace:*",
@@ -485,6 +493,8 @@
     "@flexwall/plugin-enable-banking": ["@flexwall/plugin-enable-banking@workspace:plugins/enable-banking"],
 
     "@flexwall/plugin-github": ["@flexwall/plugin-github@workspace:plugins/github"],
+
+    "@flexwall/plugin-google-analytics": ["@flexwall/plugin-google-analytics@workspace:plugins/google-analytics"],
 
     "@flexwall/plugin-gumroad": ["@flexwall/plugin-gumroad@workspace:plugins/gumroad"],
 

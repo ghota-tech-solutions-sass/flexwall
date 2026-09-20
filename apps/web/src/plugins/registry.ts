@@ -9,6 +9,7 @@ import bluesky from "@flexwall/plugin-bluesky";
 import hackernews from "@flexwall/plugin-hackernews";
 import lemonSqueezy from "@flexwall/plugin-lemon-squeezy";
 import polar from "@flexwall/plugin-polar";
+import googleAnalytics from "@flexwall/plugin-google-analytics";
 import plausible from "@flexwall/plugin-plausible";
 import youtube from "@flexwall/plugin-youtube";
 import { DEFAULT_THEME_ID } from "@/domain/wall";
@@ -44,6 +45,6 @@ import { createCatalog } from "./catalog";
  *
  * Adding a plugin: `bun run new-plugin <id>`, then list it here.
  */
-export const PLUGINS: readonly PluginDef[] = [core, github, stripe, http, npm, pypi, bluesky, hackernews, lemonSqueezy, polar, plausible, youtube, alpaca, trading212, interactiveBrokers, kraken, binance, coinbase, cryptoWallet, revenuecat, paddle, gumroad, wakatime, chessCom, lichess, monkeytype, twitch, tiktok, instagram, enableBanking, steam, x, snaptrade, plaid, powens];
+export const PLUGINS: readonly PluginDef[] = [core, github, stripe, http, npm, pypi, bluesky, hackernews, lemonSqueezy, polar, plausible, googleAnalytics, youtube, alpaca, trading212, interactiveBrokers, kraken, binance, coinbase, cryptoWallet, revenuecat, paddle, gumroad, wakatime, chessCom, lichess, monkeytype, twitch, tiktok, instagram, enableBanking, steam, x, snaptrade, plaid, powens];
 
 export const catalog = createCatalog(PLUGINS, DEFAULT_THEME_ID);

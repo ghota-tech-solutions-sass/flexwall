@@ -18,3 +18,18 @@ test("interactive history labels include dates and exact values, but respect pri
     expect(renderToStaticMarkup(widget.render(props))).not.toContain("data-chart-point");
   }
 });
+
+test("demo revenue reconciles with the 30-day headline on every history chart", async () => {
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { stripeConnector } = await import("@flexwall/plugin-stripe");
+  const daily = stripeConnector.sample["revenue-daily"];
+  const total = stripeConnector.sample.revenue30d;
+  expect(daily.type).toBe("series");
+  expect(total.type).toBe("number");
+  if (daily.type !== "series" || total.type !== "number") throw new Error("Invalid sample types");
+  expect(daily.points.reduce((sum,p)=>sum+Math.round(p.v*100),0)).toBe(total.value*100);
+  for (const widget of [barChart,stepChart,sparkline]) {
+    const props = widgetProps(widget,{ inputs:{series:daily}, options:{label:"Revenue, 30 days",summary:"sum"} });
+    expect(renderToStaticMarkup(widget.render(props))).toContain("$5,310");
+  }
+});

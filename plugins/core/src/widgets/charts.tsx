@@ -2,7 +2,7 @@ import { asType, currencySymbol, defineWidget, displayAdvance, field, formatBand
 import { Col, Fill, Row, Text, fitFont, sparkPoints } from "@flexwall/sdk/ui";
 
 /** A number's recent history as a line, with the latest value and the change. */
-export const sparkline = defineWidget<{ label: string; prefix: string; display: string }>({
+export const sparkline = defineWidget<{ label: string; prefix: string; display: string; summary: string }>({
   id: "sparkline",
   name: "Trend",
   description: "A line chart of a number over time, with its latest value and change.",
@@ -10,6 +10,7 @@ export const sparkline = defineWidget<{ label: string; prefix: string; display: 
   inputs: [{ key: "series", label: "History", accepts: ["series"] }],
   options: [
     field.text("label", "Label", { placeholder: "MRR, 30 days", maxLength: 40, optional: true }),
+    field.select("summary", "Headline value", [{ value: "latest", label: "Latest observation" }, { value: "sum", label: "Total of the displayed period" }], { default: "latest", help: "Sum daily revenue or visits, not balances or unique visitors." }),
     field.text("prefix", "Before the number", { maxLength: 4, optional: true }),
     field.select("display", "Show", NUMBER_DISPLAY_OPTIONS, { default: "auto", help: "Balances and portfolios print as a range unless you ask for the exact number." }),
   ],
@@ -18,8 +19,8 @@ export const sparkline = defineWidget<{ label: string; prefix: string; display: 
   render({ inputs, options, area, theme, u, surface }) {
     const s = asType(inputs.series!.value, "series")!;
     const values = s.points.map((p) => p.v);
-    const last = values.at(-1) ?? 0;
-    const change = seriesChange(s);
+    const last = options.summary === "sum" ? values.reduce((sum, value) => sum + value, 0) : values.at(-1) ?? 0;
+    const change = options.summary === "sum" ? null : seriesChange(s);
     const prefix = options.prefix || (s.unit === "currency" ? currencySymbol(s.currency) : "");
     // The line has no axis, so its shape stays: only the printed number becomes a range.
     const shown = showsRange(options.display, inputs.series!.source?.sensitive) ? formatBand({ value: last, unit: s.unit, currency: s.currency }) : prefix + formatNumber(last);

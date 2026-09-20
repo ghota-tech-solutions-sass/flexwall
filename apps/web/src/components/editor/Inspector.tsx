@@ -78,13 +78,13 @@ function TileInspector({ tile }: { tile: Tile }) {
           </div>
 
           {widget.inputs.map((input) => (
-            <Group key={input.key} title={widget.inputs.length > 1 ? input.label : "Data"}>
+            <Group key={input.key} title={widget.inputs.length > 1 ? input.label : "1. Connect your data"}>
               <InputEditor tile={tile} input={input} paid={paid} />
             </Group>
           ))}
 
           {widget.options.length ? (
-            <Group title="Appearance">
+            <Group title="2. Make it yours">
               {widget.options.map((f) => (
                 <FieldInput key={f.key} field={f} value={tile.options[f.key]} onChange={(v) => actions.setOption(tile.id, f.key, v)} />
               ))}
@@ -365,7 +365,7 @@ function WallPanel() {
         </div>
       </header>
 
-      <Group title="Start from a template">
+      <Group title="Start from a template" defaultOpen={false}>
         <p className="ed-note">Replaces the tiles you have. One tap puts them back.</p>
         <div className="ed-templates">
           {TEMPLATES.map((template) => (

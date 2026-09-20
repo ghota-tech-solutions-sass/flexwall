@@ -19,7 +19,8 @@ request.
 - **Editor**: widget library, drag and resize, an inspector generated from each widget's declared options.
 - **Connectors**:
   - Code and audience: GitHub, npm, PyPI, Bluesky, Hacker News, YouTube, X (your own API key, you choose the refresh rate and see its cost), Twitch, TikTok, Instagram, WakaTime, Monkeytype, Steam, Chess.com, Lichess.
-  - Revenue, verified: Stripe, Lemon Squeezy, Polar, Paddle, RevenueCat, Gumroad, Plausible.
+  - Revenue, verified: Stripe, Lemon Squeezy, Polar, Paddle, RevenueCat, Gumroad.
+  - Website traffic: Plausible and Google Analytics 4 (users, visits, pageviews and daily visits).
   - Wealth, verified: brokerages worldwide through SnapTrade, US and Canadian banks and investments through Plaid, French banks, life insurance and PEA through Powens, bank accounts through Enable Banking (EU open banking), Alpaca, Trading 212, Interactive Brokers, Kraken, Binance, Coinbase. Public crypto wallets (Bitcoin, Ethereum, Base, Solana), unverified.
   - Sign in at the provider (OAuth) for Twitch, TikTok, Instagram, SnapTrade, Plaid, Powens and banks: tokens renew on their own, expired consents ask the owner to reconnect.
   - Any JSON endpoint.

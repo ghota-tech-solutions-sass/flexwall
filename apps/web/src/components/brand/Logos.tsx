@@ -1,4 +1,4 @@
-import { siBluesky, siGithub, siLemonsqueezy, siNpm, siPlausibleanalytics, siPypi, siStripe, siYcombinator, siYoutube } from "simple-icons";
+import { siGoogleanalytics, siBluesky, siGithub, siLemonsqueezy, siNpm, siPlausibleanalytics, siPypi, siStripe, siYcombinator, siYoutube } from "simple-icons";
 
 /** Brand marks from Simple Icons, by connector id. Connectors without a mark get none. */
 const MARKS: Record<string, { title: string; path: string }> = {
@@ -10,6 +10,7 @@ const MARKS: Record<string, { title: string; path: string }> = {
   hackernews: siYcombinator,
   "lemon-squeezy": siLemonsqueezy,
   plausible: siPlausibleanalytics,
+  "google-analytics": siGoogleanalytics,
   youtube: siYoutube,
 };
 

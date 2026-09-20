@@ -61,7 +61,7 @@ export function demoWall(today: string): Wall {
     { id: "mrr", widget: "stat", inputs: { value: metric("stripe", "mrr", {}, DEMO) }, options: { label: "MRR", prefix: "", suffix: "", goal: 10000 }, visibility: "public", layout: { x: 0, y: 0, w: 2, h: 1 } },
     { id: "streak", widget: "stat", inputs: { value: metric("github", "streak", { user: DEMO }) }, options: { label: "Commit streak", prefix: "", suffix: "days" }, visibility: "public", layout: { x: 2, y: 0, w: 1, h: 1 } },
     { id: "launch", widget: "countdown", inputs: {}, options: { date: inDays(23), label: "until v2" }, visibility: "public", layout: { x: 3, y: 0, w: 1, h: 1 } },
-    { id: "revenue", widget: "sparkline", inputs: { series: metric("stripe", "revenue-daily", {}, DEMO) }, options: { label: "Revenue, 30 days", prefix: "" }, visibility: "public", layout: { x: 0, y: 1, w: 2, h: 1 } },
+    { id: "revenue", widget: "sparkline", inputs: { series: metric("stripe", "revenue-daily", {}, DEMO) }, options: { label: "Revenue, 30 days", prefix: "", summary: "sum" }, visibility: "public", layout: { x: 0, y: 1, w: 2, h: 1 } },
     { id: "customers", widget: "stat", inputs: { value: metric("stripe", "subscribers", {}, DEMO) }, options: { label: "Customers", prefix: "", suffix: "" }, visibility: "public", layout: { x: 2, y: 1, w: 1, h: 1 } },
     { id: "year", widget: "time-left", inputs: {}, options: { period: "year", style: "bar" }, visibility: "public", layout: { x: 3, y: 1, w: 1, h: 1 } },
     { id: "graph", widget: "heatmap", inputs: { days: metric("github", "activity", { user: DEMO }) }, options: { label: "Contributions", showTotal: true }, visibility: "public", layout: { x: 0, y: 2, w: 4, h: 1 } },
