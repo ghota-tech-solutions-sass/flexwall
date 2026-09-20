@@ -110,11 +110,11 @@ async function* paginate<T extends { id: string }>(ctx: ConnectorContext, key: s
   }
 }
 
-async function readAccount(key: string, ctx: ConnectorContext, wanted: Set<string>) {
+export async function readAccount(key: string, ctx: ConnectorContext, wanted: Set<string>, reportingCurrency?: string) {
   const balance = await ctx.fetch.json<{ available: { currency: string }[]; pending: { currency: string }[] }>(`${API}/balance`, {
     headers: { Authorization: `Bearer ${key}` },
   });
-  const currency = balance.available[0]?.currency ?? balance.pending[0]?.currency ?? "usd";
+  const currency = reportingCurrency ?? balance.available[0]?.currency ?? balance.pending[0]?.currency ?? "usd";
   const nowSec = Math.floor(Date.now() / 1000);
   const out: FetchResult = {};
 

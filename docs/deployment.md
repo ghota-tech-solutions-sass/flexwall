@@ -106,3 +106,25 @@ editor and fits the Free plan. The reserved handle is provisioned only by this
 operator workflow; ordinary signup cannot claim it. Existing walls and owners
 are never overwritten. An email that already owns another handle is refused.
 The owner can then sign in normally to edit it.
+
+### Live Stripe on the official wall
+
+`/api/public-stats/stripe` publishes only MRR, active-subscription count and
+30-day revenue (including a daily series) for the existing live Flexwall Stripe
+account. The server reuses its existing Secret Manager-backed billing credential;
+it is never copied to a wall, connector record, browser, or API response.
+The public `Stripe · Flexwall` connector is explicitly this business's public
+report, not a connection to the visitor's Stripe account. It uses the API-source
+badge rather than claiming independent connected-account verification.
+
+Reporting fails closed for a test key, a different account, an unrelated product,
+an incomplete product list, or a mismatched configured price. MRR uses the
+configured subscription-price currency; net receipts before fees use Stripe's
+settlement currency. No exchange rate is invented. The existing Stripe reader's
+MRR calculation and revenue rules apply. Reports refresh every 30 minutes.
+
+Run **Inspect production Stripe** to validate account identity and aggregate
+metrics without changing Stripe data. After deploying the reporting endpoint,
+run **Connect official Stripe** to append three widgets to the existing official
+wall. It preserves the original tiles, gives that showcase account complimentary
+Pro for the extra tiles, and never creates a Stripe subscription or payment.

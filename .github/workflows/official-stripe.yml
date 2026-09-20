@@ -1,8 +1,11 @@
-name: Inspect production Stripe
+name: Connect official Stripe
 on:
   workflow_dispatch:
+concurrency:
+  group: connect-official-stripe
+  cancel-in-progress: false
 jobs:
-  inspect:
+  publish:
     runs-on: ubuntu-latest
     environment: production
     permissions:
@@ -19,8 +22,7 @@ jobs:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_TERRAFORM_SERVICE_ACCOUNT }}
           project_id: ghota-outflex-prod
-      - uses: google-github-actions/setup-gcloud@v3
-        with:
-          project_id: ghota-outflex-prod
-      - name: Inspect account identity and Flexwall products (read only)
-        run: bun --tsconfig-override apps/web/tsconfig.json scripts/inspect-production-stripe.ts
+      - name: Add live Stripe widgets to the existing official wall
+        env:
+          GOOGLE_PROJECT_ID: ghota-outflex-prod
+        run: bun --tsconfig-override apps/web/tsconfig.json scripts/connect-official-stripe.ts

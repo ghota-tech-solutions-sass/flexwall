@@ -1,4 +1,5 @@
 import type { PluginDef } from "@flexwall/sdk";
+import officialStripe from "./official-stripe";
 import flexwall from "./flexwall";
 import core from "@flexwall/plugin-core";
 import github from "@flexwall/plugin-github";
@@ -46,6 +47,6 @@ import { createCatalog } from "./catalog";
  *
  * Adding a plugin: `bun run new-plugin <id>`, then list it here.
  */
-export const PLUGINS: readonly PluginDef[] = [core, flexwall, github, stripe, http, npm, pypi, bluesky, hackernews, lemonSqueezy, polar, plausible, googleAnalytics, youtube, alpaca, trading212, interactiveBrokers, kraken, binance, coinbase, cryptoWallet, revenuecat, paddle, gumroad, wakatime, chessCom, lichess, monkeytype, twitch, tiktok, instagram, enableBanking, steam, x, snaptrade, plaid, powens];
+export const PLUGINS: readonly PluginDef[] = [core, flexwall, officialStripe, github, stripe, http, npm, pypi, bluesky, hackernews, lemonSqueezy, polar, plausible, googleAnalytics, youtube, alpaca, trading212, interactiveBrokers, kraken, binance, coinbase, cryptoWallet, revenuecat, paddle, gumroad, wakatime, chessCom, lichess, monkeytype, twitch, tiktok, instagram, enableBanking, steam, x, snaptrade, plaid, powens];
 
 export const catalog = createCatalog(PLUGINS, DEFAULT_THEME_ID);

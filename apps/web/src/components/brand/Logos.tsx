@@ -3,6 +3,7 @@ import { siGoogleanalytics, siBluesky, siGithub, siLemonsqueezy, siNpm, siPlausi
 /** Brand marks from Simple Icons, by connector id. Connectors without a mark get none. */
 const MARKS: Record<string, { title: string; path: string }> = {
   stripe: siStripe,
+  "flexwall-stripe": siStripe,
   github: siGithub,
   npm: siNpm,
   pypi: siPypi,
