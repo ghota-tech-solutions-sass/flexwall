@@ -33,6 +33,7 @@ import {
   SITE_DESCRIPTION,
   websiteLd,
 } from "@/presentation/seo/structured-data";
+import { showcaseTiles } from "@/presentation/wall/showcase";
 import { demoWall, sampleStates } from "@/rendering/samples";
 import handChat from "../../public/photos/hand-chat.jpg";
 import laptopCafe from "../../public/photos/laptop-cafe.jpg";
@@ -161,7 +162,7 @@ export default async function Home() {
   const signedIn = Boolean(await sessionUserId());
   const connectors = visibleConnectors(catalog.connectors(), await container().publicConnectors.execute());
   const featuredConnectors = connectors.filter((c) => ["stripe", "github", "polar", "lemon-squeezy", "plausible", "npm"].includes(c.id));
-  const heroTiles = ["mrr", "streak", "revenue", "customers"].map((id, i) => ({ ...wall.tiles.find((tile) => tile.id === id)!, layout: { x: (i % 2) * 2, y: Math.floor(i / 2), w: 2, h: 1 } }));
+  const heroTiles = showcaseTiles(wall.tiles);
   const revenueState = states.revenue;
   const revenue =
     revenueState?.status === "ready"
@@ -211,10 +212,10 @@ export default async function Home() {
           <div className="hero-preview">
             <div className="preview-caption"><span>Ada’s launch journal</span><span className="badge">Sample data</span></div>
             <div className="preview-board only-light" style={wallStyle(light)}>
-              <WallGrids animate={false} tiles={heroTiles} states={states} theme={light} today={today} catalog={catalog} />
+              <WallGrids tiles={heroTiles} states={states} theme={light} today={today} catalog={catalog} />
             </div>
             <div className="preview-board only-dark" style={wallStyle(dark)}>
-              <WallGrids animate={false} tiles={heroTiles} states={states} theme={dark} today={today} catalog={catalog} />
+              <WallGrids tiles={heroTiles} states={states} theme={dark} today={today} catalog={catalog} />
             </div>
             <p>One page. A share card. Your daily lock screen.</p>
           </div>

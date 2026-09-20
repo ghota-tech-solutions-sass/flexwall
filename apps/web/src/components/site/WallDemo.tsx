@@ -7,7 +7,7 @@ import type { TileState } from "@/application/use-cases/resolve-wall";
 import { DEFAULT_THEME_ID, TITLE_MAX, type Wall } from "@/domain/wall";
 import { createCatalog } from "@/plugins/catalog";
 import { WallGrids, wallStyle } from "@/components/wall/WallView";
-import { firstFreeSpot, type Box } from "@/domain/layout";
+import { SHOWCASE_IDS, showcaseTiles } from "@/presentation/wall/showcase";
 import { monogram } from "@/presentation/wall/profile";
 import { ROUTES } from "@/presentation/routes";
 
@@ -21,15 +21,8 @@ export function WallDemo({ wall, states, today, signedIn }: { wall: Wall; states
   const [chartType, setChartType] = useState("bar-chart");
   const [hidden, setHidden] = useState<string[]>([]);
   const theme = catalog.theme(themeId) ?? catalog.defaultTheme();
-  const choices = ["mrr", "streak", "customers", "revenue", "graph"].flatMap((id) => wall.tiles.filter((tile) => tile.id === id));
-  const placed: Box[] = [];
-  const tiles = choices.filter((tile) => !hidden.includes(tile.id)).map((tile) => {
-    const w = ["revenue", "graph"].includes(tile.id) ? 4 : 2;
-    const h = tile.id === "mrr" ? 2 : 1;
-    const layout = firstFreeSpot(placed, w, h, 4);
-    placed.push(layout);
-    return { ...tile, ...(tile.id === "revenue" ? { widget: chartType } : tile.id === "mrr" ? { widget: "goal-ring", options: { ...tile.options, goal: 10000 } } : {}), layout };
-  });
+  const choices = SHOWCASE_IDS.flatMap((id) => wall.tiles.filter((tile) => tile.id === id));
+  const tiles = showcaseTiles(wall.tiles, { hidden, chartType });
 
   return (
     <div className="demo-workspace">
