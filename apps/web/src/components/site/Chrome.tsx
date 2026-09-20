@@ -26,11 +26,7 @@ export function TopBar({ signedIn }: { signedIn: boolean }) {
           <Link href={ROUTES.pricing} className="hide-sm">
             Pricing
           </Link>
-          {SOURCE_URL ? (
-            <a href={SOURCE_URL} className="hide-sm">
-              GitHub
-            </a>
-          ) : null}
+          <Link href={ROUTES.openSource} className="hide-sm">Open source</Link>
         </nav>
         <div className="nav-actions">
           <details className="mobile-menu">
@@ -40,6 +36,7 @@ export function TopBar({ signedIn }: { signedIn: boolean }) {
               <Link href={ROUTES.pricing}>Pricing</Link>
               <Link href={ROUTES.explore}>The Wall</Link>
               <Link href={ROUTES.integrations}>Integrations</Link>
+              <Link href={ROUTES.openSource}>Open source</Link>
               <Link href={signedIn ? ROUTES.edit : ROUTES.login}>{signedIn ? "Edit my wall" : "Sign in"}</Link>
             </nav>
           </details>
@@ -79,6 +76,7 @@ export function Footer() {
         <Link href={ROUTES.explore}>The Wall</Link>
         <Link href={ROUTES.wall("flexwall")}>Our live wall</Link>
         <Link href={ROUTES.integrations}>Integrations</Link>
+        <Link href={ROUTES.openSource}>Open source</Link>
         <Link href={ROUTES.pricing}>Pricing</Link>
         {SOURCE_URL ? <a href={`${SOURCE_URL}/tree/main/docs`}>Docs</a> : null}
       </nav>

@@ -25,6 +25,7 @@ export function sitemapEntries(input: {
     { url: at(ROUTES.pricing), changeFrequency: "monthly", priority: 0.8 },
     { url: at(ROUTES.demo), changeFrequency: "monthly", priority: 0.8 },
     { url: at(ROUTES.integrations), changeFrequency: "weekly", priority: 0.7 },
+    { url: at(ROUTES.openSource), changeFrequency: "monthly", priority: 0.6 },
     ...input.integrations.map((i) => ({ url: at(i.path), changeFrequency: "monthly" as const, priority: 0.6 })),
     ...LEGAL_PATHS.map((path) => ({ url: at(path), lastModified: new Date(`${LEGAL_UPDATED}T00:00:00Z`), changeFrequency: "yearly" as const, priority: 0.2 })),
     ...input.walls.map((w) => ({ url: at(ROUTES.wall(w.handle)), lastModified: new Date(w.updatedAt), changeFrequency: "daily" as const, priority: 0.5 })),

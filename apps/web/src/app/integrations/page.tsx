@@ -70,6 +70,12 @@ export default async function IntegrationsPage() {
             </section>
           ) : null
         )}
+        <section className="section">
+          <div className="explore-invitation">
+            <div><h2>Missing your favorite service?</h2><p>Connect your own API or build a connector for everyone. Flexwall’s SDK and plugins are open source.</p></div>
+            <Link href={ROUTES.openSource} className="btn btn-quiet">Build a connector →</Link>
+          </div>
+        </section>
       </main>
       <Footer />
     </div>

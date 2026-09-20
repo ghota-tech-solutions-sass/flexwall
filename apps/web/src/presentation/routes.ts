@@ -70,6 +70,7 @@ export const ROUTES = {
   explore: "/explore",
   exploreSorted: (sort: string) => `/explore?${new URLSearchParams({ sort })}`,
   integrations: "/integrations",
+  openSource: "/open-source",
   integration: (id: string) => `/integrations/${segment(id)}`,
   legal: "/legal",
   terms: "/terms",
