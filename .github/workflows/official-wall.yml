@@ -1,0 +1,34 @@
+name: Publish official wall
+on:
+  workflow_dispatch:
+    inputs:
+      owner_email:
+        description: Owner email for the official Flexwall wall (must not own a different wall)
+        required: true
+        type: string
+concurrency:
+  group: publish-official-wall
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_TERRAFORM_SERVICE_ACCOUNT }}
+          project_id: ghota-outflex-prod
+      - name: Create the official wall without overwriting an existing wall
+        env:
+          GOOGLE_PROJECT_ID: ghota-outflex-prod
+          OFFICIAL_WALL_EMAIL: ${{ inputs.owner_email }}
+        run: bun --tsconfig-override apps/web/tsconfig.json scripts/publish-official-wall.ts

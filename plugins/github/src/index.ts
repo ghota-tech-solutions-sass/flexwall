@@ -1,4 +1,4 @@
-import { calendar, ConnectorError, defineConnector, definePlugin, field, HttpError, number, type CalendarDay, type ConnectorContext } from "@flexwall/sdk";
+import { calendar, ConnectorError, defineConnector, definePlugin, field, HttpError, number, series, type CalendarDay, type ConnectorContext } from "@flexwall/sdk";
 
 /**
  * Public GitHub numbers. No account needed: the contribution calendar is the
@@ -68,6 +68,29 @@ async function api<T>(ctx: ConnectorContext, path: string): Promise<T> {
   }
 }
 
+/** Default-branch commits grouped by UTC committer date; never returns a truncated total. */
+export async function repositoryActivity(ctx: ConnectorContext, repository: string) {
+  const end = new Date(`${ctx.today}T00:00:00Z`).getTime();
+  const days = Array.from({ length: 30 }, (_, i) => new Date(end - (29 - i) * 86400000).toISOString().slice(0, 10));
+  const counts = new Map(days.map((day) => [day, 0]));
+  const seen = new Set<string>();
+  for (let page = 1; page <= 20; page++) {
+    const query = new URLSearchParams({ since: `${days[0]}T00:00:00Z`, until: `${ctx.today}T23:59:59Z`, per_page: "100", page: String(page) });
+    let commits: { sha: string; commit: { committer: { date: string } } }[];
+    try { commits = await api(ctx, `/repos/${repository}/commits?${query}`); }
+    catch (error) { if (error instanceof HttpError && error.status === 409) break; throw error; }
+    for (const commit of commits) {
+      const day = commit.commit.committer.date.slice(0, 10);
+      if (!seen.has(commit.sha) && counts.has(day)) counts.set(day, counts.get(day)! + 1);
+      seen.add(commit.sha);
+    }
+    if (commits.length < 100) break;
+    if (page === 20) throw new ConnectorError("This repository exceeds 2,000 commits in 30 days. No partial total is shown.");
+  }
+  const points = days.map((t) => ({ t, v: counts.get(t)! }));
+  return { "commits-30d": number(points.reduce((sum, p) => sum + p.v, 0), { unit: "count" }), "commits-daily": series(points, { unit: "count" }) };
+}
+
 const githubConnector = defineConnector({
   id: "github",
   name: "GitHub",
@@ -86,17 +109,21 @@ const githubConnector = defineConnector({
     { id: "contributions", name: "Contributions, last 12 months", type: "number", unit: "count", params: [user], defaults: { label: "contributions this year" } },
     { id: "activity", name: "Contribution graph", type: "calendar", params: [user], defaults: { label: "Contributions" } },
     { id: "followers", name: "Followers", type: "number", unit: "count", params: [user], defaults: { label: "GitHub followers" } },
+    { id: "commits-30d", name: "Repository commits, last 30 days", type: "number", unit: "count", params: [repo], defaults: { label: "Commits, 30 days" } },
+    { id: "commits-daily", name: "Daily repository commits, last 30 days", type: "series", unit: "count", params: [repo], defaults: { label: "Daily commits" } },
     { id: "stars", name: "Repository stars", type: "number", unit: "count", params: [repo], defaults: { label: "stars" }, leaderboard: "stars" },
   ],
 
   // One calendar page answers streak, contributions and activity for a user.
   cacheKey({ metric, params }) {
+    if (metric.startsWith("commits-")) return `commits:${String(params.repo).toLowerCase()}`;
     if (metric === "stars") return `repo:${String(params.repo).toLowerCase()}`;
     if (metric === "followers") return `user:${String(params.user).toLowerCase()}`;
     return `calendar:${String(params.user).toLowerCase()}`;
   },
 
   async fetch({ metrics, params }, ctx) {
+    if (metrics.some((m) => m.startsWith("commits-"))) return repositoryActivity(ctx, String(params.repo));
     if (metrics.includes("stars")) {
       const r = await api<{ stargazers_count: number }>(ctx, `/repos/${params.repo}`);
       return { stars: number(r.stargazers_count, { unit: "count" }) };
@@ -127,6 +154,8 @@ const githubConnector = defineConnector({
     activity: calendar(sampleDays()),
     followers: number(1613, { unit: "count" }),
     stars: number(2410, { unit: "count" }),
+    "commits-30d": number(90, { unit: "count" }),
+    "commits-daily": series(Array.from({ length: 30 }, (_, i) => ({ t: new Date(Date.now() - (29 - i) * 86400000).toISOString().slice(0, 10), v: 3 })), { unit: "count" }),
   },
 });
 

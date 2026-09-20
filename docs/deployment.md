@@ -84,3 +84,25 @@ checkout session while they are on and the account isn't ready:
 - `stripe_automatic_tax`: needs Stripe Tax active with a registration.
 
 The pricing page's own consent box is always on and recorded with each payment.
+
+## Official product wall
+
+`/api/public-stats` publishes only aggregate account, wall, published-wall,
+available-connector and widget counts. Firestore count queries are not capped
+by the normal 500-document listing limit. Results are cached for five minutes.
+Accounts include the official account; walls include drafts. These are not
+paying-customer or active-user counts. No email, wall content or revenue is
+returned. The Flexwall connector reads this fixed production endpoint.
+
+The GitHub connector also provides default-branch commits over 30 UTC dates,
+including today, as a number or daily series. It paginates, deduplicates SHA
+values, fills missing dates with zero, and refuses to display truncated totals
+above 2,000 commits. Source: [GitHub commits API](https://docs.github.com/en/rest/commits/commits).
+
+After deploying those connectors, dispatch **Publish official wall** with the
+owner's approved email. The workflow creates the real, listed `@flexwall` wall
+and associates it with that account. It uses the same wall validation as the
+editor and fits the Free plan. The reserved handle is provisioned only by this
+operator workflow; ordinary signup cannot claim it. Existing walls and owners
+are never overwritten. An email that already owns another handle is refused.
+The owner can then sign in normally to edit it.

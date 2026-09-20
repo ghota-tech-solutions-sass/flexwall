@@ -27,6 +27,7 @@ export interface Db {
   update(collection: string, id: string, patch: Doc): Promise<boolean>;
   delete(collection: string, id: string): Promise<void>;
   where<T extends Doc>(collection: string, filters: [field: string, value: unknown][], limit?: number): Promise<T[]>;
+  count(collection: string, filters?: [field: string, value: unknown][]): Promise<number>;
   /** Reads then writes atomically. Writes are applied only if `fn` resolves. */
   transaction<R>(fn: (tx: Tx) => Promise<R>): Promise<R>;
 }
@@ -71,6 +72,11 @@ function firestoreDb(projectId: string): Db {
       const snap = await q.limit(limit).get();
       return snap.docs.map((d) => d.data() as never);
     },
+    async count(c, filters = []) {
+      let q: FirebaseFirestore.Query = fs.collection(PREFIX + c);
+      for (const [field, value] of filters) q = q.where(field, "==", value);
+      return (await q.count().get()).data().count;
+    },
     transaction(fn) {
       return fs.runTransaction(async (t) =>
         fn({
@@ -113,6 +119,9 @@ function memoryDb(): Db {
     delete: async (c, id) => void col(c).delete(id),
     async where(c, filters, limit = 500) {
       return [...col(c).values()].filter((d) => filters.every(([f, v]) => d[f] === v)).slice(0, limit).map(clone) as never;
+    },
+    async count(c, filters = []) {
+      return [...col(c).values()].filter((d) => filters.every(([f, v]) => d[f] === v)).length;
     },
     transaction(fn) {
       // Serialize transactions so read-then-write is atomic in memory too.

@@ -74,6 +74,16 @@ beforeAll(async () => {
 afterAll(() => server?.kill());
 
 describe("Public pages", () => {
+  test("public product statistics disclose aggregate counts only", async () => {
+    const res = await http("/api/public-stats");
+    expect(res.status).toBe(200);
+    const stats = await res.json();
+    expect(Object.keys(stats).sort()).toEqual(["accounts", "connectors", "published", "updatedAt", "walls", "widgets"]);
+    for (const key of ["accounts", "connectors", "published", "walls", "widgets"]) {
+      expect(Number.isSafeInteger(stats[key])).toBe(true);
+      expect(stats[key]).toBeGreaterThanOrEqual(0);
+    }
+  });
   test("a Pro choice reaches onboarding and returns an existing owner to pricing without starting payment", async () => {
     const token = new HmacTokenService(SECRET, true, { now: () => Date.now() }).magic("conversion@example.com");
     const verified = await fetch(`${BASE}/api/auth/verify?token=${encodeURIComponent(token)}&plan=yearly&handle=conversion`, { redirect: "manual" });

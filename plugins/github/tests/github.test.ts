@@ -104,3 +104,22 @@ describe("github plugin", () => {
     expect(b).toEqual({ configured: true, environment: "production", detail: "GITHUB_TOKEN set: 5,000 requests an hour" });
   });
 });
+
+test("repository daily commits paginate, deduplicate, and include zero days", async () => {
+  const ctx = fakeContext({}, { today: "2026-09-20" });
+  const commit = (sha: string, date: string) => ({ sha, commit: { committer: { date } } });
+  ctx.fetch.json = async (url) => {
+    const parsed = new URL(String(url));
+    expect(parsed.searchParams.get("since")).toBe("2026-08-22T00:00:00Z");
+    expect(parsed.searchParams.get("until")).toBe("2026-09-20T23:59:59Z");
+    return (parsed.searchParams.get("page") === "1" ? Array.from({ length: 100 }, (_, i) => commit(String(i), "2026-09-20T12:00:00Z")) : [commit("0", "2026-09-20T12:00:00Z"), commit("101", "2026-09-19T12:00:00Z")]) as never;
+  };
+  const result = await githubConnector.fetch(request(["commits-daily"], { repo: "owner/repo" }), ctx);
+  expect(result["commits-30d"]).toMatchObject({ type: "number", value: 101 });
+  expect(result["commits-daily"]).toMatchObject({ type: "series" });
+  if (result["commits-daily"].type === "series") {
+    expect(result["commits-daily"].points).toHaveLength(30);
+    expect(result["commits-daily"].points[0].v).toBe(0);
+    expect(result["commits-daily"].points.at(-1)?.v).toBe(100);
+  }
+});

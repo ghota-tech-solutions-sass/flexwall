@@ -225,3 +225,10 @@ describe("Guarded fetch", () => {
     expect(String(error)).not.toMatch(/ECONNREFUSED/);
   });
 });
+
+test("aggregate counts are exact beyond the default query limit", async () => {
+  const store = db();
+  await Promise.all(Array.from({ length: 501 }, (_, i) => store.set("count-test", String(i), { published: i % 2 === 0 })));
+  expect(await store.count("count-test")).toBe(501);
+  expect(await store.count("count-test", [["published", true]])).toBe(251);
+});
