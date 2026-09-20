@@ -429,7 +429,8 @@ describe("fetch", () => {
     // Then
     expect(values.cash).toEqual(money(1000.25, "usd"));
     expect(values["portfolio-value"]).toBeUndefined();
-    expect(ctx.calls.filter((u) => u.includes("/balances"))).toEqual([`${API}/accounts/a-usd/balances?${userQuery}`, `${API}/accounts/b-cad/balances?${userQuery}`]);
+    // Requests are signed concurrently, so their arrival order is not guaranteed.
+    expect(ctx.calls.filter((u) => u.includes("/balances")).sort()).toEqual([`${API}/accounts/a-usd/balances?${userQuery}`, `${API}/accounts/b-cad/balances?${userQuery}`].sort());
   });
 
   test("given more accounts than the cap, when cash is fetched, then only the first accounts' balances are read", async () => {
