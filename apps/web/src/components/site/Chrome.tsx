@@ -77,6 +77,7 @@ export function Footer() {
         <h2>Product</h2>
         <Link href={ROUTES.demo}>Try the demo</Link>
         <Link href={ROUTES.explore}>The Wall</Link>
+        <Link href={ROUTES.wall("flexwall")}>Our live wall</Link>
         <Link href={ROUTES.integrations}>Integrations</Link>
         <Link href={ROUTES.pricing}>Pricing</Link>
         {SOURCE_URL ? <a href={`${SOURCE_URL}/tree/main/docs`}>Docs</a> : null}

@@ -63,8 +63,9 @@ export class SignIn {
 
   /** Unknown handles and self-invitations are ignored: the account is created either way. */
   private async referrerFor(handle: string | undefined, referee: User): Promise<User | null> {
-    if (!handle || !Handle.isValid(handle)) return null;
-    const referrerId = await this.deps.handles.ownerOf(Handle.parse(handle));
+    const existing = handle ? Handle.lookup(handle) : null;
+    if (!existing) return null;
+    const referrerId = await this.deps.handles.ownerOf(existing);
     const referrer = referrerId ? await this.deps.users.byId(referrerId) : null;
     return referrer && canRefer(referrer, referee) ? referrer : null;
   }

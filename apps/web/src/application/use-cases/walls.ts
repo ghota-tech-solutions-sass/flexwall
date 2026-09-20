@@ -105,12 +105,8 @@ export class GetPublicWall {
   ) {}
 
   async execute(input: { handle: string; viewerId?: string | null }): Promise<PublicWall> {
-    let handle: Handle;
-    try {
-      handle = Handle.parse(input.handle);
-    } catch {
-      throw notFound("This wall");
-    }
+    const handle = Handle.lookup(input.handle);
+    if (!handle) throw notFound("This wall");
     const wall = await this.deps.walls.byHandle(handle);
     if (!wall) throw notFound("This wall");
     const preview = !wall.published && input.viewerId === wall.ownerId;

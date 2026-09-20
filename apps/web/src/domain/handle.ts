@@ -47,9 +47,15 @@ export const Handle = {
       .slice(0, HANDLE_MAX_LENGTH);
   },
 
-  parse(raw: string): Handle {
+  /** Looks up an existing name, including reserved names provisioned by operators. Does not grant a claim. */
+  lookup(raw: string): Handle | null {
     const value = Handle.slugify(raw).replace(/-+$/, "");
-    if (value.length < 2 || !PATTERN.test(value)) {
+    return value.length >= 2 && PATTERN.test(value) ? value as Handle : null;
+  },
+
+  parse(raw: string): Handle {
+    const value = Handle.lookup(raw);
+    if (!value) {
       throw new DomainError("invalid_handle", `Handles are 2 to ${HANDLE_MAX_LENGTH} characters: letters, digits and hyphens.`);
     }
     if (RESERVED.has(value)) throw new DomainError("handle_reserved", `${formatHandle(value)} is reserved.`);

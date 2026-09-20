@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { money, text } from "@flexwall/sdk";
 import { GetOwnerWall, GetPublicWall, RotateLockscreenLink, SaveWall } from "@/application/use-cases/walls";
+import { Handle } from "@/domain/handle";
 import { FREE_TILE_LIMIT } from "@/domain/user";
 import { aConnection, aTile, aUser, aWall } from "../builders";
 import { FakeAvailability, FakeLinks, FakeTokens, FixedClock, InMemoryConnections, InMemoryUsers, InMemoryWalls, SequentialIds } from "../fakes";
@@ -194,6 +195,15 @@ describe("SaveWall", () => {
 });
 
 describe("GetPublicWall", () => {
+  test("operator-provisioned reserved handles are readable but cannot be claimed", async () => {
+    const owner = { ...aUser().withId("official").build(), handle: Handle.lookup("flexwall")! };
+    const { getPublicWall } = await setup(owner);
+    const result = await getPublicWall.execute({ handle: "@flexwall" });
+    expect(result.wall.handle).toBe(owner.handle);
+    expect(() => Handle.parse("flexwall")).toThrow();
+    expect(Handle.isValid("flexwall")).toBe(false);
+    await expect(getPublicWall.execute({ handle: "admin" })).rejects.toMatchObject({ code: "not_found" });
+  });
   test("given a published wall, when a stranger opens it, then only public tiles are shown", async () => {
     // Given
     const { walls, getPublicWall } = await setup();

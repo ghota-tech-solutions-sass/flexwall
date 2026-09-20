@@ -11,8 +11,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ han
   const c = container();
   const response = NextResponse.redirect(`${c.appUrl}${ROUTES.home}`, HTTP_STATUS.temporaryRedirect);
   const { handle } = await params;
-  if (!Handle.isValid(handle)) return response;
-  response.cookies.set(REFERRAL_COOKIE, Handle.parse(handle), {
+  const existing = Handle.lookup(handle);
+  if (!existing) return response;
+  response.cookies.set(REFERRAL_COOKIE, existing, {
     httpOnly: true,
     secure: isProduction(),
     sameSite: "lax",

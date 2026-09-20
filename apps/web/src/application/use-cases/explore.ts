@@ -89,8 +89,9 @@ export class ReportWall {
     const reason = input.reason.trim();
     if (reason.length < REPORT_REASON_MIN || reason.length > REPORT_REASON_MAX) throw new DomainError("invalid_input", `Tell us what's wrong in a few words (up to ${REPORT_REASON_MAX} characters).`);
     const contact = reportContact(input.contact);
-    if (!Handle.isValid(input.handle)) return;
-    const wall = await this.deps.walls.byHandle(Handle.parse(input.handle));
+    const handle = Handle.lookup(input.handle);
+    if (!handle) return;
+    const wall = await this.deps.walls.byHandle(handle);
     if (!wall) return;
     await this.deps.mailer.send({
       to: this.deps.moderationInbox,
