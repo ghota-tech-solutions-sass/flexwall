@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.17.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.16.0...v0.17.0) (2026-09-20)
+
+
+### Features
+
+* add open source page and connector contribution links ([07852df](https://github.com/ghota-tech-solutions-sass/flexwall/commit/07852dfcd0b11c168adddb131f21def158123e64))
+* **billing:** collect VAT and the terms consent at checkout ([c252485](https://github.com/ghota-tech-solutions-sass/flexwall/commit/c25248573e67c39e1c811539b2ec6487960f290a))
+* check real handle availability from landing page ([3477426](https://github.com/ghota-tech-solutions-sass/flexwall/commit/347742615169cd640535778860bf9a2326cc1a86))
+* expose live Stripe metrics for the official Flexwall wall ([1a6e320](https://github.com/ghota-tech-solutions-sass/flexwall/commit/1a6e32021d1fc6617f5a4eedff2d2b3c11273e7b))
+* improve wall creation and add coherent analytics demos ([97ed5be](https://github.com/ghota-tech-solutions-sass/flexwall/commit/97ed5be94dbcaa922505ec26e0c71f706a9ff0b1))
+* polish walls, add interactive charts and source verification ([6b3383c](https://github.com/ghota-tech-solutions-sass/flexwall/commit/6b3383c24754efc22a6fe043f769aadca074560f))
+* prepare official live wall and product statistics connectors ([9106a29](https://github.com/ghota-tech-solutions-sass/flexwall/commit/9106a294a7139787b8c32178e326c35b9381797a))
+
+
+### Bug Fixes
+
+* allow public access to operator-provisioned official walls ([5966379](https://github.com/ghota-tech-solutions-sass/flexwall/commit/59663795622b2e23acbb18a8af180a2a7ac5bc54))
+* **charts:** keep keyboard tooltips visible while scrolling ([e1ca90e](https://github.com/ghota-tech-solutions-sass/flexwall/commit/e1ca90eaa4a710637dc2117cb01219c2bf008b2a))
+* **home:** share animated widget showcase with demo ([76c17b2](https://github.com/ghota-tech-solutions-sass/flexwall/commit/76c17b22f4e429e63cc74f32d63f84ffadc78e22))
+* **onboarding:** carry the handle through the inbox, and stop asking for one twice ([8eb6e78](https://github.com/ghota-tech-solutions-sass/flexwall/commit/8eb6e78f8e1da0ed1f8efa74473d496733351d7b))
+* simplify site footer links and columns ([c1b799c](https://github.com/ghota-tech-solutions-sass/flexwall/commit/c1b799c250ea450a156360d3a18d6dee9f72c1d9))
+
 ## [0.16.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.15.0...v0.16.0) (2026-09-16)
 
 
