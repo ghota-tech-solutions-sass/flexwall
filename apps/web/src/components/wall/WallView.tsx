@@ -1,5 +1,4 @@
 import type { CSSProperties } from "react";
-import { SealCheckIcon } from "@phosphor-icons/react/ssr";
 import { themeBackground, type Theme } from "@flexwall/sdk";
 import type { TileState } from "@/application/use-cases/resolve-wall";
 import type { Catalog } from "@/domain/catalog";
@@ -35,16 +34,9 @@ function Grid({ placed, variant, ...rest }: WallViewProps & { placed: { tile: Ti
     <div className={`wall-grid ${variant}`}>
       {placed.map(({ tile, box }) => {
         const state = rest.states[tile.id];
-        const sources = state?.status === "ready" ? Object.values(state.inputs).flatMap((i) => (i.source?.verified ? [i.source.name] : [])) : [];
         return (
           <div key={tile.id} className="wall-tile" style={{ gridColumn: `${box.x + 1} / span ${box.w}`, gridRow: `${box.y + 1} / span ${box.h}` }}>
             <TileBody tile={tile} state={state} box={{ w: box.w, h: box.h }} theme={rest.theme} surface="page" u={webUnits} today={rest.today} catalog={rest.catalog} />
-            {sources.length ? (
-              <span className="verified" role="img" aria-label={`Verified by ${sources[0]}`} style={{ background: rest.theme.tile, color: rest.theme.ink, border: `1px solid ${rest.theme.tileBorder}` }} title={`Read from the owner's ${sources[0]} account`}>
-                <SealCheckIcon size={14} weight="fill" aria-hidden="true" />
-                <span>{sources[0]}</span>
-              </span>
-            ) : null}
           </div>
         );
       })}
@@ -52,15 +44,14 @@ function Grid({ placed, variant, ...rest }: WallViewProps & { placed: { tile: Ti
   );
 }
 
-export function WallGrids(props: WallViewProps) {
+export function WallGrids({ animate = true, ...props }: WallViewProps & { animate?: boolean }) {
   const desktop = props.tiles.map((tile) => ({ tile, box: tile.layout }));
   const mobile = mobileLayout(props.tiles).map(({ item, box }) => ({ tile: item, box }));
-  return (
-    <MotionScope className="wall-frame" tiles>
+  const grids = <>
       <Grid {...props} placed={desktop} variant="desktop" />
       <Grid {...props} placed={mobile} variant="mobile" />
-    </MotionScope>
-  );
+    </>;
+  return <MotionScope className="wall-frame" tiles motion={animate}>{grids}</MotionScope>;
 }
 
 /** Colors and fonts for the page around the grid. */

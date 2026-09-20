@@ -34,7 +34,7 @@ export function sampleStates(tiles: readonly Tile[], catalog: Catalog): Record<s
       const value = connector?.sample[binding.metric];
       if (!connector || !value) continue;
       const sensitive = Boolean(catalog.metric(connector.id, binding.metric)?.sensitive);
-      inputs[key] = { value, stale: false, source: { connector: connector.id, name: connector.name, verified: connector.verified, sensitive } };
+      inputs[key] = { value, stale: false, source: { connector: connector.id, name: connector.name, verified: connector.verified, sample: true, sensitive } };
     }
     states[tile.id] = { status: "ready", inputs };
   }

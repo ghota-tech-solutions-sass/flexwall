@@ -16,6 +16,7 @@ export function TopBar({ signedIn }: { signedIn: boolean }) {
           Flexwall
         </Link>
         <nav className="nav" aria-label="Main">
+          <Link href={ROUTES.demo}>Try the demo</Link>
           <Link href={ROUTES.explore} className="hide-sm">
             The Wall
           </Link>
@@ -32,6 +33,16 @@ export function TopBar({ signedIn }: { signedIn: boolean }) {
           ) : null}
         </nav>
         <div className="nav-actions">
+          <details className="mobile-menu">
+            <summary aria-label="Navigation menu">Menu</summary>
+            <nav aria-label="Mobile navigation">
+              <Link href={ROUTES.demo}>Try the demo</Link>
+              <Link href={ROUTES.pricing}>Pricing</Link>
+              <Link href={ROUTES.explore}>The Wall</Link>
+              <Link href={ROUTES.integrations}>Integrations</Link>
+              <Link href={signedIn ? ROUTES.edit : ROUTES.login}>{signedIn ? "Edit my wall" : "Sign in"}</Link>
+            </nav>
+          </details>
           {signedIn ? (
             <Link href={ROUTES.edit} className="btn btn-signal btn-small">
               Edit my wall
@@ -64,6 +75,7 @@ export function Footer() {
       </div>
       <nav aria-label="Product">
         <h2>Product</h2>
+        <Link href={ROUTES.demo}>Try the demo</Link>
         <Link href={ROUTES.explore}>The Wall</Link>
         <Link href={ROUTES.integrations}>Integrations</Link>
         <Link href={ROUTES.pricing}>Pricing</Link>

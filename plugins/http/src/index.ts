@@ -47,7 +47,8 @@ const httpConnector = defineConnector({
   description: "A number or a line of text from any HTTPS endpoint that answers JSON.",
   icon: "M8 3H6a3 3 0 0 0-3 3v3a2 2 0 0 1-2 2 2 2 0 0 1 2 2v3a3 3 0 0 0 3 3h2M16 3h2a3 3 0 0 1 3 3v3a2 2 0 0 0 2 2 2 2 0 0 0-2 2v3a3 3 0 0 1-3 3h-2",
   tier: "pro",
-  verified: true,
+  // The owner controls the endpoint: fetching it proves synchronization, not authenticity.
+  verified: false,
   ttl: 600,
   auth: {
     label: "Add an endpoint",

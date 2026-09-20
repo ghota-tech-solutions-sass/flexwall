@@ -85,7 +85,7 @@ export const PROCESSORS: Processor[] = [
 ];
 
 /** Version of the terms a buyer accepts at checkout; bump it when their substance changes. */
-export const TERMS_VERSION = "2026-09-17";
+export const TERMS_VERSION = "2026-09-20";
 
 function isFilled(value: string | null | undefined): boolean {
   return typeof value === "string" && value.trim().length > 0;

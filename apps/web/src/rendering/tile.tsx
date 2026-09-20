@@ -1,3 +1,5 @@
+import { fitFont } from "@flexwall/sdk/ui";
+import { provenanceOf } from "./provenance";
 import type { CSSProperties, ReactElement } from "react";
 import { areaOf, CARD_PADDING_UNITS, DEFAULT_CHROME, type Surface, type Theme, type UnitFn } from "@flexwall/sdk";
 import type { TileState } from "@/application/use-cases/resolve-wall";
@@ -38,6 +40,8 @@ export function TileBody({ tile, state, box, theme, surface, u, today, catalog }
   };
   const card: CSSProperties = {
     background: theme.tile,
+    // A restrained wash gives numbers and goals their own material, on every surface.
+    ...((widget?.category === "numbers" || widget?.category === "progress") && theme.radius >= 14 ? { backgroundImage: `linear-gradient(135deg, ${theme.heat[0]} 0%, ${theme.tile} 75%)` } : {}),
     border: `1px solid ${theme.tileBorder}`,
     padding: u(CARD_PADDING_UNITS),
     ...(theme.tileShadow ? { boxShadow: theme.tileShadow } : {}),
@@ -48,9 +52,23 @@ export function TileBody({ tile, state, box, theme, surface, u, today, catalog }
     return <div style={{ ...frame, ...card, border: `1px dashed ${theme.tileBorder}` }}>{message(state?.message ?? "Loading…", theme, u)}</div>;
   }
 
-  const props = { inputs: state.inputs, options: tile.options, box, area: areaOf(box, chrome), theme, surface, u, today };
+  const provenance = provenanceOf(state.inputs);
+  const area = areaOf(box, chrome);
+  const footerHeight = provenance ? 12 : 0;
+  const props = { inputs: state.inputs, options: tile.options, box, area: { ...area, height: area.height - footerHeight }, theme, surface, u, today };
   const body = surface === "page" && widget.renderPage ? widget.renderPage(props) : widget.render(props);
-  return <div style={chrome === "card" ? { ...frame, ...card } : frame}>{body}</div>;
+  const trusted = provenance?.kind === "verified" || provenance?.kind === "synced";
+  const badge = provenance ? <div title={provenance.detail} aria-label={provenance.detail} style={{ display: "flex", alignItems: "center", gap: u(3), height: u(footerHeight), flexShrink: 0, alignSelf: "flex-start", maxWidth: "100%", paddingTop: trusted ? 0 : u(3), paddingLeft: trusted ? u(3) : 0, paddingRight: trusted ? u(3) : 0, borderRadius: u(4), background: trusted ? theme.track : "transparent", color: trusted ? theme.positive : theme.muted, fontSize: u(fitFont(provenance.label, area.width - 16, 8)), whiteSpace: "nowrap" }}>
+      {trusted ? <svg width={u(8)} height={u(8)} viewBox="0 0 16 16" style={{ flexShrink: 0 }}><path d={provenance.kind === "verified" ? "M8 1L14 4V8C14 11 11 14 8 15C5 14 2 11 2 8V4Z" : "M8 1a7 7 0 1 0 0 14a7 7 0 1 0 0-14"} fill={theme.positive} /><path d="M5 8L7 10L11 6" fill="none" stroke={theme.tile} strokeWidth="1.5" /></svg> : null}
+      <div style={{ display: "flex", overflow: "hidden" }}>{provenance.label}</div>
+    </div> : null;
+  return <div style={{ ...(chrome === "card" ? { ...frame, ...card } : frame), flexDirection: "column" }}>
+    <div style={{ display: "flex", width: "100%", height: u(area.height - footerHeight), flexShrink: 0 }}>{body}</div>
+    {provenance && surface === "page" ? <details className="source-disclosure" style={{ height: u(footerHeight), flexShrink: 0, alignSelf: "flex-start", maxWidth: "100%" }}>
+      <summary aria-label={provenance.detail}>{badge}</summary>
+      <div className="source-tooltip">{provenance.detail}</div>
+    </details> : badge}
+  </div>;
 }
 
 function message(text: string, theme: Theme, u: UnitFn): ReactElement {

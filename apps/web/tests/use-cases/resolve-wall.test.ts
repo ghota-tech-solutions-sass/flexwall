@@ -343,3 +343,20 @@ describe("ResolveWall and paused connectors", () => {
     expect(upstream.calls).toBe(1);
   });
 });
+
+test("custom API resolution exposes only the configured hostname, never paths or credentials", async () => {
+  const { default: core } = await import("@flexwall/plugin-core");
+  const { default: http } = await import("@flexwall/plugin-http");
+  const { createCatalog } = await import("@/plugins/catalog");
+  const catalog = createCatalog([core, http], "daylight");
+  const owner = aUser().build();
+  const connections = new InMemoryConnections();
+  const secret = { url: "https://api.example.com/private/stats?token=secret-token", path: "private.amount", headerName: "Authorization", headerValue: "Bearer secret-key" };
+  await connections.save(aConnection().withId("api-1").ownedBy(owner).forConnector("http").withPublic({ host: "api.example.com:8443", path: secret.path, headerName: secret.headerName }).sealed(`sealed:${JSON.stringify(secret)}`).build());
+  const resolve = new ResolveWall({ catalog, connections, cache: new InMemoryValueCache(), snapshots: new InMemorySnapshots(), secrets: new TransparentSecretBox(), runtime: new FakeRuntime({ "https://api.example.com/private/stats": { private: { amount: 42 } } }), access: new FakeAvailability({}, catalog), administrators: [], clock: new FixedClock() });
+  const tile = aTile().withId("api").stat({ label: "Metric" }).metric("http", "value", { connection: "api-1" }).build();
+  const result = await resolve.execute({ tiles: [tile], owner, surface: "editor" });
+  expect(result.states.api).toMatchObject({ status: "ready", inputs: { value: { source: { domain: "api.example.com" } } } });
+  const publicState = JSON.stringify(result.states);
+  for (const hidden of ["8443", "private", "secret-token", "Authorization", "secret-key", "https://"]) expect(publicState).not.toContain(hidden);
+});

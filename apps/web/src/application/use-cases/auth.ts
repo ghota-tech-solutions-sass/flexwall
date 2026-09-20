@@ -1,3 +1,4 @@
+import { sellablePlan } from "@/domain/pricing";
 import { invalid } from "@/domain/errors";
 import { Handle } from "@/domain/handle";
 import { canRefer, newReferral } from "@/domain/referral";
@@ -14,11 +15,11 @@ export class RequestSignInLink {
   ) {}
 
   /** `handle` is what they typed before signing in; an unusable one is dropped rather than refused, since the link is about the address. */
-  async execute(input: { email: string; handle?: string }): Promise<{ link: string }> {
+  async execute(input: { email: string; handle?: string; plan?: string }): Promise<{ link: string }> {
     const email = input.email.trim().toLowerCase();
     if (!EMAIL.test(email)) throw invalid("That doesn't look like an email address.");
     const wanted = input.handle && Handle.isValid(input.handle) ? Handle.parse(input.handle) : undefined;
-    const link = this.deps.links.signIn(this.deps.tokens.magic(email), wanted);
+    const link = this.deps.links.signIn(this.deps.tokens.magic(email), wanted, sellablePlan(input.plan));
     await this.deps.mailer.send({
       to: email,
       subject: "Your Flexwall sign-in link",

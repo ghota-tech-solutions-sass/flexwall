@@ -3,7 +3,7 @@ import { ROUTES } from "../routes";
 import type { IntegrationPage } from "./integrations";
 
 /** When the legal pages last changed in substance. Keep in step with LAST_UPDATED in LegalDocument. */
-export const LEGAL_UPDATED = "2026-09-14";
+export const LEGAL_UPDATED = "2026-09-20";
 
 const LEGAL_PATHS = [ROUTES.legal, ROUTES.terms, ROUTES.privacy, ROUTES.legalFr, ROUTES.termsFr, ROUTES.privacyFr];
 
@@ -23,6 +23,7 @@ export function sitemapEntries(input: {
     { url: at(""), changeFrequency: "weekly", priority: 1 },
     { url: at(ROUTES.explore), changeFrequency: "daily", priority: 0.8, ...(freshest ? { lastModified: freshest } : {}) },
     { url: at(ROUTES.pricing), changeFrequency: "monthly", priority: 0.8 },
+    { url: at(ROUTES.demo), changeFrequency: "monthly", priority: 0.8 },
     { url: at(ROUTES.integrations), changeFrequency: "weekly", priority: 0.7 },
     ...input.integrations.map((i) => ({ url: at(i.path), changeFrequency: "monthly" as const, priority: 0.6 })),
     ...LEGAL_PATHS.map((path) => ({ url: at(path), lastModified: new Date(`${LEGAL_UPDATED}T00:00:00Z`), changeFrequency: "yearly" as const, priority: 0.2 })),

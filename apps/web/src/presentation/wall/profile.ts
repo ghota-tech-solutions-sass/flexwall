@@ -1,3 +1,4 @@
+import { provenanceOf } from "@/rendering/provenance";
 import type { TileState } from "@/application/use-cases/resolve-wall";
 import { formatHandle, stripHandlePrefix } from "@/domain/handle";
 import { APP_LOCALE, DISPLAY_TIME_ZONE } from "@/domain/time";
@@ -31,7 +32,7 @@ export function joinedLabel(createdAt: number): string {
 
 /** Tiles whose numbers were read from the owner's own account. */
 export function verifiedCount(states: Record<string, TileState>): number {
-  return Object.values(states).filter((st) => st.status === "ready" && Object.values(st.inputs).some((i) => i.source?.verified)).length;
+  return Object.values(states).filter((st) => st.status === "ready" && ["verified", "synced"].includes(provenanceOf(st.inputs)?.kind ?? "")).length;
 }
 
 /** A prefilled post on X. */

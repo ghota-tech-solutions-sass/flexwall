@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { container } from "@/composition";
+import { sellablePlan } from "@/domain/pricing";
 import { Handle } from "@/domain/handle";
 import { REFERRAL_COOKIE } from "@/domain/referral";
 import { setSession } from "@/presentation/http";
@@ -16,7 +17,10 @@ export async function GET(req: NextRequest) {
     });
     // A wall already has its address; only an account still picking one cares about the handle that came along.
     const wanted = req.nextUrl.searchParams.get(SIGN_IN_PARAMS.handle) ?? "";
-    const next = user.handle ? ROUTES.edit : ROUTES.onboardingToClaim(Handle.isValid(wanted) ? Handle.parse(wanted) : "");
+    const plan = sellablePlan(req.nextUrl.searchParams.get(SIGN_IN_PARAMS.plan));
+    const onboarding = new URL(ROUTES.onboardingToClaim(Handle.isValid(wanted) ? Handle.parse(wanted) : ""), c.appUrl);
+    if (plan) onboarding.searchParams.set(SIGN_IN_PARAMS.plan, plan);
+    const next = user.handle ? (plan ? ROUTES.pricingForPlan(plan) : ROUTES.edit) : onboarding.pathname + onboarding.search;
     const response = NextResponse.redirect(`${c.appUrl}${next}`);
     setSession(response, session);
     // Used once: the invite only ever applies to the account it created.

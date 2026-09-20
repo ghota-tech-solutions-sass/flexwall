@@ -30,3 +30,8 @@ export const MAX_PAID_ACCOUNTS = 10;
 export function isBillingPlan(value: unknown): value is BillingPlan {
   return BILLING_PLANS.includes(value as BillingPlan);
 }
+
+/** Public checkout choices only; never revive the retired lifetime offer through a URL. */
+export function sellablePlan(value: unknown): "monthly" | "yearly" | undefined {
+  return value === "monthly" || value === "yearly" ? value : undefined;
+}

@@ -48,16 +48,18 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
         ]}
       />
       <TopBar signedIn={signedIn} />
-      <main>
+      <main id="main">
         <header className="wall-head dotted">
           <div>
             <h1 className="display">The Wall</h1>
-            <p>People who build in public, with the numbers to show for it. Revenue ranks only count what an owner&apos;s own Stripe, Lemon Squeezy or Polar account says.</p>
+            <p>Discover published walls from the community. Revenue rankings use supported provider metrics, never manually entered numbers or personal APIs.</p>
           </div>
           <Link href={signedIn ? ROUTES.edit : ROUTES.login} className="btn">
             {signedIn ? "List my wall" : "Add your wall"}
           </Link>
         </header>
+
+        {entries.length < 6 ? <aside className="explore-invitation"><div><strong>Looking for inspiration?</strong><p>Explore a sample wall and try different themes before building yours. Demo figures are examples, separate from the community listings below.</p></div><Link href={ROUTES.demo} className="btn">Try the demo</Link></aside> : null}
 
         <nav className="tabs" aria-label="Sort">
           {EXPLORE_SORTS.map((s) => (

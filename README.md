@@ -24,7 +24,8 @@ request.
   - Sign in at the provider (OAuth) for Twitch, TikTok, Instagram, SnapTrade, Plaid, Powens and banks: tokens renew on their own, expired consents ask the owner to reconnect.
   - Any JSON endpoint.
 - **Ranges for money**: balances and portfolios print as `$1M+` everywhere they leave the wall owner's editor, unless the owner asks a tile for the exact number.
-- **Widgets**: number with goal, trend line, heatmap, countdown, time left, note, link.
+- **Widgets**: number with goal, trend line, bars, stepped history, goal ring, heatmap, countdown, time left, note, link.
+- **Source labels**: provider-verified, API-synchronized, manually entered, sample data, or last-known values. Labels remain visible on pages, share cards and lock screens. Personal APIs do not receive a verified badge.
 - **Outputs**: server-rendered page, Open Graph card, iPhone lock screen through a Shortcut.
 - **The Wall**: `/explore`, listed walls ranked by verified numbers: revenue, wealth, streaks, audience, stars.
 - **Plans**: free, Pro (monthly or yearly) and lifetime, through Stripe.

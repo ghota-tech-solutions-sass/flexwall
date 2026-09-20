@@ -29,8 +29,9 @@ The first audience is the one we reach first: builders on X.
 
 **A wall** at `flexwall.lol/@handle`. Drag tiles onto a grid, resize them,
 connect accounts. Each tile is a widget showing data from a connector. Tiles
-fed by an account the owner connected carry a *verified* badge. Every tile is
-private until the owner makes it public.
+fed by a supported provider account carry a *verified* badge. Personal APIs
+are synchronized, not independently verified. The wall starts as a draft;
+owners choose which tiles to make public when they publish.
 
 **Outputs of the same wall**, generated from the same widgets and layout:
 
@@ -53,7 +54,7 @@ Free is generous, because every public wall is distribution.
 |---|---|---|---|
 | Price | $0 | $6/month or $48/year | $99 once, founding members |
 | Public wall, share card, Explore listing | ✓ | ✓ | ✓ |
-| Widgets | 8 | Unlimited | Unlimited |
+| Widgets | 8 | 60 | 60 |
 | Public connectors (GitHub, npm, Bluesky, HN…) | ✓ | ✓ | ✓ |
 | Verified connectors with credentials (Stripe, Lemon Squeezy, Polar, Plausible, your API…) | | ✓ | ✓ |
 | History charts (daily snapshots) | | ✓ | ✓ |

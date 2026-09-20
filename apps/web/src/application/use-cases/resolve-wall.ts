@@ -1,3 +1,4 @@
+import { publicSourceDomain } from "@/domain/source-domain";
 import { ConnectorError, defaultCacheKey, ExpiredCredentialsError, isValue, series, type ConnectorDef, type FieldValues, type InputValue, type Surface, type Value } from "@flexwall/sdk";
 import type { Catalog } from "@/domain/catalog";
 import { needsRenewal, type Connection } from "@/domain/connection";
@@ -161,7 +162,7 @@ export class ResolveWall {
         states[tile.id] = blocked.get(tile.id)!;
         continue;
       }
-      states[tile.id] = await this.tileState(tile, groupOf, results, { today, editor, record: !editor });
+      states[tile.id] = await this.tileState(tile, groupOf, results, groups, { today, editor, record: !editor });
     }
     return { states, today, entitlements };
   }
@@ -271,6 +272,7 @@ export class ResolveWall {
     tile: Tile,
     groupOf: Map<Binding, string>,
     results: Map<string, { entry: CachedValues | null; stale: boolean; error: string | null }>,
+    groups: Map<string, Group>,
     opts: { today: string; editor: boolean; record: boolean }
   ): Promise<TileState> {
     const inputs: Record<string, InputValue> = {};
@@ -288,7 +290,8 @@ export class ResolveWall {
       if (!value) return { status: "placeholder", reason: "unavailable", message: "No data yet." };
 
       const sensitive = Boolean(this.deps.catalog.metric(connector.id, binding.metric)?.sensitive);
-      const source = { connector: connector.id, name: connector.name, verified: connector.verified, sensitive };
+      const domain = connector.id === "http" ? publicSourceDomain(groups.get(groupOf.get(binding)!)?.connection?.public.host) : undefined;
+      const source = { connector: connector.id, name: connector.name, verified: connector.verified, sensitive, ...(domain ? { domain } : {}) };
       if (value.type === "number" && opts.record && !result.stale) await this.recordOnce(seriesKey(binding), opts.today, value.value);
 
       if (binding.history && value.type === "number") {

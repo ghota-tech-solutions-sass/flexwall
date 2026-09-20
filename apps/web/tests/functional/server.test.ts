@@ -74,7 +74,19 @@ beforeAll(async () => {
 afterAll(() => server?.kill());
 
 describe("Public pages", () => {
-  for (const path of ["/", "/explore", "/pricing", "/login", "/legal", "/demo/card.png", "/demo/lockscreen.png", "/robots.txt", "/sitemap.xml"]) {
+  test("a Pro choice reaches onboarding and returns an existing owner to pricing without starting payment", async () => {
+    const token = new HmacTokenService(SECRET, true, { now: () => Date.now() }).magic("conversion@example.com");
+    const verified = await fetch(`${BASE}/api/auth/verify?token=${encodeURIComponent(token)}&plan=yearly&handle=conversion`, { redirect: "manual" });
+    expect(verified.headers.get("location")).toBe(`${BASE}/onboarding?handle=conversion&plan=yearly`);
+    const session = verified.headers.get("set-cookie")!.split(";")[0]!;
+    const claimed = await fetch(`${BASE}/api/me/handle`, { method: "POST", headers: { cookie: session, origin: BASE, "content-type": "application/json" }, body: JSON.stringify({ handle: "conversion" }) });
+    expect(claimed.status).toBe(200);
+    const returning = await fetch(`${BASE}/login?plan=yearly`, { headers: { cookie: session }, redirect: "manual" });
+    expect(returning.headers.get("location")).toBe("/pricing?plan=yearly");
+    const invalid = await fetch(`${BASE}/login?plan=lifetime`, { headers: { cookie: session }, redirect: "manual" });
+    expect(invalid.headers.get("location")).toBe("/edit");
+  });
+  for (const path of ["/", "/demo", "/explore", "/pricing", "/login", "/legal", "/demo/card.png", "/demo/lockscreen.png", "/robots.txt", "/sitemap.xml"]) {
     test(`given a visitor, when they open ${path}, then it answers`, async () => {
       // Given / When
       const res = await http(path);

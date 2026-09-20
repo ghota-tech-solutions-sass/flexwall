@@ -9,8 +9,8 @@ export class RouteLinks implements AppLinks {
     this.origin = appUrl.replace(/\/+$/, "");
   }
 
-  signIn(token: string, handle?: string) {
-    return this.origin + API.signInLink(token, handle);
+  signIn(token: string, handle?: string, plan?: string) {
+    return this.origin + API.signInLink(token, handle, plan);
   }
 
   lockscreen(wallId: string, key: string) {

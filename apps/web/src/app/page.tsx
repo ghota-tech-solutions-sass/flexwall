@@ -6,7 +6,6 @@ import {
   CheckIcon,
   EyeSlashIcon,
   KeyIcon,
-  LockKeyIcon,
   SealCheckIcon,
 } from "@phosphor-icons/react/ssr";
 import { asType, currencySymbol, formatNumber } from "@flexwall/sdk";
@@ -19,9 +18,7 @@ import { MotionScope } from "@/components/motion/MotionScope";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Footer, TopBar } from "@/components/site/Chrome";
 import { ClaimForm } from "@/components/site/ClaimForm";
-import { ProfileHeader } from "@/components/wall/ProfileHeader";
 import { WallGrids, wallStyle } from "@/components/wall/WallView";
-import { DEFAULT_DEVICE, DEVICES } from "@/domain/layout";
 import { todayIn } from "@/domain/time";
 import { PLAN_PRICES_USD } from "@/domain/pricing";
 import { FREE_TILE_LIMIT } from "@/domain/user";
@@ -37,9 +34,6 @@ import {
   websiteLd,
 } from "@/presentation/seo/structured-data";
 import { demoWall, sampleStates } from "@/rendering/samples";
-import faceInes from "../../public/photos/face-ines.jpg";
-import faceMaya from "../../public/photos/face-maya.jpg";
-import faceTheo from "../../public/photos/face-theo.jpg";
 import handChat from "../../public/photos/hand-chat.jpg";
 import laptopCafe from "../../public/photos/laptop-cafe.jpg";
 import nightstand from "../../public/photos/nightstand.jpg";
@@ -53,7 +47,6 @@ export const metadata: Metadata = pageMetadata({
 
 export const dynamic = "force-dynamic";
 
-const PHONE = DEVICES[DEFAULT_DEVICE];
 
 /** Photographs are staged; the screens in them are real Flexwall renders of the sample wall. */
 const MOMENTS: {
@@ -83,41 +76,6 @@ const MOMENTS: {
     body: "Your link unfolds into a card with today's numbers, wherever you post it.",
     photo: handChat,
     alt: "Hands holding a phone with a message thread where a Flexwall link unfolds into a card",
-  },
-];
-
-/** Invented people, labelled as examples on the page: The Wall lists the real ones. */
-const EXAMPLES: {
-  name: string;
-  handle: string;
-  figure: string;
-  what: string;
-  delta: string;
-  photo: StaticImageData;
-}[] = [
-  {
-    name: "Maya Levin",
-    handle: "maya",
-    figure: "$12.4k",
-    what: "MRR, verified with Stripe",
-    delta: "+18% this month",
-    photo: faceMaya,
-  },
-  {
-    name: "Théo Lambert",
-    handle: "theo",
-    figure: "8,912",
-    what: "GitHub stars",
-    delta: "412-day streak",
-    photo: faceTheo,
-  },
-  {
-    name: "Inès Garnier",
-    handle: "ines",
-    figure: "21,380",
-    what: "newsletter subscribers",
-    delta: "+640 this week",
-    photo: faceInes,
   },
 ];
 
@@ -193,40 +151,6 @@ function SchemeImage({
   );
 }
 
-/** The phone screen, with the clock the lock screen image leaves room for. */
-function LockScreen({ date }: { date: string }) {
-  return (
-    <div
-      className="device"
-      role="img"
-      aria-label="An iPhone lock screen showing the same numbers as widgets"
-    >
-      <div className="device-screen">
-        <span className="device-island" />
-        <SchemeImage
-          name="lockscreen"
-          alt=""
-          width={PHONE.w}
-          height={PHONE.h}
-          sizes="270px"
-          priority
-        />
-        <div className="device-clock only-light">
-          <div>{date}</div>
-          <div>9:41</div>
-        </div>
-        <div
-          className="device-clock only-dark"
-          style={{ ["--clock" as string]: "#f5f5f7" }}
-        >
-          <div>{date}</div>
-          <div>9:41</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default async function Home() {
   const now = Date.now();
   const today = todayIn("UTC", now);
@@ -236,6 +160,8 @@ export default async function Home() {
   const states = sampleStates(wall.tiles, catalog);
   const signedIn = Boolean(await sessionUserId());
   const connectors = visibleConnectors(catalog.connectors(), await container().publicConnectors.execute());
+  const featuredConnectors = connectors.filter((c) => ["stripe", "github", "polar", "lemon-squeezy", "plausible", "npm"].includes(c.id));
+  const heroTiles = ["mrr", "streak", "revenue", "customers"].map((id, i) => ({ ...wall.tiles.find((tile) => tile.id === id)!, layout: { x: (i % 2) * 2, y: Math.floor(i / 2), w: 2, h: 1 } }));
   const revenueState = states.revenue;
   const revenue =
     revenueState?.status === "ready"
@@ -247,12 +173,6 @@ export default async function Home() {
     mrrState?.status === "ready"
       ? asType(mrrState.inputs.value?.value, "number")
       : null;
-  const date = new Date(now).toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    timeZone: "UTC",
-  });
   const faqLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -273,108 +193,36 @@ export default async function Home() {
       </div>
 
       <main id="main">
-        <section className="hero page" aria-labelledby="title">
-          <Link href={integrationPath(stripeConnector.id)} className="pill-link">
-            <SealCheckIcon size={18} weight="fill" />
-            Revenue verified straight from Stripe
-            <ArrowRightIcon size={14} />
-          </Link>
-          <h1 id="title" className="display">
-            Flex your real numbers.
-          </h1>
-          <p className="hero-lede">
-            Stripe revenue, GitHub streaks and any API, live on one public page
-            and on your lock screen. Set it up once, it stays up to date.
-          </p>
-          {/* Someone who already has a wall has nothing to claim: the address bar of the page they own is the point. */}
-          {signedIn ? (
-            <Link href={ROUTES.edit} className="btn btn-signal">
-              Edit my wall
+        <section className="hero hero-conversion page" aria-labelledby="title">
+          <div className="hero-copy">
+            <Link href={integrationPath(stripeConnector.id)} className="pill-link">
+              <SealCheckIcon size={18} weight="fill" /> Revenue, straight from the source
             </Link>
-          ) : (
-            <ClaimForm />
-          )}
-          <ul className="trust">
-            <li>
-              <CheckIcon size={16} weight="bold" />
-              Free to start
-            </li>
-            <li>
-              <CheckIcon size={16} weight="bold" />
-              No card needed
-            </li>
-            <li>
-              <CheckIcon size={16} weight="bold" />
-              Read-only keys
-            </li>
-          </ul>
-
-          <div className="showcase">
-            <div className="browser">
-              <div className="browser-bar" aria-hidden="true">
-                <span className="dots">
-                  <i />
-                  <i />
-                  <i />
-                </span>
-                <span className="url">
-                  <LockKeyIcon size={12} />
-                  flexwall.lol/@{wall.handle}
-                </span>
-                <span />
-              </div>
-              <div
-                className="browser-body only-light"
-                style={{ ["--wall-fade" as string]: light.page }}
-              >
-                <div className="mini-wall board" style={wallStyle(light)}>
-                  <ProfileHeader
-                    as="h2"
-                    title={wall.title}
-                    handle={wall.handle}
-                    bio={wall.bio}
-                    theme={light}
-                    stats={[{ value: "3", label: "verified numbers" }]}
-                  />
-                  <WallGrids
-                    tiles={wall.tiles}
-                    states={states}
-                    theme={light}
-                    today={today}
-                    catalog={catalog}
-                  />
-                </div>
-              </div>
-              <div
-                className="browser-body only-dark"
-                style={{ ["--wall-fade" as string]: dark.page }}
-              >
-                <div className="mini-wall board" style={wallStyle(dark)}>
-                  <ProfileHeader
-                    as="h2"
-                    title={wall.title}
-                    handle={wall.handle}
-                    bio={wall.bio}
-                    theme={dark}
-                    stats={[{ value: "3", label: "verified numbers" }]}
-                  />
-                  <WallGrids
-                    tiles={wall.tiles}
-                    states={states}
-                    theme={dark}
-                    today={today}
-                    catalog={catalog}
-                  />
-                </div>
-              </div>
+            <h1 id="title" className="display">Your work.<br />The numbers to prove it.</h1>
+            <p className="hero-lede">Turn your revenue and progress into one live page. Share your story with numbers from Stripe, GitHub and the tools you already use.</p>
+            {signedIn ? <Link href={ROUTES.edit} className="btn btn-signal">Edit my wall</Link> : <ClaimForm />}
+            <div className="hero-demo-link"><Link href={ROUTES.demo}>Try the interactive demo <ArrowRightIcon size={16} /></Link><span>No sign-up needed</span></div>
+            <ul className="trust">
+              <li><CheckIcon size={16} weight="bold" /> Free to start</li>
+              <li><CheckIcon size={16} weight="bold" /> No card needed</li>
+              <li><EyeSlashIcon size={16} /> You choose what is public</li>
+            </ul>
+          </div>
+          <div className="hero-preview">
+            <div className="preview-caption"><span>Ada’s launch journal</span><span className="badge">Sample data</span></div>
+            <div className="preview-board only-light" style={wallStyle(light)}>
+              <WallGrids animate={false} tiles={heroTiles} states={states} theme={light} today={today} catalog={catalog} />
             </div>
-            <LockScreen date={date} />
+            <div className="preview-board only-dark" style={wallStyle(dark)}>
+              <WallGrids animate={false} tiles={heroTiles} states={states} theme={dark} today={today} catalog={catalog} />
+            </div>
+            <p>One page. A share card. Your daily lock screen.</p>
           </div>
         </section>
 
         <nav className="sources page" aria-label="Sources">
           <span>Reads from the tools you already use</span>
-          {connectors
+          {featuredConnectors
             .filter((conn) => hasMark(conn.id))
             .map((conn) => (
               <Link key={conn.id} href={integrationPath(conn.id)}>
@@ -483,11 +331,11 @@ export default async function Home() {
               <div className="block-head">
                 <span className="eyebrow">Verified</span>
                 <h2 id="verified" className="display">
-                  Numbers nobody can type in.
+                  A source behind every number.
                 </h2>
                 <p>
-                  Screenshots can be edited. A figure read from your own account
-                  can&apos;t.
+                  Verified figures come directly from your connected provider.
+                  Personal API data and typed numbers are clearly distinguished.
                 </p>
               </div>
               <ul className="points">
@@ -495,7 +343,7 @@ export default async function Home() {
                   <KeyIcon />
                   <strong>Read-only access</strong>
                   <span>
-                    Restricted keys that can read revenue and nothing else.
+                    Restricted keys with the read permissions the connector needs.
                   </span>
                 </li>
                 <li>
@@ -507,9 +355,9 @@ export default async function Home() {
                 </li>
                 <li>
                   <SealCheckIcon />
-                  <strong>A mark on every verified tile</strong>
+                  <strong>Know where each number comes from</strong>
                   <span>
-                    Visitors see which numbers come straight from the source.
+                    Provider-verified, synchronized from your API, or entered manually.
                   </span>
                 </li>
               </ul>
@@ -556,32 +404,12 @@ export default async function Home() {
         </section>
 
         <section className="block page" aria-labelledby="examples">
-          <div className="block-head">
-            <span className="eyebrow">For every kind of builder</span>
-            <h2 id="examples" className="display">
-              One wall, whatever you build.
-            </h2>
-            <p>
-              Apps, open source, newsletters, videos.{" "}
-              <Link href={ROUTES.explore}>See the real walls on The Wall</Link>.
-            </p>
+          <div className="cta-band">
+            <span className="eyebrow">Make it yours</span>
+            <h2 id="examples" className="display">See your next page before you sign up.</h2>
+            <p>Change the theme, edit the title and choose the numbers to show. Our demo uses sample data, so you can explore without connecting an account.</p>
+            <Link href={ROUTES.demo} className="btn btn-signal">Try the demo <ArrowRightIcon size={16} /></Link>
           </div>
-          <ul className="examples">
-            {EXAMPLES.map((e) => (
-              <li key={e.handle}>
-                <span className="who">
-                  <Image src={e.photo} alt="" sizes="44px" />
-                  <strong>{e.name}</strong>
-                  <span>@{e.handle}</span>
-                  <span className="badge">Example</span>
-                </span>
-                <b>{e.figure}</b>
-                <span className="what">
-                  {e.what} <span className="delta">{e.delta}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
         </section>
 
         <section className="block page tinted" aria-labelledby="sources">
@@ -592,8 +420,9 @@ export default async function Home() {
             </h2>
             <p>Connect an account once and every tile can read from it.</p>
           </div>
+          <p><Link href={ROUTES.integrations}>Browse all integrations <ArrowRightIcon size={14} /></Link></p>
           <ul className="connector-list">
-            {connectors.map((conn) => (
+            {featuredConnectors.map((conn) => (
               <li key={conn.id}>
                 <h3>
                   <BrandMark id={conn.id} size={20} />

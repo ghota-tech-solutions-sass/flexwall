@@ -1,5 +1,6 @@
 "use client";
 
+import { sellablePlan } from "@/domain/pricing";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { HANDLE_MAX_LENGTH, Handle } from "@/domain/handle";
@@ -11,7 +12,7 @@ import { STORAGE_KEYS } from "@/presentation/storage-keys";
 const clean = (raw: string) => Handle.slugify(raw).replace(/-+$/, "");
 
 /** `suggested` is the handle that travelled on the sign-in link; it wins over the one this browser happens to remember. */
-export function HandleForm({ suggested }: { suggested?: string }) {
+export function HandleForm({ suggested, plan }: { suggested?: string; plan?: string }) {
   const router = useRouter();
   const [handle, setHandle] = useState(clean(suggested ?? ""));
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +36,7 @@ export function HandleForm({ suggested }: { suggested?: string }) {
         const res = await postJson(API.handle, { handle });
         setBusy(false);
         if (!res.ok) return setError(res.body.message ?? "Couldn't claim that handle.");
-        router.push(ROUTES.edit);
+        router.push(sellablePlan(plan) ? ROUTES.pricingForPlan(plan!) : ROUTES.edit);
       }}
     >
       <label className="field">

@@ -1,6 +1,6 @@
 import { defineTheme } from "@flexwall/sdk";
 
-/** Four free themes that suit most walls, four Pro ones with a point of view. */
+/** Five free themes and four Pro palettes, shared by pages and image exports. */
 
 /** The default: widgets on a soft daylight wallpaper, the way a phone shows them. */
 export const daylight = defineTheme({
@@ -8,19 +8,19 @@ export const daylight = defineTheme({
   name: "Daylight",
   tier: "free",
   mode: "light",
-  page: "#f2f2f7",
+  page: "#edf2ee",
   wallpaper: "radial-gradient(90% 70% at 0% 0%, #d9f2e2 0%, rgba(242,242,247,0) 60%), radial-gradient(80% 60% at 100% 0%, #e3eaf6 0%, rgba(242,242,247,0) 55%)",
   tile: "#ffffff",
-  tileBorder: "rgba(15,17,21,0.04)",
-  tileShadow: "0 1px 2px rgba(20,40,28,0.04), 0 10px 30px -14px rgba(20,40,28,0.18)",
+  tileBorder: "rgba(32,67,47,0.08)",
+  tileShadow: "0 2px 3px rgba(20,40,28,0.025), 0 12px 28px -16px rgba(20,40,28,0.22)",
   ink: "#0c0d10",
   muted: "#6e6f78",
-  accent: "#2fb866",
+  accent: "#23865b",
   positive: "#1e9e52",
   negative: "#e5484d",
   track: "rgba(12,13,16,0.06)",
   heat: ["#ececf1", "#c9ecd5", "#8bd7a7", "#43bd72", "#1e9e52"],
-  radius: 14,
+  radius: 20,
   display: { family: "Geist", weight: 700 },
   body: { family: "Geist", weight: 400 },
 });
@@ -33,17 +33,17 @@ export const midnight = defineTheme({
   mode: "dark",
   page: "#060708",
   wallpaper: "radial-gradient(90% 70% at 0% 0%, #0f3a25 0%, rgba(6,7,8,0) 60%), radial-gradient(80% 60% at 100% 0%, #11213a 0%, rgba(6,7,8,0) 55%)",
-  tile: "#16171b",
+  tile: "#141d1c",
   tileBorder: "rgba(255,255,255,0.06)",
-  tileShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+  tileShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 30px -18px rgba(0,0,0,0.6)",
   ink: "#f5f5f7",
   muted: "#8e8e96",
-  accent: "#30d158",
+  accent: "#74e3b2",
   positive: "#30d158",
   negative: "#ff6961",
   track: "rgba(255,255,255,0.09)",
   heat: ["#1f2025", "#123d25", "#1b6b3c", "#26a557", "#30d158"],
-  radius: 14,
+  radius: 20,
   display: { family: "Geist", weight: 700 },
   body: { family: "Geist", weight: 400 },
 });
@@ -95,6 +95,8 @@ export const paper = defineTheme({
   tier: "free",
   mode: "light",
   page: "#efece5",
+  wallpaper: "radial-gradient(ellipse at 15% 0%, #f9e5cc 0%, rgba(239,236,229,0) 65%)",
+  tileShadow: "0 10px 24px -18px rgba(73,48,29,0.24)",
   tile: "#fbfaf7",
   tileBorder: "#e2ddd2",
   ink: "#161513",

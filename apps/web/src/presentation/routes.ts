@@ -4,6 +4,8 @@
  * path by hand. `next.config.ts` maps the public `/@handle` onto `/u/[handle]`.
  */
 
+import type { BillingPlan } from "@/domain/pricing";
+
 const segment = (value: string) => encodeURIComponent(value);
 
 /**
@@ -15,7 +17,7 @@ const segment = (value: string) => encodeURIComponent(value);
 export const HANDLE_PARAM = "handle";
 
 /** Query parameters of the sign-in link. The browser adds its time zone so a new account starts on the owner's day. */
-export const SIGN_IN_PARAMS = { token: "token", timeZone: "tz", handle: HANDLE_PARAM } as const;
+export const SIGN_IN_PARAMS = { token: "token", timeZone: "tz", handle: HANDLE_PARAM, plan: "plan" } as const;
 
 /** Query parameters /settings reads. */
 export const SETTINGS_PARAMS = { upgraded: "upgraded", seats: "seats" } as const;
@@ -27,10 +29,10 @@ export const PAID_ACCOUNTS_ANCHOR = "accounts";
 export const CONNECT_PARAMS = { connected: "connected", error: "connect_error" } as const;
 
 /** Query parameters /login reads. */
-export const LOGIN_PARAMS = { expired: "expired", handle: HANDLE_PARAM } as const;
+export const LOGIN_PARAMS = { expired: "expired", handle: HANDLE_PARAM, plan: "plan" } as const;
 
 /** Query parameters /onboarding reads. */
-export const ONBOARDING_PARAMS = { handle: HANDLE_PARAM } as const;
+export const ONBOARDING_PARAMS = { handle: HANDLE_PARAM, plan: "plan" } as const;
 
 /** A query flag's "on" value. */
 const FLAG_ON = "1";
@@ -42,11 +44,13 @@ const SIGN_IN_VERIFY = `${PREFIX.api}auth/verify`;
 
 export const ROUTES = {
   home: "/",
+  demo: "/demo",
   login: "/login",
   /** After a sign-in link that expired. */
   loginExpired: `/login?${new URLSearchParams({ [LOGIN_PARAMS.expired]: FLAG_ON })}`,
   /** Signing in to claim the handle that was typed on the way here. */
   loginToClaim: (handle: string) => (handle ? `/login?${new URLSearchParams({ [LOGIN_PARAMS.handle]: handle })}` : "/login"),
+  loginForPlan: (plan: BillingPlan) => `/login?${new URLSearchParams({ plan })}`,
   onboarding: "/onboarding",
   /** Picking a handle with the one already typed filled in. */
   onboardingToClaim: (handle: string) => (handle ? `/onboarding?${new URLSearchParams({ [ONBOARDING_PARAMS.handle]: handle })}` : "/onboarding"),
@@ -62,6 +66,7 @@ export const ROUTES = {
   /** The back office page for connectors: environments and who may use them. */
   adminConnectors: `${PREFIX.admin}/connectors`,
   pricing: "/pricing",
+  pricingForPlan: (plan: string) => `/pricing?${new URLSearchParams({ plan })}`,
   explore: "/explore",
   exploreSorted: (sort: string) => `/explore?${new URLSearchParams({ sort })}`,
   integrations: "/integrations",
@@ -110,8 +115,8 @@ export const API = {
   report: "/api/report",
   signInVerify: SIGN_IN_VERIFY,
   /** The link mailed to sign in, carrying the handle it was asked for, if any. */
-  signInLink: (token: string, handle?: string) =>
-    `${SIGN_IN_VERIFY}?${new URLSearchParams({ [SIGN_IN_PARAMS.token]: token, ...(handle ? { [SIGN_IN_PARAMS.handle]: handle } : {}) })}`,
+  signInLink: (token: string, handle?: string, plan?: string) =>
+    `${SIGN_IN_VERIFY}?${new URLSearchParams({ [SIGN_IN_PARAMS.token]: token, ...(handle ? { [SIGN_IN_PARAMS.handle]: handle } : {}), ...(plan ? { [SIGN_IN_PARAMS.plan]: plan } : {}) })}`,
 } as const;
 
 /** Path prefixes of screens and links that must stay out of search engines. */

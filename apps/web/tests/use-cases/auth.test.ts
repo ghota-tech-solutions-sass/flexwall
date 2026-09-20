@@ -1,9 +1,19 @@
 import { describe, expect, test } from "bun:test";
 import { RequestSignInLink, SignIn } from "@/application/use-cases/auth";
 import { aUser } from "../builders";
+import { RouteLinks } from "@/presentation/links";
 import { FakeLinks, FakeTokens, FixedClock, InMemoryHandles, InMemoryReferrals, InMemoryUsers, RecordingMailer, SequentialIds } from "../fakes";
 
 describe("RequestSignInLink", () => {
+  test("a checkout choice survives the email link, while retired or arbitrary destinations are dropped", async () => {
+    const mailer = new RecordingMailer();
+    const requestLink = new RequestSignInLink({ tokens: new FakeTokens(), mailer, links: new RouteLinks("https://flexwall.test") });
+    for (const plan of ["monthly", "yearly", "lifetime", "https://untrusted.example"]) {
+      const { link } = await requestLink.execute({ email: "ada@example.com", handle: "ada", plan });
+      expect(new URL(link).searchParams.get("handle")).toBe("ada");
+      expect(new URL(link).searchParams.get("plan")).toBe(plan === "monthly" || plan === "yearly" ? plan : null);
+    }
+  });
   test("given an email address, when a link is requested, then a sign-in link is mailed to it", async () => {
     // Given
     const mailer = new RecordingMailer();

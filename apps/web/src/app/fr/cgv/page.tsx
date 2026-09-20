@@ -3,7 +3,7 @@ import Link from "next/link";
 import { LEGAL_PATHS, LegalDocument, legalMetadata, MediatorBlock } from "@/components/legal/LegalDocument";
 import { PAID_ACCOUNT_PRICE_USD, PLAN_PRICES_USD } from "@/domain/pricing";
 import { REFERRAL_DISCOUNT_PERCENT, REFERRAL_REWARD_CAP, REFERRAL_REWARD_DAYS } from "@/domain/referral";
-import { FREE_TILE_LIMIT } from "@/domain/user";
+import { FREE_TILE_LIMIT, PAID_TILE_LIMIT } from "@/domain/user";
 import { PUBLISHER } from "@/domain/publisher";
 
 export const metadata: Metadata = legalMetadata("terms", "fr");
@@ -30,7 +30,7 @@ export default function CgvPage() {
           <strong>Gratuit :</strong> un mur, {FREE_TILE_LIMIT} tuiles, les connecteurs de base, une marque flexwall.lol sur les images.
         </li>
         <li>
-          <strong>Pro :</strong> tuiles illimitées, tous les connecteurs et thèmes, l&apos;historique des valeurs, sans marque. Abonnement mensuel ou annuel.
+          <strong>Pro :</strong> jusqu’à {PAID_TILE_LIMIT} tuiles, tous les connecteurs et thèmes, l&apos;historique des valeurs, sans marque. Abonnement mensuel ou annuel.
         </li>
         <li>
           <strong>Lifetime :</strong> les fonctionnalités Pro pour la durée de vie du service, en un paiement unique. Cette offre n&apos;est plus vendue ; les

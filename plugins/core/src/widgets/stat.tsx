@@ -38,16 +38,17 @@ export const stat = defineWidget<Options>({
     const goal = options.goal && options.goal > 0 ? options.goal : null;
 
     const small = area.height < 90;
-    const labelSize = small ? 10 : 12;
+    const labelSize = small ? 9 : 11;
     const footer = goal !== null || change !== null;
-    const valueMax = Math.min(area.height * (footer ? 0.5 : 0.62), 120);
+    const reserved = labelSize * 1.2 + (footer ? labelSize * 1.2 + 14 : 0);
+    const valueMax = Math.min(Math.max(6, area.height - reserved - 6), area.height * 0.62, 120);
     const valueSize = fitFont(shown, area.width, valueMax, displayAdvance(theme));
 
     return (
       <Col style={{ width: "100%", height: "100%", justifyContent: "space-between" }}>
-        <Text style={{ fontSize: u(labelSize), color: theme.muted, fontFamily: theme.body.family }}>{options.label || " "}</Text>
-        <Fill style={{ alignItems: "center" }}>
-          <Text
+        <Text style={{ fontSize: u(labelSize), lineHeight: 1.2, color: theme.muted, fontFamily: theme.body.family, letterSpacing: u(0.5) }}>{options.label || " "}</Text>
+        <Fill style={{ alignItems: "center", paddingBottom: u(footer ? 4 : 0) }}>
+          <Text animate={!range}
             style={{
               fontSize: u(valueSize),
               lineHeight: 1,
@@ -62,15 +63,15 @@ export const stat = defineWidget<Options>({
         </Fill>
         {goal !== null ? (
           <Col style={{ width: "100%" }}>
-            <Bar value={current / goal} height={u(small ? 5 : 7)} color={theme.accent} track={theme.track} />
+            {!range ? <Bar value={current / goal} height={u(small ? 4 : 6)} color={theme.accent} track={theme.track} /> : null}
             <Row style={{ justifyContent: "space-between", marginTop: u(5) }}>
               {/* Goal and percentage together would give the number back. */}
-              <Text style={{ fontSize: u(labelSize - 1), color: theme.muted }}>{range ? " " : formatPercent(current / goal)}</Text>
-              <Text style={{ fontSize: u(labelSize - 1), color: theme.muted }}>{prefix + formatNumber(goal) + suffix}</Text>
+              <Text style={{ fontSize: u(labelSize - 1), lineHeight: 1.2, color: theme.muted }}>{range ? " " : formatPercent(current / goal)}</Text>
+              <Text style={{ fontSize: u(labelSize - 1), lineHeight: 1.2, color: theme.muted }}>{prefix + formatNumber(goal) + suffix}</Text>
             </Row>
           </Col>
         ) : change !== null ? (
-          <Text style={{ fontSize: u(labelSize), color: change >= 0 ? theme.positive : theme.negative }}>
+          <Text style={{ fontSize: u(labelSize), lineHeight: 1.2, color: change >= 0 ? theme.positive : theme.negative }}>
             {`${formatPercent(change, true)} in ${ser!.points.length} days`}
           </Text>
         ) : null}

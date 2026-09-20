@@ -24,6 +24,8 @@
   column-gap: clamp(16px, 2.2vw, 24px);
   align-items: center;
   margin-bottom: clamp(28px, 4vw, 44px);
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--wp-line);
   animation: wp-in 0.7s var(--spring) both;
 }
 .wall-page .wp-avatar {
@@ -33,9 +35,10 @@
   place-items: center;
   width: var(--size);
   height: var(--size);
-  border-radius: 50%;
-  background: var(--wall-tile);
-  color: var(--wall-ink);
+  border-radius: 28%;
+  background: var(--wall-ink);
+  color: var(--wall-on-ink);
+  transform: rotate(-4deg);
   box-shadow: inset 0 0 0 1px var(--wall-border), 0 0 0 1px var(--wp-line), 0 1px 2px rgba(0, 0, 0, 0.06);
   font-size: calc(var(--size) * 0.4);
   font-weight: 600;
@@ -43,10 +46,11 @@
   line-height: 1;
   user-select: none;
 }
+.wall-page .wp-eyebrow { display: block; margin-bottom: 8px; color: var(--wall-muted); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; overflow-wrap: anywhere; }
 .wall-page .wp-id { grid-row: 1; grid-column: 2; min-width: 0; }
 .wall-page .wp-id h1 {
   margin: 0;
-  font-size: clamp(26px, 3.4vw, 36px);
+  font-size: clamp(30px, 4.5vw, 48px);
   line-height: 1.1;
   letter-spacing: -0.035em;
   overflow-wrap: anywhere;
@@ -146,28 +150,6 @@
 }
 .wall-page .share-menu > *:hover, .wall-page .share-menu > *:focus-visible { background: var(--wp-wash); outline: none; }
 .wall-page .share-menu svg { flex: none; color: var(--wall-muted); }
-
-/* ── Tiles: the verified seal stays in view ──── */
-.wall-page .wall-tile .verified {
-  --seal: clamp(18px, calc(var(--u) * 9.5), 22px);
-  top: calc(var(--u) * 3.5);
-  right: calc(var(--u) * 3.5);
-  bottom: auto;
-  justify-content: center;
-  gap: 0;
-  min-width: var(--seal);
-  height: var(--seal);
-  padding: 0;
-  border-radius: 999px;
-  font: 500 11px/1 inherit;
-  opacity: 1;
-  cursor: default;
-  transition: padding 0.35s var(--spring), gap 0.35s var(--spring);
-}
-.wall-page .wall-tile .verified svg { flex: none; width: calc(var(--seal) - 6px); height: calc(var(--seal) - 6px); color: var(--wall-positive); }
-.wall-page .wall-tile .verified > span { max-width: 0; overflow: hidden; white-space: nowrap; opacity: 0; transition: max-width 0.35s var(--spring), opacity 0.2s ease-out; }
-.wall-page .wall-tile:hover .verified, .wall-page .wall-tile .verified:focus-visible { gap: 4px; padding: 0 8px 0 3px; }
-.wall-page .wall-tile:hover .verified > span { max-width: 96px; opacity: 1; }
 
 /* ── Preview bar, before publishing ──────────── */
 .wall-page .wp-preview {

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { LEGAL_PATHS, LegalDocument, legalMetadata, MediatorBlock } from "@/components/legal/LegalDocument";
 import { PAID_ACCOUNT_PRICE_USD, PLAN_PRICES_USD } from "@/domain/pricing";
 import { REFERRAL_DISCOUNT_PERCENT, REFERRAL_REWARD_CAP, REFERRAL_REWARD_DAYS } from "@/domain/referral";
-import { FREE_TILE_LIMIT } from "@/domain/user";
+import { FREE_TILE_LIMIT, PAID_TILE_LIMIT } from "@/domain/user";
 import { PUBLISHER } from "@/domain/publisher";
 
 export const metadata: Metadata = legalMetadata("terms", "en");
@@ -29,7 +29,7 @@ export default function TermsPage() {
           <strong>Free:</strong> one wall, {FREE_TILE_LIMIT} tiles, the basic connectors, a flexwall.lol mark on images.
         </li>
         <li>
-          <strong>Pro:</strong> unlimited tiles, every connector and theme, value history, no mark. Monthly or yearly subscription.
+          <strong>Pro:</strong> up to {PAID_TILE_LIMIT} tiles, every connector and theme, value history, no mark. Monthly or yearly subscription.
         </li>
         <li>
           <strong>Lifetime:</strong> Pro features for the life of the service, in one payment. No longer sold; accounts that bought it keep it.

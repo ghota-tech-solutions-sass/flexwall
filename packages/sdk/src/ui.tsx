@@ -28,8 +28,8 @@ export function Fill({ children, style }: BoxProps) {
   return <div style={{ display: "flex", flex: 1, minWidth: 0, minHeight: 0, ...style }}>{children}</div>;
 }
 
-export function Text({ children, style }: BoxProps) {
-  return <div style={{ display: "flex", whiteSpace: "nowrap", overflow: "hidden", ...style }}>{children}</div>;
+export function Text({ children, style, animate }: BoxProps & { animate?: boolean }) {
+  return <div data-figure={animate || undefined} style={{ display: "flex", whiteSpace: "nowrap", overflow: "hidden", ...style }}>{children}</div>;
 }
 
 /** Horizontal progress bar. `value` is 0 to 1. */
@@ -37,7 +37,7 @@ export function Bar({ value, height, color, track, radius }: { value: number; he
   const pct = Math.max(0, Math.min(1, value)) * 100;
   return (
     <div style={{ display: "flex", width: "100%", height, background: track, borderRadius: radius ?? height, overflow: "hidden" }}>
-      <div style={{ display: "flex", width: `${Math.max(pct, pct > 0 ? 2 : 0)}%`, height: "100%", background: color, borderRadius: radius ?? height }} />
+      <div data-progress-fill="true" style={{ display: "flex", width: `${Math.max(pct, pct > 0 ? 2 : 0)}%`, height: "100%", background: color, borderRadius: radius ?? height }} />
     </div>
   );
 }

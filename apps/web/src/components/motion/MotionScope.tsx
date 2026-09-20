@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect, useRef } from "react";
+import { installChartInteractions } from "./chart-interactions";
 import { easeOutExpo, formatFigure, parseFigure } from "@/presentation/motion/figures";
 
 const SPRING = "cubic-bezier(0.32, 0.72, 0, 1)";
@@ -8,55 +9,36 @@ const SPRING = "cubic-bezier(0.32, 0.72, 0, 1)";
 /** Share of the scope that must be on screen before anything moves. */
 const VISIBLE_THRESHOLD = 0.2;
 
-/**
- * The choreography, in milliseconds. Each tile starts `tileStagger` after the
- * previous one; inside a tile, lines, bars and heatmaps follow its figures by
- * their own offsets so the eye reads the number first.
- */
+/** Timing for explicitly marked figures and charts outside public wall tiles. */
 const TIMING = {
   count: { start: 120, stagger: 90, duration: 1100 },
   draw: { start: 200, stagger: 90, duration: 1300 },
-  tile: { start: 80, stagger: 70, drawAfter: 120, fillAfter: 160, lightAfter: 100 },
-  fill: { duration: 1200 },
-  cell: { duration: 500, stagger: 12 },
 } as const;
 
-/** Text smaller than this is a label or small print, not a figure to count. */
-const FIGURE_MIN_FONT_PX = 18;
-
-/** What a heatmap looks like in the DOM: at least this many columns of at least this many cells. */
-const HEATMAP_SHAPE = { columns: 20, cells: 5 } as const;
-
-/** How far a heatmap cell rises as it lights up, in pixels. */
-const CELL_RISE_PX = 4;
-
-/**
- * Brings live numbers to life once, when they scroll into view: figures count
- * up, lines draw from left to right, bars fill, heatmap cells light up.
- *
- * It reads the rendered DOM instead of asking widgets for hooks, so every
- * widget, community ones included, gets it without changing how images are
- * drawn. Elements marked `data-count` or `data-draw` are animated explicitly.
- * Nothing moves when the system asks for reduced motion.
- */
-export function MotionScope({ children, className, tiles = false, style }: { children: ReactNode; className?: string; tiles?: boolean; style?: React.CSSProperties }) {
+/** Explicit marketing figures can count up; wall tiles animate only explicitly marked, non-private values. */
+export function MotionScope({ children, className, tiles = false, motion = true, style }: { children: ReactNode; className?: string; tiles?: boolean; motion?: boolean; style?: React.CSSProperties }) {
   const root = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (root.current && tiles) return installChartInteractions(root.current);
+  }, [tiles]);
+
+  useEffect(() => {
     const el = root.current;
-    if (!el || typeof IntersectionObserver === "undefined") return;
+    if (!motion || !el || typeof IntersectionObserver === "undefined") return;
+    if (tiles) return observeTiles(el);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry?.isIntersecting) return;
         observer.disconnect();
-        animate(el, tiles);
+        animate(el);
       },
       { threshold: VISIBLE_THRESHOLD }
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [tiles]);
+  }, [tiles, motion]);
 
   return (
     <div ref={root} className={className} style={style}>
@@ -65,77 +47,98 @@ export function MotionScope({ children, className, tiles = false, style }: { chi
   );
 }
 
-function animate(root: HTMLElement, tiles: boolean) {
+/** Per-tile observation keeps long walls lively without a giant off-screen animation queue.
+ * Only explicitly marked figures count up; verification badges stay untouched.
+ */
+function observeTiles(root: HTMLElement) {
+  const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const seen = new WeakSet<Element>();
+  const enrolled = new WeakSet<Element>();
+  const running = new Set<Animation>();
+  const counters = new Set<() => void>();
+  const play = (el: Element, frames: Keyframe[], delay: number, duration: number) => {
+    const animation = el.animate(frames, { duration, delay, easing: SPRING, fill: "backwards" });
+    running.add(animation);
+    animation.onfinish = () => running.delete(animation);
+  };
+  const observer = new IntersectionObserver((entries) => {
+    let order = 0;
+    for (const entry of entries) {
+      const tile = entry.target as HTMLElement;
+      if (!entry.isIntersecting || tile.offsetParent === null || seen.has(tile)) continue;
+      seen.add(tile);
+      observer.unobserve(tile);
+      if (preference.matches) continue;
+      const delay = Math.min(order++, 4) * 45;
+      play(tile, [{ opacity: 0.35, transform: "translateY(10px)" }, { opacity: 1, transform: "translateY(0)" }], delay, 520);
+      tile.querySelectorAll<HTMLElement>("[data-figure]").forEach((figure) => {
+        counters.add(countUp(figure, delay));
+      });
+      tile.querySelectorAll<HTMLElement>("[data-progress-fill]").forEach((bar) => {
+        play(bar, [{ transform: "scaleX(0)", transformOrigin: "left center" }, { transform: "scaleX(1)", transformOrigin: "left center" }], delay + 80, 900);
+      });
+      tile.querySelectorAll<SVGCircleElement>("[data-progress-ring]").forEach((ring) => {
+        const final = ring.getAttribute("stroke-dasharray")!;
+        play(ring, [{ strokeDasharray: `0 ${2 * Math.PI * 40}` }, { strokeDasharray: final }], delay + 80, 900);
+      });
+      // Chart geometry has this viewBox; source shields and link icons do not.
+      tile.querySelectorAll<SVGElement>('svg[viewBox="0 0 100 100"]').forEach((chart) => {
+        if (chart.querySelector("circle")) {
+          play(chart, [{ opacity: 0.4 }, { opacity: 1 }], delay + 80, 650);
+        } else {
+          play(chart, [{ clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)" }], delay + 80, 750);
+        }
+      });
+    }
+  }, { threshold: 0.12 });
+  const enroll = () => root.querySelectorAll<HTMLElement>(".wall-tile").forEach((tile) => {
+    if (enrolled.has(tile)) return;
+    enrolled.add(tile);
+    observer.observe(tile);
+  });
+  const cancel = () => { running.forEach((animation) => animation.cancel()); running.clear(); counters.forEach((stop) => stop()); counters.clear(); };
+  const onPreference = () => { if (preference.matches) cancel(); };
+  enroll();
+  const mutations = new MutationObserver(enroll);
+  mutations.observe(root, { childList: true, subtree: true });
+  preference.addEventListener("change", onPreference);
+  return () => { observer.disconnect(); mutations.disconnect(); preference.removeEventListener("change", onPreference); cancel(); };
+}
+
+function animate(root: HTMLElement) {
   root.querySelectorAll<HTMLElement>("[data-count]").forEach((el, i) => countUp(el, TIMING.count.start + i * TIMING.count.stagger));
   root.querySelectorAll<SVGElement>("[data-draw]").forEach((el, i) => draw(el, TIMING.draw.start + i * TIMING.draw.stagger));
-  if (!tiles) return;
-  root.querySelectorAll<HTMLElement>(".wall-tile").forEach((tile, i) => {
-    if (tile.offsetParent === null) return; // the other breakpoint's copy
-    const delay = TIMING.tile.start + i * TIMING.tile.stagger;
-    leafFigures(tile).forEach((el) => countUp(el, delay));
-    tile.querySelectorAll<SVGElement>("svg").forEach((svg) => draw(svg, delay + TIMING.tile.drawAfter));
-    bars(tile).forEach((bar) => fill(bar, delay + TIMING.tile.fillAfter));
-    heatmaps(tile).forEach((cells) => lightUp(cells, delay + TIMING.tile.lightAfter));
-  });
 }
 
-/** Leaf elements whose text is one big figure: labels and small print are left alone. */
-function leafFigures(tile: HTMLElement): HTMLElement[] {
-  return [...tile.querySelectorAll<HTMLElement>("div, span, b")].filter((el) => {
-    if (el.childElementCount > 0 || !parseFigure(el.textContent ?? "")) return false;
-    return Number.parseFloat(getComputedStyle(el).fontSize) >= FIGURE_MIN_FONT_PX;
-  });
-}
-
-function countUp(el: HTMLElement, delay: number) {
+/** Restore exact text on completion, unmount or reduced motion; never overwrite newer React data. */
+function countUp(el: HTMLElement, delay: number): () => void {
+  const node = el.firstChild;
   const final = el.textContent ?? "";
   const figure = parseFigure(final);
-  if (!figure || figure.value === 0) return;
-  const duration = TIMING.count.duration;
-  el.style.fontVariantNumeric = "tabular-nums";
-  el.textContent = formatFigure(figure, 0);
+  if (!node || node.nodeType !== Node.TEXT_NODE || !figure || figure.value === 0) return () => {};
+  let frame = 0;
+  let written = final;
+  let stopped = false;
+  const stop = () => {
+    stopped = true;
+    cancelAnimationFrame(frame);
+    if (node.textContent === written) node.textContent = final;
+  };
   const start = performance.now() + delay;
   const step = (now: number) => {
-    const t = Math.max(0, (now - start) / duration);
-    if (t >= 1) {
-      el.textContent = final;
-      return;
-    }
+    if (stopped || !el.isConnected || node.textContent !== written) return;
+    const t = Math.max(0, (now - start) / TIMING.count.duration);
+    if (t >= 1) { stop(); return; }
     const value = figure.value * easeOutExpo(t);
-    el.textContent = formatFigure(figure, figure.decimals ? value : Math.round(value));
-    requestAnimationFrame(step);
+    written = formatFigure(figure, figure.decimals ? value : Math.round(value));
+    node.textContent = written;
+    frame = requestAnimationFrame(step);
   };
-  requestAnimationFrame(step);
+  frame = requestAnimationFrame(step);
+  return stop;
 }
 
 /** Lines and areas reveal left to right, like a chart being drawn. */
 function draw(el: SVGElement, delay: number) {
   el.animate([{ clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)" }], { duration: TIMING.draw.duration, delay, easing: SPRING, fill: "backwards" });
-}
-
-/** Bars are a filled child inside a clipped track: grow the fill from the left. */
-function bars(tile: HTMLElement): HTMLElement[] {
-  return [...tile.querySelectorAll<HTMLElement>("div")].filter((el) => el.style.width.endsWith("%") && el.parentElement?.style.overflow === "hidden");
-}
-
-function fill(el: HTMLElement, delay: number) {
-  el.style.transformOrigin = "left center";
-  el.animate([{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], { duration: TIMING.fill.duration, delay, easing: SPRING, fill: "backwards" });
-}
-
-/** A heatmap is a row of columns of many equal cells: light them column by column. */
-function heatmaps(tile: HTMLElement): HTMLElement[][] {
-  const groups: HTMLElement[][] = [];
-  tile.querySelectorAll<HTMLElement>("div").forEach((el) => {
-    const columns = [...el.children] as HTMLElement[];
-    if (columns.length < HEATMAP_SHAPE.columns || !columns.every((c) => c.childElementCount >= HEATMAP_SHAPE.cells)) return;
-    groups.push(columns);
-  });
-  return groups;
-}
-
-function lightUp(columns: HTMLElement[], delay: number) {
-  columns.forEach((column, i) => {
-    column.animate([{ opacity: 0, transform: `translateY(${CELL_RISE_PX}px)` }, { opacity: 1, transform: "none" }], { duration: TIMING.cell.duration, delay: delay + i * TIMING.cell.stagger, easing: SPRING, fill: "backwards" });
-  });
 }

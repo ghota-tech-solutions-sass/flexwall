@@ -23,7 +23,8 @@ export interface InputValue {
   /** The upstream was unreachable; this is the last known value. */
   stale: boolean;
   /** `sensitive` comes from the metric: widgets show it as a range unless the tile asks for the exact number. */
-  source?: { connector: string; name: string; verified: boolean; sensitive?: boolean };
+  /** `domain` is an optional public hostname only: no port, URL path, query or credentials. */
+  source?: { connector: string; name: string; verified: boolean; sample?: boolean; sensitive?: boolean; domain?: string };
 }
 
 export interface WidgetInputDef {

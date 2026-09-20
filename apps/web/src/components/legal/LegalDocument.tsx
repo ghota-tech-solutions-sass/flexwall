@@ -29,7 +29,7 @@ const TITLES: Record<LegalDoc, Record<Lang, string>> = {
   privacy: { en: "Privacy policy", fr: "Politique de confidentialité" },
 };
 
-export const LAST_UPDATED: Record<Lang, string> = { en: "September 14, 2026", fr: "14 septembre 2026" };
+export const LAST_UPDATED: Record<Lang, string> = { en: "September 20, 2026", fr: "20 septembre 2026" };
 
 export function legalMetadata(doc: LegalDoc, lang: Lang): Metadata {
   return {

@@ -79,6 +79,7 @@ describe("core plugin", () => {
     expect(markup).toContain("$1M+");
     expect(markup).not.toContain("2.4M");
     expect(markup).not.toContain("48.6%");
+    expect(markup).not.toContain("0.48638");
   });
 
   test("given a sensitive balance the owner wants exact, when a stat renders, then the number is printed", () => {

@@ -8,6 +8,7 @@ import { dropCell, tileConnections, tileName } from "@/application/editor/draft"
 import { editorTheme } from "@/application/editor/state";
 import { MOBILE_COLUMNS, mobileLayout, phoneSizeBounds, WALL_COLUMNS } from "@/domain/layout";
 import { BIO_MAX, TITLE_MAX, type Tile } from "@/domain/wall";
+import { TEMPLATES } from "@/domain/templates";
 import { catalog } from "@/plugins/registry";
 import { BrandMark, hasMark } from "@/components/brand/Logos";
 import { ConnectionTitle } from "@/components/connections/ConnectionTitle";
@@ -222,7 +223,12 @@ function EmptyWall({ theme }: { theme: Theme }) {
   const suggestions = QUICK_ADD_WIDGETS.flatMap((id) => catalog.widget(id) ?? []);
   return (
     <div className="canvas-empty" style={{ borderColor: theme.tileBorder, color: theme.muted }}>
-      <p>Your wall is empty. Start with one of these, or pick any tile on the left.</p>
+      <h2>Start with a wall, not a blank page.</h2>
+      <p>Choose a starting point, then replace the example text and connect your numbers. Nothing is public until you publish.</p>
+      <div className="starter-templates">
+        {TEMPLATES.map((template) => <button key={template.id} type="button" onClick={() => actions.applyTemplate(template.id)} style={{ background: theme.tile, color: theme.ink, boxShadow: `inset 0 0 0 1px ${theme.tileBorder}` }}><strong>{template.name}</strong><span>{template.tagline}</span></button>)}
+      </div>
+      <p>Or start with a single tile:</p>
       <div>
         {suggestions.map((w) => (
           <button key={w.id} type="button" onClick={() => actions.addTile(w.id)} style={{ background: theme.tile, color: theme.ink, boxShadow: `inset 0 0 0 1px ${theme.tileBorder}` }}>

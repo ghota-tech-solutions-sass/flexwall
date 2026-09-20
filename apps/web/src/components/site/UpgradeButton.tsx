@@ -12,7 +12,7 @@ export function UpgradeButton({ plan, label, signedIn, primary }: { plan: Billin
   const consent = useCheckoutConsent();
   if (!signedIn) {
     return (
-      <a href={ROUTES.login} className={`btn${primary ? " btn-signal" : ""}`}>
+      <a href={ROUTES.loginForPlan(plan)} className={`btn${primary ? " btn-signal" : ""}`}>
         {label}
       </a>
     );

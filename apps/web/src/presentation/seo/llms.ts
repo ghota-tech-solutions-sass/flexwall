@@ -1,4 +1,4 @@
-import { FREE_TILE_LIMIT } from "@/domain/user";
+import { FREE_TILE_LIMIT, PAID_TILE_LIMIT } from "@/domain/user";
 import { PAID_ACCOUNT_PRICE_USD, PLAN_PRICES_USD } from "@/domain/pricing";
 import { ROUTES } from "../routes";
 import { SITE_DESCRIPTION } from "./structured-data";
@@ -12,12 +12,12 @@ export function llmsTxt(origin: string, integrations: readonly IntegrationPage[]
     "",
     `> ${SITE_DESCRIPTION}`,
     "",
-    "Flexwall lets builders, creators and indie hackers publish a wall of live tiles at flexwall.lol/@handle. Tiles read numbers from the accounts that produce them (revenue from Stripe, commit streaks from GitHub, downloads from npm, any JSON API) and redraw on their own. The same wall becomes a share card for social posts and an iPhone lock screen. Numbers read from an owner's own account carry a verified badge; The Wall ranks walls by verified revenue, streaks and stars.",
+    "Flexwall lets builders, creators and indie hackers publish a wall of live tiles at flexwall.lol/@handle. Tiles read numbers from the accounts that produce them (revenue from Stripe, commit streaks from GitHub, downloads from npm, any JSON API) and redraw on their own. The same wall becomes a share card for social posts and an iPhone lock screen. Numbers from supported connected provider accounts carry a verified badge; personal APIs are synchronized, not independently verified; The Wall ranks walls by verified revenue, streaks and stars.",
     "",
     "## Plans",
     "",
     `- Free: one public wall, ${FREE_TILE_LIMIT} tiles, basic connectors, a small flexwall.lol mark on images.`,
-    `- Pro: $${PLAN_PRICES_USD.monthly} a month or $${PLAN_PRICES_USD.yearly} a year, taxes included. Unlimited tiles, every connector and theme, value history, no mark.`,
+    `- Pro: $${PLAN_PRICES_USD.monthly} a month or $${PLAN_PRICES_USD.yearly} a year, taxes included. Up to ${PAID_TILE_LIMIT} tiles, every connector and theme, value history, no mark.`,
     `- Connected bank or brokerage account: $${PAID_ACCOUNT_PRICE_USD} a month each, on top of Pro, for as long as the account stays connected.`,
     "",
     "## Main pages",

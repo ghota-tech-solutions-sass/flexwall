@@ -35,13 +35,14 @@ export function WallProfile({
         {monogram(title, handle)}
       </div>
       <div className="wp-id">
+        <span className="wp-eyebrow">The wall of {formatHandle(handle)}</span>
         <h1 style={{ fontFamily: theme.display.family, fontWeight: theme.display.weight }}>{name}</h1>
         <ul className="wp-facts">
           {showHandle ? <li className="wp-handle">{formatHandle(handle)}</li> : null}
           {verified ? (
             <li className="wp-verified">
               <SealCheckIcon size={16} weight="fill" aria-hidden="true" />
-              {verified} verified {verified === 1 ? "number" : "numbers"}
+              {verified} {verified === 1 ? "tile" : "tiles"} with verified sources
             </li>
           ) : null}
           <li>

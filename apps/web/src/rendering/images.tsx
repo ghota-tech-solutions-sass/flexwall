@@ -4,6 +4,7 @@ import { ImageResponse } from "next/og";
 import { CELL_UNITS, GAP_UNITS, gridUnits, themeBackground, type Theme } from "@flexwall/sdk";
 import type { TileState } from "@/application/use-cases/resolve-wall";
 import type { Catalog } from "@/domain/catalog";
+import { monogram } from "@/presentation/wall/profile";
 import { formatHandle } from "@/domain/handle";
 import { DEVICES, heightOf, lockscreenGeometry, packInto, WALL_COLUMNS, WATERMARK, type Box, type DeviceId } from "@/domain/layout";
 import type { Tile } from "@/domain/wall";
@@ -154,7 +155,10 @@ function card(text: CardText, input: { placed: Placed[]; states: Record<string, 
     <div style={{ display: "flex", width: "100%", height: "100%", position: "relative", ...themeBackground(theme), color: theme.ink, fontFamily: theme.body.family }}>
       <div style={{ position: "absolute", left: padding, top: padding, width: textWidth, bottom: padding, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", fontSize: kicker.fontSize, color: theme.muted }}>{text.kicker}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ display: "flex", width: 44, height: 44, flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: 14, background: theme.ink, color: theme.page, fontFamily: theme.display.family, fontSize: 22, transform: "rotate(-4deg)" }}>{monogram(text.title, text.kicker)}</div>
+            <div style={{ display: "flex", fontSize: kicker.fontSize, color: theme.muted }}>{text.kicker}</div>
+          </div>
           <div style={{ display: "flex", fontSize: titleSize, lineHeight: title.lineHeight, marginTop: title.gap, fontFamily: theme.display.family, fontWeight: theme.display.weight }}>{text.title}</div>
           {text.body ? <div style={{ display: "flex", fontSize: body.fontSize, lineHeight: body.lineHeight, marginTop: body.gap, color: theme.muted }}>{text.body.slice(0, body.maxChars)}</div> : null}
         </div>

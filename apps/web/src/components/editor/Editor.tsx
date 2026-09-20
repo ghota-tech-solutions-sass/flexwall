@@ -10,6 +10,7 @@ import { editorDeps } from "@/presentation/editor/composition";
 import { CLOSED, isOpen, nextSheet, type Sheet } from "@/presentation/editor/sheet";
 import { isTypingInto, shortcutFor } from "@/presentation/editor/shortcuts";
 import { ROUTES } from "@/presentation/routes";
+import { TEMPLATES } from "@/domain/templates";
 import { EditorProvider, useEditor, useEditorActions } from "./EditorContext";
 import { CheckIcon, CloseIcon, ExternalIcon, PlusIcon, SettingsIcon, TypeIcon } from "./icons";
 import { Inspector } from "./Inspector";
@@ -55,6 +56,7 @@ function EditorShell({ appUrl }: { appUrl: string }) {
   const canvas = (
     <main className="canvas" onMouseDown={(e) => e.target === e.currentTarget && actions.select(null)}>
       <SaveError />
+      {surface === "wall" ? <GettingStarted /> : null}
       {surface === "wall" ? <WallCanvas /> : <LockscreenPanel appUrl={appUrl} />}
       <UndoToast />
     </main>
@@ -62,7 +64,7 @@ function EditorShell({ appUrl }: { appUrl: string }) {
 
   if (phone) {
     return (
-      <div className="editor phone">
+      <div className="editor editor-mobile">
         <EditorBar />
         <ConnectNotice connections={connections} onConnected={actions.adoptConnection} />
         <div className="editor-body">{canvas}</div>
@@ -101,6 +103,27 @@ function EditorShell({ appUrl }: { appUrl: string }) {
       </div>
     </div>
   );
+}
+
+/** A draft owner can reach the first useful number without discovering the inspector first. */
+function GettingStarted() {
+  const published = useEditor((s) => s.draft.published);
+  const tiles = useEditor((s) => s.draft.tiles);
+  const actions = useEditorActions();
+  if (published || !tiles.length) return null;
+  const firstNumber = tiles.find((tile) => catalog.widget(tile.widget)?.inputs.length);
+  return <section className="ed-start-guide" aria-label="Set up your wall">
+    <strong>Your first wall, in three steps</strong>
+    <p>Choose a layout, add your numbers, then preview and publish. Your draft is only visible to you.</p>
+    <div className="row">
+      <details><summary>1. Choose a starting layout</summary>
+        <p>Replaces the current tiles. Use Undo to restore them.</p>
+        <div className="ed-templates">{TEMPLATES.map((template) => <button type="button" key={template.id} onClick={() => actions.applyTemplate(template.id)}><strong>{template.name}</strong><small>{template.tagline}</small></button>)}</div>
+      </details>
+      <button type="button" className="btn btn-small" onClick={() => firstNumber ? actions.select(firstNumber.id) : actions.addTile("stat")}>2. Add your numbers</button>
+      <span>3. Preview, then Publish above</span>
+    </div>
+  </section>;
 }
 
 const SHEET_TITLES: Record<Sheet["kind"], string> = { none: "", library: "Add a tile", inspector: "Tile", wall: "Design" };

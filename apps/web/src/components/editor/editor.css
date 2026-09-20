@@ -370,3 +370,13 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; height: 22px; 
 .phone-watermark { position: absolute; width: 100%; text-align: center; }
 .lock-steps { padding-left: 1.2em; margin: 0; }
 @media (max-width: 900px) { .lock-panel { grid-template-columns: minmax(0, 1fr); justify-items: center; } }
+
+.canvas-empty .starter-templates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; width: 100%; }
+.canvas-empty .starter-templates button { display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 6px; padding: 18px; white-space: normal; }
+.starter-templates span { font-size: 13px; opacity: 0.75; }
+@media (max-width: 480px) { .canvas-empty .starter-templates { grid-template-columns: 1fr; } }
+.ed-start-guide { padding: 18px; margin: 0 0 20px; background: var(--surface); color: var(--ink); border: 1px solid var(--hairline); border-radius: 16px; font-size: 13px; }
+.ed-start-guide p { margin: 6px 0 12px; color: var(--muted); }
+.ed-start-guide summary { cursor: pointer; padding: 9px 0; font-weight: 550; }
+.ed-start-guide details[open] { width: 100%; }
+.ed-start-guide .ed-templates { margin-bottom: 12px; }

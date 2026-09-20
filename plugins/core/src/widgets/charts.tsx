@@ -15,7 +15,7 @@ export const sparkline = defineWidget<{ label: string; prefix: string; display: 
   ],
   size: { default: [2, 1], min: [2, 1], max: [4, 2] },
 
-  render({ inputs, options, area, theme, u }) {
+  render({ inputs, options, area, theme, u, surface }) {
     const s = asType(inputs.series!.value, "series")!;
     const values = s.points.map((p) => p.v);
     const last = values.at(-1) ?? 0;
@@ -32,7 +32,7 @@ export const sparkline = defineWidget<{ label: string; prefix: string; display: 
         <Row style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
           <Col>
             <Text style={{ fontSize: u(11), color: theme.muted }}>{options.label || " "}</Text>
-            <Text style={{ fontSize: u(valueSize), lineHeight: 1.05, color: theme.ink, fontFamily: theme.display.family, fontWeight: theme.display.weight }}>{shown}</Text>
+            <Text animate={!showsRange(options.display, inputs.series!.source?.sensitive)} style={{ fontSize: u(valueSize), lineHeight: 1.05, color: theme.ink, fontFamily: theme.display.family, fontWeight: theme.display.weight }}>{shown}</Text>
           </Col>
           {change !== null ? (
             <Text style={{ fontSize: u(12), color: change >= 0 ? theme.positive : theme.negative }}>{formatPercent(change, true)}</Text>
@@ -41,8 +41,14 @@ export const sparkline = defineWidget<{ label: string; prefix: string; display: 
         <Fill style={{ marginTop: u(6), alignItems: "flex-end" }}>
           {values.length > 1 ? (
             <svg width={u(area.width)} height={u(Math.max(20, chartHeight))} viewBox="0 0 100 100" preserveAspectRatio="none">
-              <polygon points={`0,100 ${points} 100,100`} fill={theme.accent} fillOpacity={0.14} />
+              <line x1="0" y1="50" x2="100" y2="50" stroke={theme.track} strokeWidth="0.7" strokeDasharray="2 3" />
+              <polygon points={`0,100 ${points} 100,100`} fill={theme.accent} fillOpacity={0.08} />
               <polyline points={points} fill="none" stroke={theme.accent} strokeWidth={2.5} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+              {surface === "page" ? s.points.map((point, i) => {
+                const value = showsRange(options.display, inputs.series!.source?.sensitive) ? formatBand({ value: point.v, unit: s.unit, currency: s.currency }) : prefix + point.v.toLocaleString("en-US", { maximumFractionDigits: 8 });
+                const label = `${point.t} · ${value}${s.unit === "percent" ? "%" : ""}`;
+                return <rect key={i} data-chart-point={label} role="img" aria-label={label} tabIndex={i === 0 ? 0 : -1} x={i * 100 / s.points.length} y="0" width={100 / s.points.length} height="100" fill="transparent"><title>{label}</title></rect>;
+              }) : null}
             </svg>
           ) : (
             <Text style={{ fontSize: u(11), color: theme.muted }}>History starts filling in tomorrow.</Text>
@@ -63,7 +69,7 @@ export const heatmap = defineWidget<{ label: string; showTotal: boolean }>({
   options: [field.text("label", "Label", { placeholder: "Commits", maxLength: 40, optional: true }), field.toggle("showTotal", "Show the total", { default: true })],
   size: { default: [4, 1], min: [2, 1], max: [4, 2] },
 
-  render({ inputs, options, area, theme, u }) {
+  render({ inputs, options, area, theme, u, surface }) {
     const days = asType(inputs.days!.value, "calendar")!.days;
     const header = Boolean(options.label || options.showTotal);
     const headerHeight = header ? 20 : 0;
@@ -104,6 +110,7 @@ export const heatmap = defineWidget<{ label: string; showTotal: boolean }>({
               {Array.from({ length: rows }, (_, r) => week[r] ?? null).map((d, j) => (
                 <div
                   key={j}
+                  {...(surface === "page" && d ? { "data-chart-point": `${d.date} · ${d.count.toLocaleString("en-US")} contributions`, role: "img", "aria-label": `${d.date} · ${d.count.toLocaleString("en-US")} contributions`, tabIndex: i === 0 && week.findIndex(Boolean) === j ? 0 : -1, title: `${d.date} · ${d.count.toLocaleString("en-US")} contributions` } : {})}
                   style={{
                     display: "flex",
                     width: u(cell),
