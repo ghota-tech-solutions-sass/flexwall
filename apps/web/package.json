@@ -48,7 +48,7 @@
     "@flexwall/sdk": "workspace:*",
     "@google-cloud/firestore": "^9.0.0",
     "@phosphor-icons/react": "^2.1.10",
-    "next": "16.3.5",
+    "next": "16.3.8",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-grid-layout": "2.2.4",
