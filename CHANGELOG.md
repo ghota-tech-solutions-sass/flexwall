@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.1](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.17.0...v0.17.1) (2026-11-10)
+
+
+### Bug Fixes
+
+* **deps:** refresh locked dependencies for security advisories ([#49](https://github.com/ghota-tech-solutions-sass/flexwall/issues/49)) ([fc3bbc2](https://github.com/ghota-tech-solutions-sass/flexwall/commit/fc3bbc22661cdddbce1740bbaeae17613976cf2b))
+
 ## [0.17.0](https://github.com/ghota-tech-solutions-sass/flexwall/compare/v0.16.0...v0.17.0) (2026-11-09)
 
 
